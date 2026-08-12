@@ -1,7 +1,9 @@
 # Inscribed Problems
-This project utilizes a skeletal constraint-based search, a "rattling frame" to demonstrate that such a state of mechanical equilibrium exists for all continuous, non-self-intersecting 2D or 3D volumes. ( containing a regular triangle, square, regular tetrahedron and cube )
+This project presents **conjectures** and a skeletal constraint-based search, a "rattling frame" construction, intended as evidence and motivation for the conjecture that a state of mechanical equilibrium exists for all continuous, non-self-intersecting 2D or 3D volumes (containing a regular triangle, square, regular tetrahedron, and cube).
 
-This repository also contains some other proposed proofs of mine.
+**Status.** The conjectures for general continuous Jordan curves / surfaces are **open problems** in the literature. The 2D inscribed-square case is the Toeplitz conjecture (open for general continuous curves; solved for smooth and locally monotone curves). The 3D inscribed-cube case is solved for convex bodies (Makeev 2009, Hausel–Makai–Szűcs 2000) and, as far as I know, open for general continuous Jordan surfaces. I am not aware of a settled result for inscribed regular tetrahedra in general Jordan surfaces. The arguments below are **proposed proofs of conjectures**, not established results.
+
+This repository also contains some other proposed arguments of mine.
 
 ## Interactive Demonstration
 You can view the **Inscribed Square & Cube Viewfinder** in action here:
@@ -22,7 +24,7 @@ I have presented a demonstration using my method anyway which can be seen here.
 [Run the Skeletal Shape Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html?shape=triangle)
 
 ## Inscribed Square Problem
-My proposed proof for the Inscribed Square Problem
+**Conjecture and proposed argument.** The general continuous-Jordan-curve case (the Toeplitz conjecture) is open; this section presents the conjecture, an informal argument, and a simulation illustrating it. Convex and smooth-curve cases have been established in the literature (Stromquist 1989 for locally monotone curves; Greene–Lobb 2021 for smooth curves).
 
 **The Skeletal Frame:** Let $C$ be any Jordan curve.
 
@@ -36,18 +38,18 @@ Define a 'Skeletal Jig' consisting of two perpendicular lines intersecting at a 
 
 **The Second Equilibrium (Bisection):** As $I$ is moved through the interior of $C$, the offset of these equal-length chords (the distance from $I$ to the boundary) also varies continuously. There exists a position for $I$ where the midpoint of the jig aligns with the midpoints of both chords.
 
+> **Open step.** The two equilibria above are coupled — equal-length chords form a 1-parameter family as $I$ moves, and the bisection condition picks one member. Closing the argument requires a topological fixed-point / equivariant argument (e.g. Borsuk–Ulam on the space of oriented rectangles inscribed in $C$ with a $\mathbb{Z}/2$ antipodal action, mapping to $\mathbb{R}^2$ via the side-length differences). I do not carry this out in full generality here.
+
 **The Result:** When the chords are perpendicular, equal in length, and bisected at $I$, the vertices $E, F, G, H$ define an inscribed square.
 
-Therefore every Jordan curve contains an inscribed square.
-
-A square is therefore a mechanical necessity of a continuous, non-self-intersecting loop.
+**Conjecture (Toeplitz).** Every Jordan curve in the plane contains an inscribed square.
 
 ![Inscribed Square Shapefinder Demo](images/square_demonstration.gif)
 
 [Run the Skeletal Shape Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html)
 
 ## Inscribed Cube Problem
-The resolution of the 2D Inscribed Square Problem provides a Deterministic Foundation for the 3D Inscribed Cube Problem.
+**Conjecture and proposed argument.** The case of convex bodies in $\mathbb{R}^3$ is established (Makeev 2009; Hausel–Makai–Szűcs 2000). The general continuous-Jordan-surface case is, as far as I am aware, open, and this section presents the conjecture together with an informal extension of the 2D skeletal-jig construction to 3D. Standard test-map / Borsuk–Ulam arguments face known obstructions in dimension 3 for some related polytopes (crosspolytopes), and I have not checked whether these obstructions also defeat the cube case; the argument below should therefore be read as heuristic.
 
 **The 3D Skeletal Jig:** Let $C$ be any closed 3D Jordan surface.
 
@@ -59,16 +61,18 @@ Define a 3D "Skeletal Jig" representing the four internal diagonals of a cube. T
 
 **The Second Equilibrium (Bisection):** As $I$ is moved through the 3D interior of $C$, the offset of these equal-length chords (the distance from $I$ to the boundary) varies continuously. There exists a position for $I$ where the midpoint of the jig aligns with the midpoints of the four equal-length chords.
 
+> **Open step.** The 1-parameter IVT claim above only equalises two diagonal lengths at a time. Pinning down all four simultaneously requires an equivariant argument whose configuration space carries the full octahedral symmetry of the cube; I do not verify this in generality here.
+
 **The Result:** When the four chords are equal in length, and bisected at $I$, the eight points of intersection define the vertices of an inscribed cube.
 
-Therefore every Jordan surface contains an inscribed cube.
+**Conjecture.** Every closed 3D Jordan surface contains an inscribed cube.
 
 ![Inscribed Cube Spacefinder Demo](images/cube_demonstration.gif)
 
 [Run the Skeletal Space Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-spacefinder.html)
 
 ## Inscribed Tetrahedron Problem
-Similarly the 2D Inscribed Triangle Problem which is already solved provides a Deterministic Foundation for the 3D Inscribed Regular Tetrahedron Problem.
+**Conjecture and proposed argument.** I am not aware of a settled result for inscribed regular tetrahedra in general continuous Jordan surfaces; this section is therefore a conjecture together with an informal extension of the 2D skeletal-jig construction.
 
 **The Tetrahedral Jig:** Let $C$ be any closed 3D Jordan surface.
 
@@ -80,19 +84,21 @@ Define a 'Skeletal Jig' consisting of four rays extending from a common midpoint
 
 **The Second Equilibrium:** Since the "Skeletal Jig" is composed of four axes passing through $I$, there are actually eight potential intersection points with $C$. This provides "twice the leverage," ensuring that even in highly irregular surfaces, the jig has multiple rotational paths to find a state where the primary four rays reach a length equilibrium.
 
+> **Open step.** Equalising all four distances simultaneously — not two at a time — requires an equivariant argument on the configuration space under the full tetrahedral symmetry. The "twice the leverage" remark above is heuristic and does not substitute for this.
+
 **The Result:** When four points on a continuous surface are equidistant from a common center $I$ and maintained at regular tetrahedral angles, those points ($E, F, G, H$) define an inscribed regular tetrahedron.
 
-Therefore every Jordan surface contains an inscribed regular tetrahedron.
+**Conjecture.** Every closed 3D Jordan surface contains an inscribed regular tetrahedron.
 
 ![Inscribed Tetrahedron Spacefinder Demo](images/tetrahedron_demonstration.gif)
 
 [Run the Skeletal Space Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-spacefinder.html?shape=tetrahedron)
 
-## Degrees Of Freedom
+## Degrees Of Freedom (Heuristic)
 
-A formal explanation describing another method of reasoning as to why this is true.
+A hand-wavy informal count of why one might expect the conjectures above to be true. This is **not** a proof — dimensional counting tells you the expected dimension of the solution set, not that a solution exists. The conjectures stand or fall on the equivariant / topological arguments in the sections above.
 
-To guarantee an equilibrium state, the available Degrees of Freedom (DoF) must meet or exceed the number of equality constraints required to make the shape regular.
+To motivate an equilibrium state, the available Degrees of Freedom (DoF) should meet or exceed the number of equality constraints required to make the shape regular.
 
 **2D Space** (3 DoF: $X, Y, \theta$)
 
@@ -114,9 +120,12 @@ To guarantee an equilibrium state, the available Degrees of Freedom (DoF) must m
 
 - **Total:** 6 Constraints (with only 4 points of contact, this is a "Loose" mechanical certainty).
 
-**Conclusion:** Since the available DoF ($3$ in 2D, $6$ in 3D) meets or exceeds the required points of contact, these shapes are a mechanically mandatory feature of any continuous volume.
+**Heuristic Conclusion:** Since the available DoF ($3$ in 2D, $6$ in 3D) meets or exceeds the required points of contact, these shapes are a plausible mechanical feature of any continuous volume. This is a motivation, not a proof.
 
-## Expansion Paradox
+## Expansion Paradox (Heuristic)
+
+A second informal motivation. This is **not** a proof either — the expansion argument below shows that some intersection state exists at every scale, not that one of those states is a regular polytope.
+
 Consider a regular polytope (triangle, square, tetrahedron, or cube) expanding from any interior point $I$ within a closed Jordan boundary.
 
 At a scale near zero, the shape is entirely contained. At a scale larger than the volume's maximum diameter, the shape entirely encloses the boundary.
@@ -125,10 +134,11 @@ Because the boundary is continuous and non-self-intersecting, the transition fro
 
 Because the Jordan boundary forbids self-intersection, this intersection cannot occur at a scale of zero, guaranteeing a non-degenerate inscribed shape.
 
-## Perfect Odd Numbers...
-Another proof by Mechanical Necessity
+## Perfect Odd Numbers... (Heuristic / Sketch)
 
-While modern number theory attempts to find a "Monster" odd perfect number through computational brute force, the Mechanical Necessity of the number's construction forbids its existence.
+**Not a proof.** This section is an informal heuristic and a visual motivation only. The non-existence of odd perfect numbers is a long-standing open problem; the argument below sketches an intuition but does not constitute a proof. Heuristic arguments based on divisor densities cannot, by themselves, rule out odd perfect numbers, since divisors of an odd integer $N$ form a sparse but unconstrained set in principle.
+
+While modern number theory attempts to find a "Monster" odd perfect number through computational brute force, this heuristic argues the structure of an odd number's divisor set makes perfection implausible.
 
 The "Binary Spine" Requirement:
 
@@ -191,7 +201,7 @@ In a perfect even number, the $N/2$ anchor does half the work. In an odd number,
 ## Another explanation
 For any odd number N, the sum of its proper divisors is structurally bounded below N because without N/2 in the divisor set, the largest available divisor is at most N/p where p is the smallest odd prime factor of N, which is at minimum 3. The remaining divisors are all smaller fractions of N derived from combinations of its prime factors, and their collective sum cannot bridge the gap to N.
 
-## Proof of Structural Instability for Odd Numbers
-This is another visualisation I have added to the interactive demonstrations.
+## Visualisation of Structural Instability for Odd Numbers (Heuristic)
+This is another visualisation I have added to the interactive demonstrations. The visual is illustrative of the heuristic in the previous sections; it is not a proof.
 
 [Run the Number Stability Viewer](https://thor110.github.io/InscribedSquareProblem/pages/number-stability.html)
