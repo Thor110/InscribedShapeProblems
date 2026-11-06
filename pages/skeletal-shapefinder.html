@@ -41,7 +41,7 @@
 <div class="sub">Edward James Gordon — Inscribed Polygon Problems</div>
 <canvas id="canvas"></canvas>
 <div class="controls">
-  <select id="insType" onchange="onShapeChange()">
+  <select id="insType" aria-label="Shape to inscribe" onchange="onShapeChange()">
     <option value="square">Inscribed Square</option>
     <option value="rectangle">Inscribed Rectangle</option>
     <option value="triangle">Inscribed Equilateral Triangle</option>
@@ -50,14 +50,14 @@
     <option value="hexagon">Inscribed Regular Hexagon</option>
   </select>
   <label class="chk" id="paramBox" style="display:none"><span id="paramLabel"></span><input id="param" type="text" size="7" onchange="newCurve(false)" style="background:#0d0d14;border:1px solid #2a2a3a;color:#aaa;font-family:inherit;font-size:11px;padding:4px 6px;"></label>
-  <select id="shapeType" onchange="newCurve(false)"></select>
+  <select id="shapeType" aria-label="Curve" onchange="newCurve(false)"></select>
   <button onclick="newCurve(true)">New curve</button>
   <button onclick="toggleScan()" id="scanBtn">Auto-find Equilibrium</button>
   <label class="chk" title="Keep the skeleton's rotation fixed and only move the central pivot"><input type="checkbox" id="pivotOnly" onchange="onPivotToggle()">Pivot only</label>
-  <div class="slrow">Rotate<input type="range" id="rtSl" min="0" max="360" value="0" step="0.1" oninput="onRt(this.value)"><span id="rtV">0.0°</span></div>
+  <label class="slrow">Rotate<input type="range" id="rtSl" min="0" max="360" value="0" step="0.1" oninput="onRt(this.value)"><span id="rtV">0.0°</span></label>
 </div>
 <div class="meters" id="meterGrid"></div>
-<div class="status" id="status">Ready</div>
+<div class="status" id="status" role="status" aria-live="polite">Ready</div>
 <div class="timing" id="timing"></div>
 <div class="registry" id="registry" style="display:none"></div>
 <div class="note" id="note">Click inside the curve to move the jig centre. A shape is only marked as locked after an independent check of every pairwise vertex distance and every vertex's distance to the curve.</div>
@@ -101,13 +101,15 @@ function buildSpec() {
   const reg = (n, kind) => ({ dirs: Array.from({ length: n }, (_, k) => (2 * Math.PI * k) / n), kind, period: (2 * Math.PI) / n, balanced: true });
   switch (t) {
     case 'rectangle': {
-      const a = Math.max(1, +p || 2), al = Math.atan(1 / a);
-      return { name: `rectangle (aspect ${+a.toFixed(4)})`, short: 'rectangle', dirs: [al, Math.PI - al, Math.PI + al, 2 * Math.PI - al], kind: 'chords', period: Math.PI, balanced: true };
+      // an aspect below 1 is the same rectangle turned sideways; anything invalid falls back to 2
+      const v = +p, a = v > 0 && isFinite(v) ? Math.max(v, 1 / v) : 2, al = Math.atan(1 / a);
+      if (+$('param').value !== a) $('param').value = +a.toFixed(6);   // show the value actually searched
+      return { name: `rectangle (aspect ${+a.toFixed(4)})`, short: 'rectangle', aspect: a, dirs: [al, Math.PI - al, Math.PI + al, 2 * Math.PI - al], kind: 'chords', period: Math.PI, balanced: true };
     }
     case 'triangle': return Object.assign(reg(3, 'family'), { name: 'equilateral triangle', short: 'triangle' });
     case 'trianglex': {
       let [A, B] = p.split(',').map(Number);
-      if (!(A > 0 && B > 0 && A + B < 180)) { A = 50; B = 70; }
+      if (!(A > 0 && B > 0 && A + B < 180)) { A = 50; B = 70; $('param').value = '50,70'; }   // show the angles actually searched
       const C = 180 - A - B;
       // Vertices on a circle about the pivot: consecutive central angles 2C, 2A, 2B.
       return { name: `triangle (${+A.toFixed(2)}°, ${+B.toFixed(2)}°, ${+C.toFixed(2)}°)`, short: 'triangle', dirs: [0, 2 * C * deg, 2 * (C + A) * deg], kind: 'family', period: 2 * Math.PI, balanced: false };
@@ -122,21 +124,21 @@ function onShapeChange() {
   const t = insType();
   $('paramBox').style.display = PARAM_DEFAULTS[t] ? '' : 'none';
   $('paramLabel').textContent = t === 'rectangle' ? 'Aspect' : t === 'trianglex' ? 'Angles A,B' : '';
-  if (PARAM_DEFAULTS[t] && !$('param').value) $('param').value = PARAM_DEFAULTS[t];
-  if (!PARAM_DEFAULTS[t]) $('param').value = '';
+  $('param').value = PARAM_DEFAULTS[t] || '';   // a rectangle's aspect means nothing to a triangle, and vice versa
   newCurve(false);
 }
 
 function resize() {
   const mw = Math.min(window.innerWidth - 40, 700), dpr = window.devicePixelRatio || 1;
   W = mw; H = Math.round(mw * 0.68);
-  cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = 'auto';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 // ---------- curve geometry ----------
+let curveAccel = null;   // chunked point-in-curve test from shapes2d.js (same even-odd rule, far faster)
 function buildCurve(pts) {
-  curve = pts; const n = pts.length;
+  curve = pts; curveAccel = Shapes2D.accel(pts); const n = pts.length;
   AX = new Float64Array(n); AY = new Float64Array(n); EX = new Float64Array(n); EY = new Float64Array(n);
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   for (let i = 0; i < n; i++) {
@@ -189,14 +191,7 @@ function distToCurve(px, py) {
   return best;
 }
 
-function insideCurve(px, py) {
-  let ins = false; const n = curve.length;
-  for (let i = 0, j = n - 1; i < n; j = i++) {
-    const xi = curve[i].x, yi = curve[i].y, xj = curve[j].x, yj = curve[j].y;
-    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) ins = !ins;
-  }
-  return ins;
-}
+function insideCurve(px, py) { return curveAccel.inside(px, py); }
 
 // All crossings of the ray with the curve (t > 0), sorted.
 function rayHitsAll(ox, oy, dx, dy) {
@@ -390,7 +385,7 @@ function showRegistry(P) {
   if (!P) { el.style.display = 'none'; return; }
   const type = $('shapeType').value, t = insType();
   Registry.panel(el, {
-    dim: 2, shape: t === 'trianglex' ? 'triangle' : t, aspect: t === 'rectangle' ? +$('param').value : undefined,
+    dim: 2, shape: t === 'trianglex' ? 'triangle' : t, aspect: t === 'rectangle' ? SPEC.aspect : undefined,
     curve: { type, seed, level: Shapes2D.DEFAULT_LEVEL[type] },
     vertices: P.map(p => [(p.x - FIT.ox) / FIT.s, (p.y - FIT.oy) / FIT.s]), finder: 'Skeletal Shape Finder',
   });
@@ -625,6 +620,7 @@ function* searchGen(s) {
 }
 
 function startScan() {
+  cancelAnimationFrame(scanId);   // never run two search loops at once
   $('registry').style.display = 'none';
   locked = null;
   search = { starts: interiorStarts(), si: 0, ang: 0, jumps: 0, tries: 0, best: null, phase: 1, k: 0, mode: 'far', t0: performance.now(), y: 0 };
@@ -645,7 +641,7 @@ function toggleScan() { search ? (stopScan(), hitMode = 'far', refresh()) : star
 function accept(x, y, ang) {
   const r = rays(x, y, ang); if (!r) return false;
   const P = hits(x, y, ang, r), v = verify(P);
-  if (!search.best || v.err < search.best.v.err) search.best = { x, y, ang, P, v, mode: hitMode };
+  if (!search.best || v.err < search.best.v.err) search.best = { x, y, ang, P, v, mode: hitMode, targets: hitMode === 'track' ? trackTargets.slice() : null };
   if (!v.ok) return false;
   locked = { x, y, ang, P, v, mode: hitMode }; jig = { x, y, ang }; syncSlider();
   return true;
@@ -653,10 +649,9 @@ function accept(x, y, ang) {
 
 function finishScan(found) {
   const s = search; stopScan();
-  if (!found && s.best) { hitMode = s.best.mode; jig = { x: s.best.x, y: s.best.y, ang: s.best.ang }; syncSlider(); computeView(); }
+  if (!found && s.best) { hitMode = s.best.mode; if (s.best.targets) trackTargets = s.best.targets; jig = { x: s.best.x, y: s.best.y, ang: s.best.ang }; syncSlider(); computeView(); }
   refresh();
   if (found && locked.mode !== 'far') $('status').textContent += locked.mode === 'near' ? ' (nearest-hit jig)' : ' (tracking jig)';
-  if (found && locked.mode === 'track') trackTargets = locked.P.map(p => Math.hypot(p.x - locked.x, p.y - locked.y));
   if (!found) setStatus(pivotOnly()
     ? `No verified ${SPEC.short} at this fixed rotation (${s.tries} pivot positions). Best error ${s.best ? fmt(s.best.v.err) : 'n/a'}${SPEC.kind !== 'family' ? ` — a ${SPEC.short} also needs the rotation` : ''}`
     : `No verified ${SPEC.short} found (${s.tries} candidates, ${s.jumps} rejected at discontinuities). Closest candidate error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');

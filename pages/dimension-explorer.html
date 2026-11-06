@@ -38,7 +38,7 @@
 <div class="sub">The skeletal jig in any dimension: rays from a pivot along the vertex directions of a regular polytope, solved until every ray has the same length. Each cell runs a fresh search and reports whether an inscribed copy was verified (all pairwise distances and surface distances to 1e-9) or the closest miss.</div>
 
 <div class="controls">
-  <label>Dimensions 2 to <select id="maxDim"><option>3</option><option>4</option><option selected>5</option><option>6</option></select></label>
+  <label>Dimensions 2 to <select id="maxDim" onchange="if (!running) build()"><option>3</option><option>4</option><option selected>5</option><option>6</option></select></label>
   <label>Seed <input id="seed" type="number" value="1" style="width:70px"></label>
   <button id="runBtn" onclick="toggle()">Run</button>
 </div>
@@ -74,11 +74,13 @@ function build() {
   }
   $('tbl').innerHTML = h;
 }
+let rafId = 0, seed = 1;
 function toggle() {
+  cancelAnimationFrame(rafId);   // a quick Stop then Run must not leave two loops running
   if (running) { running = false; $('runBtn').textContent = 'Run'; $('runBtn').classList.remove('active'); $('status').textContent = 'Stopped'; return; }
-  build(); running = true; cur = -1; gen = null; t0 = performance.now();
+  build(); running = true; cur = -1; gen = null; t0 = performance.now(); seed = +$('seed').value;   // one seed for the whole run
   $('runBtn').textContent = 'Stop'; $('runBtn').classList.add('active');
-  requestAnimationFrame(step);
+  rafId = requestAnimationFrame(step);
 }
 function step() {
   if (!running) return;
@@ -88,7 +90,7 @@ function step() {
       cur++;
       if (cur >= jobs.length) { running = false; $('runBtn').textContent = 'Run'; $('runBtn').classList.remove('active'); $('status').textContent = `Done in ${((performance.now() - t0) / 1000).toFixed(0)} s`; return; }
       const j = jobs[cur], starts = j.e >= 0 ? 8 : j.n <= 3 ? 16 : 4;
-      gen = N.makeProblem(j.shape, j.n, j.sf, +$('seed').value).search({ starts, maxIt: j.e >= 0 ? 200 : 120 });
+      gen = N.makeProblem(j.shape, j.n, j.sf, seed).search({ starts, maxIt: j.e >= 0 ? 200 : 120 });
       tJob = performance.now(); $(j.id).className = 'cell run'; $(j.id).textContent = '…';
     }
     const x = gen.next(), j = jobs[cur];
@@ -104,7 +106,7 @@ function step() {
   }
   const j = jobs[cur];
   if (j) $('status').textContent = `n = ${j.n} · ${N.shapeName(j.shape, j.n)} · ${N.SURFACES[j.sf]} · cell ${cur + 1}/${jobs.length} · elapsed ${((performance.now() - t0) / 1000).toFixed(0)} s` + (j.e < 0 ? ' · estimate ∞ (none expected)' : '');
-  requestAnimationFrame(step);
+  rafId = requestAnimationFrame(step);
 }
 build();
 </script>

@@ -17,8 +17,13 @@ const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
 
 const ROOT = path.join(__dirname, '..'), REPO = 'https://github.com/Thor110/InscribedShapeProblems/blob/main/';
 const adaptor = liteAdaptor(); RegisterHTMLHandler(adaptor);
-const doc = mathjax.document('', { InputJax: new TeX({ packages: AllPackages }), OutputJax: new SVG({ fontCache: 'local' }) });
-const tex2svg = (tex, display) => adaptor.outerHTML(doc.convert(tex.replace(/\\\*/g, '*'), { display }));
+// fontCache 'global': each glyph shape is stored once per page (in one hidden <svg>, added
+// below) and formulas refer to it, instead of every formula carrying its own copies.
+const doc = mathjax.document('', { InputJax: new TeX({ packages: AllPackages }), OutputJax: new SVG({ fontCache: 'global' }) });
+const escAttr = t => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const tex2svg = (tex, display) => adaptor.outerHTML(doc.convert(tex.replace(/\\\*/g, '*'), { display }))
+  .replace(/ data-(mml-node|c)="[^"]*"/g, '')                                       // unused without the MathJax runtime
+  .replace('<svg ', `<svg aria-label="${escAttr(tex.trim())}" `);                   // screen readers read the TeX
 
 // GitHub-style heading slugs, so links such as PROOFS.md#theorem-6--a-computer-assisted-certificate work.
 const slug = s => s.toLowerCase().replace(/<[^>]+>/g, '').replace(/[^\p{L}\p{N}\s-]/gu, '').trim().replace(/\s/g, '-');
@@ -51,6 +56,10 @@ const paper = fs.readFileSync(path.join(ROOT, 'PAPER.md'), 'utf8');
 const proofs = fs.readFileSync(path.join(ROOT, 'PROOFS.md'), 'utf8').split('## Notation')[1];
 const appendix = '\n\n## Appendix: complete proofs\n\nThis appendix is the repository file `PROOFS.md`, reproduced verbatim from its notation section on.\n\n### Notation' + proofs.replace(/^## /gm, '### ');
 const body = render(paper + appendix);
+// the shared glyph definitions referenced by every formula
+// getCache() is a bare <defs> element, so it needs its own <svg> to be read as SVG. It is
+// hidden by zero size, not display:none, which the PDF printer would skip.
+const glyphs = `<svg aria-hidden="true" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden">${adaptor.outerHTML(doc.outputJax.fontCache.getCache())}</svg>`;
 
 const page = `<!DOCTYPE html>
 <html lang="en">
@@ -86,6 +95,7 @@ const page = `<!DOCTYPE html>
 </head>
 <body>
 <main>
+${glyphs}
 <div class="nav"><a href="../index.html">← Back to suite</a><a href="${REPO}PAPER.md">Markdown source</a><a href="${REPO}PAPER.pdf">PDF</a></div>
 ${body}
 </main>

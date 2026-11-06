@@ -29,7 +29,7 @@
 <h1>Verified Results</h1>
 <div class="sub">Every inscribed shape recorded here was rebuilt from its curve or surface seed and verified independently (all pairwise distances and every vertex's distance from the curve or surface, to a relative error of 1e-9). Only the first result for each problem is recorded. When a finder verifies a shape that is not listed, it offers to submit it; an automated check opens a pull request. Results are collected for seeds 1–10 of every curve and surface. <a href="https://github.com/Thor110/InscribedShapeProblems#submitting-results">How it works</a>.</div>
 <div class="counts" id="counts"></div>
-<input id="q" placeholder="Filter, e.g. cube, coastline, rectangle-16, s3" oninput="render()">
+<input id="q" aria-label="Filter results" placeholder="Filter, e.g. cube, coastline, rectangle-16, s3" oninput="render()">
 <div class="wrap"><table id="tbl"></table></div>
 <div class="status" id="status">Loading…</div>
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
@@ -37,16 +37,20 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let reg = null, group = '';
+// entries come from submitted issues, so every value is escaped before it goes into the page
+const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 function render() {
+  if (!reg) return;   // typing before the data has loaded
   const q = $('q').value.trim().toLowerCase(), rows = Object.entries(reg.entries).filter(([k, e]) => (!group || k.startsWith(group + '/')) && (!q || (k + ' ' + e.label + ' ' + e.author).toLowerCase().includes(q)));
   $('tbl').innerHTML = '<tr><th>Problem</th><th>Size</th><th>Error</th><th>Found by</th><th>File</th></tr>' + rows.map(([k, e]) =>
-    `<tr><td>${e.label}</td><td class="num">${e.size.toFixed(4)}</td><td class="num">${e.err.toExponential(1)}</td><td>${e.author}${e.issue ? ` (<a href="https://github.com/Thor110/InscribedShapeProblems/issues/${e.issue}" target="_blank" rel="noopener">#${e.issue}</a>)` : ''}</td><td><a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/results/${k}.json" target="_blank" rel="noopener">${k}</a></td></tr>`).join('');
+    `<tr><td>${esc(e.label)}</td><td class="num">${e.size.toFixed(4)}</td><td class="num">${e.err.toExponential(1)}</td><td>${esc(e.author)}${e.issue ? ` (<a href="https://github.com/Thor110/InscribedShapeProblems/issues/${encodeURIComponent(e.issue)}" target="_blank" rel="noopener">#${esc(e.issue)}</a>)` : ''}</td><td><a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/results/${esc(k)}.json" target="_blank" rel="noopener">${esc(k)}</a></td></tr>`).join('');
   $('status').textContent = `${rows.length} of ${reg.count} results shown · size = diagonal (2D) or circumdiameter (3D) ÷ curve width`;
 }
 fetch('../data/registry.json').then(r => r.json()).then(d => {
   reg = d;
-  $('counts').innerHTML = `<div class="count on" data-g="">All<b>${d.count}</b></div>` + Object.entries(d.counts).map(([g, n]) => `<div class="count" data-g="${g}">${g}<b>${n}</b></div>`).join('');
+  $('counts').innerHTML = `<div class="count on" role="button" tabindex="0" data-g="">All<b>${d.count}</b></div>` + Object.entries(d.counts).map(([g, n]) => `<div class="count" role="button" tabindex="0" data-g="${esc(g)}">${esc(g)}<b>${n}</b></div>`).join('');
   $('counts').onclick = e => { const c = e.target.closest('.count'); if (!c) return; group = c.dataset.g; document.querySelectorAll('.count').forEach(x => x.classList.toggle('on', x === c)); render(); };
+  $('counts').onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.count')) { e.preventDefault(); e.target.click(); } };
   render();
 }).catch(() => { $('status').textContent = 'Could not load data/registry.json (open the site online)'; });
 </script>

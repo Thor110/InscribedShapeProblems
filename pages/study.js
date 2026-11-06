@@ -154,7 +154,7 @@
         const ratios = next.map((v, i) => (v && sols[i] ? v.size / sols[i].size : null)).filter(x => x !== null);
         const big = live.reduce((m, v) => (!m || v.size > m.size ? v : m), null);
         rec.levels.push({
-          level: L, vertices: L, count: live.length, tracked: sols.filter(Boolean).length || K,
+          level: L, vertices: L, count: live.length, tracked: L === F.levels[0] ? K : sols.filter(Boolean).length,   // all K at the first level
           smallest: sizes.length ? Math.min(...sizes) : 0, largest: sizes.length ? Math.max(...sizes) : 0, median: median(sizes),
           minRatio: ratios.length ? Math.min(...ratios) : NaN, best: big ? big.P : null, ms: Date.now() - t0,
         });

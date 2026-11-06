@@ -17,6 +17,7 @@
   button.active{border-color:#4a9;color:#4a9;background:rgba(74,169,120,0.05);}
   select{background:#0d0d14;border:1px solid #2a2a3a;color:#888;padding:4px 6px;font-family:'Courier New',monospace;font-size:9px;cursor:pointer;text-transform:uppercase;}
   .sl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:500px;}
+  @media (max-width:480px){.sl-grid{grid-template-columns:1fr;}}
   .slrow{display:flex;align-items:center;gap:8px;font-size:9px;color:#555;}
   .slrow span{display:inline-block;width:40px;text-align:right;}
   input[type=range]{width:90px;accent-color:#4a9;}
@@ -47,26 +48,26 @@
 
 <div class="controls">
   <div class="btn-group">
-    <select id="insType" onchange="resetJig()">
+    <select id="insType" aria-label="Shape to inscribe" onchange="resetJig()">
       <option value="cube">Inscribed Cube</option>
       <option value="tetrahedron">Inscribed Tetrahedron</option>
       <option value="octahedron">Inscribed Octahedron</option>
     </select>
-    <select id="surfType" onchange="newSurface(false)"></select>
+    <select id="surfType" aria-label="Surface" onchange="newSurface(false)"></select>
     <button onclick="newSurface(true)">New surface</button>
     <button onclick="toggleScan()" id="scanBtn">Auto-find Equilibrium</button>
     <label class="chk" title="Keep the skeleton's rotation fixed and only move the central pivot"><input type="checkbox" id="pivotOnly" onchange="resetJig()">Pivot only</label>
   </div>
   <div class="sl-grid">
-    <div class="slrow">Pitch<input type="range" id="pSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="pV">0°</span></div>
-    <div class="slrow">Roll <input type="range" id="rSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="rV">0°</span></div>
-    <div class="slrow">Yaw  <input type="range" id="ySl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="yV">0°</span></div>
-    <div class="slrow">Ghost<input type="range" id="alphaSl" min="0" max="100" value="25" oninput="draw3D()"><span id="alphaV">25%</span></div>
+    <label class="slrow">Pitch<input type="range" id="pSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="pV">0°</span></label>
+    <label class="slrow">Roll <input type="range" id="rSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="rV">0°</span></label>
+    <label class="slrow">Yaw  <input type="range" id="ySl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="yV">0°</span></label>
+    <label class="slrow">Ghost<input type="range" id="alphaSl" min="0" max="100" value="25" oninput="draw3D()"><span id="alphaV">25%</span></label>
   </div>
 </div>
 
 <div class="meters" id="meterGrid"></div>
-<div class="status" id="status">Ready</div>
+<div class="status" id="status" role="status" aria-live="polite">Ready</div>
 <div class="timing" id="timing"></div>
 <div class="registry" id="registry" style="display:none"></div>
 <div class="note">Drag the view to look around. The jig's rays run from a common centre along the cube diagonals, tetrahedral directions or octahedral axes; a shape is only marked locked after an independent check of every pairwise vertex distance and every vertex's distance to the surface.</div>
@@ -273,9 +274,9 @@ function line(a, b, color, dash, width) {
 function draw3D() {
   x3.clearRect(0, 0, W, H);
   const alpha = $('alphaSl').value / 100; $('alphaV').textContent = $('alphaSl').value + '%';
-  const faces = [];
+  const faces = [], PV = mesh.map(row => row.map(project));   // each vertex projected once
   for (let i = 0; i < MR; i++) for (let j = 0; j < MC; j++) {
-    const ps = [mesh[i][j], mesh[i][(j + 1) % MC], mesh[i + 1][(j + 1) % MC], mesh[i + 1][j]].map(project);
+    const ps = [PV[i][j], PV[i][(j + 1) % MC], PV[i + 1][(j + 1) % MC], PV[i + 1][j]];
     faces.push({ ps, z: (ps[0].z + ps[2].z) / 2 });
   }
   faces.sort((a, b) => a.z - b.z);
@@ -377,6 +378,7 @@ function* searchGen(s) {
   return false;
 }
 function startScan() {
+  cancelAnimationFrame(scanId);   // never run two search loops at once
   $('registry').style.display = 'none';
   locked = null; search = { k: 0, best: null, t0: performance.now() }; search.gen = searchGen(search);
   $('scanBtn').textContent = 'Stop'; $('scanBtn').classList.add('active');
@@ -408,7 +410,7 @@ function syncSlidersQuiet() { syncSliders(); }
 
 // ---------- view interaction ----------
 c3d.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; c3d.setPointerCapture(e.pointerId); });
-c3d.addEventListener('pointerup', () => (dragging = false));
+for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) c3d.addEventListener(ev, () => (dragging = false));
 c3d.addEventListener('pointermove', e => { if (!dragging) return; vY += (e.clientX - lastX) * 0.01; vP += (e.clientY - lastY) * 0.01; lastX = e.clientX; lastY = e.clientY; draw3D(); });
 
 // ---------- start-up ----------

@@ -672,6 +672,7 @@ The pages also accept `?pace=N` to watch a search in slow motion, and the Space 
 The pages are plain HTML and need no build step. The scripts in `tests/` use Node.js and Playwright:
 
 ```bash
+node tests/smoke.js              # every page loads cleanly at desktop and phone width (errors, overflow, labels)
 node tests/jordan-check.js       # every 2D curve is a simple closed polygon
 node tests/run-2d.js 3           # square and triangle search on every curve, 3 seeds
 node tests/run-2d.js 1 rectangle,trianglex,pentagon,hexagon   # the other 2D targets

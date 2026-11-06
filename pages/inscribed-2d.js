@@ -149,7 +149,8 @@
     grid.sort((a, b) => b.d - a.d);
     const starts = grid.slice(0, Math.min(1, nStarts)), rest = grid.slice(1);
     while (starts.length < nStarts && rest.length) starts.push(rest.splice(Math.floor(R() * rest.length), 1)[0]);
-    const total = 2 * starts.length * Math.ceil(period / ((stepDeg * Math.PI) / 180)) + nRandom + nTrack;
+    // the sweep below visits angles 0, step, …, period (inclusive), so count period/step + 1 of them
+    const total = 2 * starts.length * (Math.floor(period / ((stepDeg * Math.PI) / 180) + 0.5) + 1) + nRandom + nTrack;
     let done = 0;
     const progress = phase => ({ phase, done, total, found: found.length, best: found.reduce((b, f) => (!b || f.diag > b.diag ? f : b), null) });
 

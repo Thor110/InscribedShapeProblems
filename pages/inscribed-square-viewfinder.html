@@ -40,12 +40,12 @@
 <div class="sub">Edward James Gordon — Inscribed Square Problem</div>
 <canvas id="canvas"></canvas>
 <div class="controls">
-  <select id="shapeType" onchange="newCurve(false)"></select>
+  <select id="shapeType" aria-label="Curve" onchange="newCurve(false)"></select>
   <button onclick="newCurve(true)">New curve</button>
   <button onclick="resetSquare()">Reset square</button>
   <button onclick="toggleScan()" id="scanBtn">Auto-find</button>
-  <div class="slrow">Size<input type="range" id="szSl" min="4" max="380" value="50" step="1" oninput="onSz(this.value)"><span id="szV">50</span></div>
-  <div class="slrow">Rotate<input type="range" id="rtSl" min="0" max="360" value="0" step="1" oninput="onRt(this.value)"><span id="rtV">0°</span></div>
+  <label class="slrow">Size<input type="range" id="szSl" min="4" max="380" value="50" step="1" oninput="onSz(this.value)"><span id="szV">50</span></label>
+  <label class="slrow">Rotate<input type="range" id="rtSl" min="0" max="360" value="0" step="1" oninput="onRt(this.value)"><span id="rtV">0°</span></label>
 </div>
 <div class="meters">
   <div class="meter"><div class="mlabel">A → B side</div><div class="mval" id="mAB">—</div></div>
@@ -60,7 +60,7 @@
   <span><span class="dot" style="background:#ca6"></span>On boundary</span>
   <span><span class="dot" style="background:#4a9"></span>All four locked</span>
 </div>
-<div class="status" id="status">Expand the square — it scales down when it meets the boundary</div>
+<div class="status" id="status" role="status" aria-live="polite">Expand the square — it scales down when it meets the boundary</div>
 
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
@@ -188,6 +188,7 @@ function draw(){
 
   updateMeters(v[0],v[1],v[2],v[3]);
   const st=document.getElementById('status');
+  if(scanning)return;   // during Auto-find the status line reports the scan, not the manual hint
   if(!constrained)st.textContent='Expand the square — it scales down when it meets the boundary';
   else st.textContent='Square constrained — expand or rotate to find the inscribed position';
   st.className=constrained?'status warn':'status';
@@ -229,7 +230,7 @@ cv.addEventListener('mousemove',e=>{
   if(inside(nx,ny)){sqX=nx;sqY=ny;}
   draw();
 });
-cv.addEventListener('mouseup',()=>dragging=false);
+window.addEventListener('mouseup',()=>dragging=false);   // releasing outside the canvas also ends the drag
 cv.addEventListener('touchstart',e=>{
   e.preventDefault();const p=gp(e);
   const cx=lockedFrame?lockedFrame.P.x:sqX,cy=lockedFrame?lockedFrame.P.y:sqY;
@@ -378,6 +379,7 @@ function scanStep(){
 function toggleScan(){scanning?stopScan():startScan();}
 
 function startScan(){
+  cancelAnimationFrame(scanId);   // never run two search loops at once
   lockedFrame=null;scanning=true;scanT=0;prevSD=null;prevT=null;
   wX=cen.x;wY=cen.y;sqX=cen.x;sqY=cen.y;sqSz=50;sqAng=0;syncSliders(50,0);
   document.getElementById('scanBtn').textContent='Stop';document.getElementById('scanBtn').classList.add('active');
@@ -390,7 +392,8 @@ function stopScan(){
   document.getElementById('scanBtn').textContent='Auto-find';document.getElementById('scanBtn').classList.remove('active');
 }
 
-window.addEventListener('resize',()=>{resize();genCurve();sqX=cen.x;sqY=cen.y;lockedFrame=null;draw();});
+// Only a real width change rebuilds the curve (phones fire resize when the address bar hides).
+window.addEventListener('resize',()=>{if(Math.min(window.innerWidth-40,700)===W)return;resize();stopScan();genCurve();sqX=cen.x;sqY=cen.y;lockedFrame=null;draw();});
 Shapes2D.populateSelect(document.getElementById('shapeType'));
 {const q=new URLSearchParams(location.search);
  if(q.get('curve')&&Shapes2D.list.some(([v])=>v===q.get('curve')))document.getElementById('shapeType').value=q.get('curve');

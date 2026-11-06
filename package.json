@@ -5,6 +5,7 @@
   "scripts": {
     "gifs": "node tools/record-gifs.js",
     "study": "node tests/run-study.js all",
+    "smoke": "node tests/smoke.js",
     "test": "node tests/jordan-check.js && node tests/run-2d.js 1 && node tests/run-3d.js 1 && node tests/run-cube-viewfinder.js 1 && node tests/run-nd.js 3"
   },
   "devDependencies": {

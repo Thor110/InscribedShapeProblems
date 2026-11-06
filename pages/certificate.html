@@ -29,7 +29,7 @@
 <body>
 <h1>Square Certificate</h1>
 <div class="sub">A computer-assisted proof (<a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/PROOFS.md#theorem-6--a-computer-assisted-certificate">PROOFS.md, Theorem 6</a>) that every curve whose radius stays within T = 0.15 of a 1 × 0.6 ellipse's has an inscribed square, including nowhere-differentiable, non-symmetric fractal curves such as the one drawn here. The proof runs in your browser below, in interval arithmetic, in under a second.<br>Left: the curve, the ellipse (dashed), and a square found numerically on the fractal. Right: the proof. The edge of a box of candidate squares is mapped to the square equations G = (g₁, g₂) (green). It stays close to the dashed square, which is what the linearised equations would give, so it winds once around the origin and keeps well away from it. A perturbation of size T moves it by at most (1 + √2)T, the grey square, so no perturbation that small can remove the square.</div>
-<div class="controls">Ripple size<input type="range" id="amp" min="0" max="0.15" step="0.005" value="0.15" oninput="drawCurve(false)" onchange="drawCurve(true)"><span id="ampV">0.150</span></div>
+<div class="controls"><label for="amp">Ripple size</label><input type="range" id="amp" min="0" max="0.15" step="0.005" value="0.15" oninput="drawCurve(false)" onchange="drawCurve(true)"><span id="ampV">0.150</span></div>
 <div class="panels">
   <div class="panel"><canvas id="curve" width="400" height="400"></canvas><div class="cap" id="capCurve"></div></div>
   <div class="panel"><canvas id="loop" width="400" height="400"></canvas><div class="cap">Green: G on the edge of the box. Dashed: the linearised equations on the same edge (a square of half-width c). Grey: max(|g₁|, |g₂|) ≤ (1 + √2)T, everything a perturbation of size T could move the origin to. The green loop never enters it.</div></div>
@@ -51,7 +51,9 @@ const W0 = 1 / (1 - Math.SQRT1_2), th0 = 0.3, W = (th, K = 14) => { let s = 0; f
 let cert = null;
 
 function view(ctx, W_, H_) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W_, H_); }
+let drawSeq = 0;   // counts redraws, so a deferred search can tell if it has been overtaken
 function drawCurve(search = true) {
+  drawSeq++;
   const amp = +$('amp').value; $('ampV').textContent = amp.toFixed(3);
   const cv = $('curve'), ctx = cv.getContext('2d'), k = 150, X = x => 200 + k * x, Y = y => 200 - k * y;
   view(ctx, 400, 400);
@@ -86,6 +88,9 @@ function drawLoop() {
 }
 let prob = null;
 function run() {
+  try { prove(); } catch (e) { $('status').textContent = 'Certificate failed: ' + e.message; $('status').className = 'status'; }
+}
+function prove() {
   const t0 = performance.now();
   prob = CertifyRigorous.squareProblem([15, 100], 0.5, 20000); cert = CertifyRigorous.certify(prob);
   const diag = CertifyRigorous.squareDiagonal(prob, cert, 200), ok = cert.ok && diag.guaranteed > 0, secs = ((performance.now() - t0) / 1000).toFixed(1);
@@ -94,12 +99,16 @@ function run() {
   $('tbl').innerHTML = row('Degree of the linearised equations (sign of det J)', cert.degree, cert.degree !== 0)
     + row(`Smallest |G| on the box edge (${cert.samples.toLocaleString()} samples, minus the most it can change between them)`, cert.minGBoundary.toFixed(4), true)
     + row('must exceed the perturbation (1 + √2)T', `${cert.minGBoundary.toFixed(4)} > ${cert.Teff.toFixed(4)}`, cert.direct)
-    + row('|G − L| < |G| on the edge (fixes the degree), margin', cert.degMargin.toFixed(4), cert.degreeHolds)
+    + row('|G − L| < |G| on the edge (fixes the degree), margin after the change between samples', (cert.degMargin - cert.gMoveBetweenSamples - cert.betweenSamples).toFixed(4), cert.degreeHolds)
     + row('Diagonal of the guaranteed square at least', diag.guaranteed.toFixed(4), diag.guaranteed > 0)
-    + row('Largest T this box certifies', (cert.roomDirect / (1 + Math.SQRT2)).toFixed(4), true)
+    + row('Largest T this box certifies', (Math.floor((cert.roomDirect / (1 + Math.SQRT2)) * 1e4) / 1e4).toFixed(4), true)   // rounded down, never overstated
     + row("Chambers' allowance 1/(10κ) for this ellipse", (1 / (10 * (a / b ** 2))).toFixed(4), true)
     + row('Time to check, in this browser', secs + ' s', true);
-  drawLoop(); drawCurve();
+  drawLoop();
+  // The proof is done and shown; the numerical square search only decorates the picture, so
+  // draw the curve now and search a moment later (skipped if something has redrawn since).
+  drawCurve(false);
+  const seq = drawSeq; setTimeout(() => { if (drawSeq === seq) drawCurve(true); }, 0);
 }
 setTimeout(run, 30);
 </script>

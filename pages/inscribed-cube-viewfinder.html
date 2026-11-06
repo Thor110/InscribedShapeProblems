@@ -17,6 +17,7 @@
   button.active{border-color:#4a9;color:#4a9;}
   select{background:#0d0d14;border:1px solid #2a2a3a;color:#888;padding:6px 10px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;text-transform:uppercase;}
   .sl-group{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;justify-content:center;}
+  @media (max-width:480px){.sl-group{grid-template-columns:1fr;}}
   .slrow{display:flex;align-items:center;gap:10px;font-size:11px;color:#555;}
   .slrow span{display:inline-block;width:46px;text-align:right;}
   input[type=range]{width:120px;accent-color:#4a9;}
@@ -45,20 +46,20 @@
 
 <div class="controls">
   <div class="btn-group">
-    <select id="surfType" onchange="newSurface(false)"></select>
+    <select id="surfType" aria-label="Surface" onchange="newSurface(false)"></select>
     <button onclick="newSurface(true)">New surface</button>
     <button onclick="toggleScan()" id="scanBtn">Auto-find Cube</button>
   </div>
   <div class="sl-group">
-    <div class="slrow">Pitch<input type="range" id="pitchSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="pitchV">0°</span></div>
-    <div class="slrow">Roll<input type="range" id="rollSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="rollV">0°</span></div>
-    <div class="slrow">Yaw<input type="range" id="yawSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="yawV">0°</span></div>
-    <div class="slrow">Ghost<input type="range" id="alphaSl" min="0" max="100" value="25" oninput="draw3D()"><span id="alphaV">25%</span></div>
+    <label class="slrow">Pitch<input type="range" id="pitchSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="pitchV">0°</span></label>
+    <label class="slrow">Roll<input type="range" id="rollSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="rollV">0°</span></label>
+    <label class="slrow">Yaw<input type="range" id="yawSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="yawV">0°</span></label>
+    <label class="slrow">Ghost<input type="range" id="alphaSl" min="0" max="100" value="25" oninput="draw3D()"><span id="alphaV">25%</span></label>
   </div>
 </div>
 
 <div class="meters" id="meterGrid"></div>
-<div class="status" id="status">Ready</div>
+<div class="status" id="status" role="status" aria-live="polite">Ready</div>
 <div class="timing" id="timing"></div>
 <div class="registry" id="registry" style="display:none"></div>
 <div class="note">Looks for a cube with all eight vertices on the surface. Turning the sliders shows the closest cube at that orientation (centre and size adjusted); Auto-find also adjusts the orientation. A cube is only marked found when every vertex is on the surface to a relative error of 1e-9.</div>
@@ -190,9 +191,9 @@ function buildMesh() {
 function draw3D() {
   x3.clearRect(0, 0, W, H);
   const alpha = $('alphaSl').value / 100; $('alphaV').textContent = $('alphaSl').value + '%';
-  const faces = [];
+  const faces = [], PV = mesh.map(row => row.map(project));   // each vertex projected once
   for (let i = 0; i < MR; i++) for (let j = 0; j < MC; j++) {
-    const ps = [mesh[i][j], mesh[i][(j + 1) % MC], mesh[i + 1][(j + 1) % MC], mesh[i + 1][j]].map(project);
+    const ps = [PV[i][j], PV[i][(j + 1) % MC], PV[i + 1][(j + 1) % MC], PV[i + 1][j]];
     faces.push({ ps, z: (ps[0].z + ps[2].z) / 2 });
   }
   faces.sort((a, b) => a.z - b.z);
@@ -281,6 +282,7 @@ function* searchGen(s) {
   return false;
 }
 function startScan() {
+  cancelAnimationFrame(scanId);   // never run two search loops at once
   $('registry').style.display = 'none';
   locked = null; search = { k: 0, best: null, t0: performance.now() }; search.gen = searchGen(search);
   $('scanBtn').textContent = 'Stop'; $('scanBtn').classList.add('active');
@@ -313,7 +315,7 @@ function scanStep() {
 }
 
 c3d.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; c3d.setPointerCapture(e.pointerId); });
-c3d.addEventListener('pointerup', () => (dragging = false));
+for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) c3d.addEventListener(ev, () => (dragging = false));
 c3d.addEventListener('pointermove', e => { if (!dragging) return; viewYaw += (e.clientX - lastX) * 0.01; viewPitch += (e.clientY - lastY) * 0.01; lastX = e.clientX; lastY = e.clientY; draw3D(); });
 
 (function init() {

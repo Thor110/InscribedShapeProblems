@@ -256,7 +256,7 @@ For $\theta_0 = 0.3$ (the curve on the [Square Certificate](pages/certificate.ht
 
 Chambers (2022) proves that a Jordan curve close enough to a $C^2$ curve $\beta$ has an inscribed square, with closeness measured against $1/\kappa$ for $\kappa$ the maximum curvature of $\beta$. For $\beta = E$, $\kappa = 1/b^2 = 2.78$ and $1/(10\kappa) = 0.036$, so Theorem 6 covers a neighbourhood about $4.2$ times wider. We have not ruled out that some other smooth $\beta$, with smaller curvature, lies within Chambers' bound of every curve in Corollary 6.1. So we claim only a computer-assisted proof of a quantitative statement, not a new class of curves.
 
-**What did not work: the Weierstrass blob.** The method was also tried, in an earlier floating-point version (`pages/certify.js`), on the `Weierstrass` fractal of the finders, $\rho = 1 + \sum_k 0.085 \cdot 2^{-k/2}\cos(m 2^k\theta + \phi_k)$. The base curve is the $K$-octave truncation, and $T$ is the size of the remaining tail, $\sum_{k \ge K} 0.085 \cdot 2^{-k/2}$:
+**What did not work: the Weierstrass blob.** The method was also tried, in an earlier floating-point version (`tools/certify-float.js`), on the `Weierstrass` fractal of the finders, $\rho = 1 + \sum_k 0.085 \cdot 2^{-k/2}\cos(m 2^k\theta + \phi_k)$. The base curve is the $K$-octave truncation, and $T$ is the size of the remaining tail, $\sum_{k \ge K} 0.085 \cdot 2^{-k/2}$:
 
 | $K$ | tail to cover | best certifiable $T$ | ratio |
 |---|---|---|---|
