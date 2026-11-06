@@ -68,6 +68,8 @@
   <div class="meter"><div class="mlabel">Divisor count</div><div class="mval" id="mCount">3</div></div>
   <div class="meter"><div class="mlabel">Sum of all divisors σ(N) / N</div><div class="mval" id="mAb">1.247</div></div>
   <div class="meter" style="grid-column:span 2"><div class="mlabel">Euler's form p^a·m², p ≡ a ≡ 1 (mod 4) — required of an odd perfect number</div><div class="mval" id="mEuler">—</div></div>
+  <div class="meter"><div class="mlabel">Forced step D = gcd(σ(N), 2N)</div><div class="mval" id="mStep">—</div></div>
+  <div class="meter" style="grid-column:span 2"><div class="mlabel">Miss σ(N) − 2N in steps of D, and where D comes from</div><div class="mval" id="mSteps" style="font-size:12px">—</div></div>
 </div>
 
 <div class="divisors" id="divisorList">Divisors: 1, 7, 11</div>
@@ -109,6 +111,8 @@
   <p>Every number up to a hundred billion, checked: how close does σ(N) come to 2N, from below (deficient) and from above (abundant), for odd and for even N? Like the best undersized and best oversized approximations of the <a href="https://thor110.github.io/ClassicalGeometryProblems/pages/charts.html" style="color:#6a8">classical geometry problems</a>, the two sides close in on the target from either side, and the target itself, a perfect odd number, lies between them. The dashed line is a miss of exactly 6: as a fraction of N the misses keep shrinking, but none lands on the mark, and apart from 3, 5 and 9 none comes closer than 6. The steps of 6 are provable for most of them: if N is odd, not a square, divisible by 3, and has a prime 5, 11, 17, … (two more than a multiple of 3) to an odd power, then σ(N) − 2N is a multiple of 6. Even numbers tell the other half of the story: they hit the mark exactly (the six even perfect numbers below 10¹¹), every power of two misses by exactly −1, and for N = 2ᵏ·p the miss is the spine sum 2ᵏ⁺¹ − 1 minus the partner prime p, so the misses of −2 are exactly 2ᵏ times the Fermat primes 5, 17, 257 and 65537. Hover the points for values.</p>
   <div id="missChart" style="width:100%;overflow-x:auto"></div>
   <table id="missDecades" style="margin-top:8px"></table>
+  <p style="margin-top:12px">Forced steps: every miss is a multiple of D(N) = gcd(σ(N), 2N), which can be read from the prime factors of N. Most of the closest odd numbers miss by exactly one step: as little as their structure allows.</p>
+  <table id="missSteps"></table>
   <p id="missSmall" style="margin-top:8px"></p>
 </div>
 
@@ -302,7 +306,21 @@ function eulerForm(n){
   return p%4===1&&a%4===1?'yes — special prime '+p+(a>1?'^'+a:''):'no — the odd exponent is on '+p+(a>1?'^'+a:'')+', not ≡ 1 (mod 4)';
 }
 const _render=render;
-render=function(n){_render(n);const t=getDivisors(n).reduce((s,x)=>s+x,0)+n;document.getElementById('mAb').textContent=(t/n).toFixed(4);const e=eulerForm(n);const el=document.getElementById('mEuler');el.textContent=e;el.className='mval '+(e.startsWith('yes')?'perfect':'');};
+// Forced step (README, result 9): D = gcd(σ(N), 2N) divides the miss. For each prime r of D,
+// list the prime powers p^a of N with r | σ(p^a) (for r = 2: those with odd σ(p^a) excluded).
+const sumPow=(p,a)=>{let s=1,q=1;for(let i=0;i<a;i++){q*=p;s+=q;}return s;};   // σ(p^a), exact
+const gcdN=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b)[a,b]=[b,a%b];return a;};
+function stepInfo(n,sigma){
+  const D=gcdN(sigma,2*n),f=factor(n),why=[];
+  for(const [r] of factor(D)){
+    const src=f.filter(([p,a])=>p!==r&&sumPow(p,a)%r===0).map(([p,a])=>p+(a>1?'^'+a:''));
+    why.push(r+(src.length?' from '+src.join(', '):''));
+  }
+  return {D,mult:(sigma-2*n)/D,why};
+}
+render=function(n){_render(n);const t=getDivisors(n).reduce((s,x)=>s+x,0)+n;document.getElementById('mAb').textContent=(t/n).toFixed(4);const e=eulerForm(n);const el=document.getElementById('mEuler');el.textContent=e;el.className='mval '+(e.startsWith('yes')?'perfect':'');
+  const st=stepInfo(n,t);document.getElementById('mStep').textContent=st.D.toLocaleString();
+  document.getElementById('mSteps').textContent=(st.mult===0?'0 (perfect)':(st.mult>0?'+':'')+st.mult+(Math.abs(st.mult)===1?' — exactly one step':''))+(st.why.length?' · D = '+st.why.join('; '):'');};
 
 (function(){
   const pr=[3,5,7,11,13,17];let P=1,rows='<tr><th>Distinct odd primes</th><th>Largest possible σ(N)/N</th><th>Can reach 2?</th></tr>';
@@ -344,6 +362,10 @@ fetch('../data/nearest-misses.json').then(r=>r.json()).then(d=>{
   const ev={};d.even.decades.forEach(D=>ev[D.decade]=D);
   document.getElementById('missDecades').innerHTML='<tr><th>N between</th><th>Odd, closest from below</th><th>Odd, closest from above</th><th>Even, closest from below</th><th>Even, closest from above</th><th>Perfect</th></tr>'+
     d.odd.decades.map(D=>{const E=ev[D.decade]||{};return `<tr><td>10^${D.decade} – 10^${D.decade+1}</td><td>${side(D.below)}</td><td>${side(D.above)}</td><td>${side(E.below)}</td><td>${side(E.above)}</td><td>${(E.perfect||0)+(D.perfect||0)}</td></tr>`;}).join('');
+  const sigF=fs=>fs.reduce((a,[p,e])=>a*sumPow(p,e),1);
+  const near=[...new Set([...d.odd.records.below,...d.odd.records.above,...d.odd.decades.flatMap(D=>[D.below,D.above].filter(Boolean))].map(r=>r.n))].filter(n=>n>1e5).sort((a,b)=>a-b);
+  document.getElementById('missSteps').innerHTML='<tr><th>N</th><th>Factors</th><th>Miss</th><th>Step D(N)</th><th>Miss ÷ D</th></tr>'+near.map(n=>{const fs=factor(n),sg=sigF(fs),st=stepInfo(n,sg);
+    return `<tr><td>${f(n)}</td><td>${fs.map(([p,e])=>p+(e>1?'^'+e:'')).join('·')}</td><td>${sg-2*n>0?'+':''}${f(sg-2*n)}</td><td>${f(st.D)}</td><td class="${Math.abs(st.mult)===1?'ok':'bad'}">${st.mult>0?'+':''}${st.mult}</td></tr>`;}).join('');
   const line=p=>{const c=d.smallGaps.counts[p],keys=Object.keys(c).map(Number).sort((a,b)=>a-b);return keys.map(k=>`<b>${k>0?'+':''}${k}</b> × ${f(c[k])}`).join(', ');};
   document.getElementById('missSmall').innerHTML=`Numbers up to ${f(d.limit)} that miss 2N by ${d.smallGapsMax} or less. Odd: ${line('odd')}. Even: ${line('even')}. Perfect: ${d.perfect.map(f).join(', ')}. A miss by an odd amount needs σ(N) odd, which happens only when N is a square or twice a square.`;
 }).catch(()=>{document.getElementById('missChart').textContent='Data not available here (open the page through a web server, or run node tools/nearest-misses.js).';});

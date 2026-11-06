@@ -178,6 +178,13 @@ Turning the tetrahedron by a small angle acts like one more small perturbation, 
 node tools/certify-tetra.js      # under two minutes on 4 cores; writes data/certificate-tetrahedron.json
 ```
 
+**Checked twice, independently.** `tools/verify_certificates.py` redoes both certificates from scratch in Python, with the interval arithmetic of the mpmath library instead of this repository's own code. It confirms the square theorem in full, and the tetrahedron theorem with $T = 0.06$ (Python is too slow for the 64-million-sample grid that $T = 0.12$ needs).
+
+```bash
+pip install mpmath
+python3 tools/verify_certificates.py   # about 6 minutes on 4 cores
+```
+
 ## Preprint
 
 [PAPER.md](PAPER.md) collects everything above into a paper-style write-up for expert review:
@@ -491,6 +498,38 @@ The results below make this precise, and the [Number Stability viewer](https://t
 
 The odd numbers *not* divisible by 3 are the exceptions to the steps of 6, and the search shows how far they stay from perfect. Of the 33 billion of them up to $10^{11}$, only **26** are abundant. The first is $5{,}391{,}411{,}025 = 5^2 \cdot 7 \cdot 11 \cdot 13 \cdot 17 \cdot 19 \cdot 23 \cdot 29$, the smallest odd abundant number not divisible by 3, which overshoots by 0.3%. The closest of all comes within 0.028% from above ($87{,}192{,}130{,}025 = 5^2 \cdot 7^2 \cdot 11 \cdot 13 \cdot 17 \cdot 19 \cdot 23 \cdot 67$) and 0.045% from below ($89{,}423{,}058{,}725$). Odd numbers divisible by 3 come within $2 \times 10^{-9}$. Without the prime 3, the bound of result 1 needs at least seven distinct primes ($5, 7, \dots, 23$) just to allow passing $2N$, and the smallest actual example uses eight. Nielsen (2015) proved that an odd perfect number not divisible by 3 would need at least 12 distinct prime factors.
 
+*Steps in general: how small a miss can be.* The steps of 6 are one case of a general rule, which also predicts how big each near miss is.
+
+9. **Forced steps.** For every $N$, the miss $\sigma(N) - 2N$ is a multiple of
+   $$D(N) = \gcd\big(\sigma(N),\ 2N\big),$$
+   so it is either 0 or at least $D(N)$ in size. (Any common divisor of $\sigma(N)$ and $2N$ divides their difference.) $D(N)$ can be read from the prime factorisation of $N$, without adding up any divisors. For a prime $r$ dividing $2N$, $r$ divides $\sigma(N) = \prod \sigma(p^a)$ exactly when it divides one of the factors, and for $p \ne r$:
+   - if $p \not\equiv 1 \pmod r$: $r \mid \sigma(p^a) = \frac{p^{a+1} - 1}{p - 1}$ exactly when $p^{a+1} \equiv 1 \pmod r$. For example, $p \equiv -1 \pmod r$ with $a$ odd;
+   - if $p \equiv 1 \pmod r$: $\sigma(p^a) \equiv a + 1 \pmod r$, so $r \mid \sigma(p^a)$ exactly when $r \mid a + 1$;
+   - and $\sigma(r^a) \equiv 1 \pmod r$ never contributes.
+
+   Result 3 is the case $r = 2$ and $r = 3$. Higher powers of $r$ work the same way, by adding up how often $r$ divides each factor.
+
+   For example, $93{,}128{,}205{,}975 = 3 \cdot 5^2 \cdot 7 \cdot 19 \cdot 181 \cdot 51581$:
+   - $51581 \equiv -1 \pmod 3$, $19 \equiv -1 \pmod 5$ and $181 \equiv -1 \pmod 7$, each to the first power;
+   - $N$ is not a square, so $\sigma(N)$ is even;
+   - so the miss must be a multiple of $2 \cdot 3 \cdot 5 \cdot 7 = 210$, and it is exactly $+210$.
+
+**Near misses miss by exactly one step.** For each near miss in the data (the records, the closest in each decade, and every miss of at most 10), here is the miss in units of its forced step:
+
+| $N$ | Factorisation | Miss | $D(N)$ | Miss ÷ $D(N)$ |
+|---|---|---|---|---|
+| 315 | $3^2 \cdot 5 \cdot 7$ | $-6$ | 6 | $-1$ |
+| 442,365 | $3 \cdot 5 \cdot 7 \cdot 11 \cdot 383$ | $+6$ | 6 | $+1$ |
+| 1,805,475 | $3 \cdot 5^2 \cdot 7 \cdot 19 \cdot 181$ | $-70$ | 70 | $-1$ |
+| 815,634,435 | $3 \cdot 5 \cdot 7 \cdot 11 \cdot 547 \cdot 1291$ | $-6$ | 6 | $-1$ |
+| 7,726,233,735 | $3^3 \cdot 5 \cdot 11 \cdot 53 \cdot 89 \cdot 1103$ | $-270$ | 270 | $-1$ |
+| 40,833,636,525 | $3^2 \cdot 5^2 \cdot 11 \cdot 79 \cdot 97 \cdot 2153$ | $-90$ | 90 | $-1$ |
+| 93,128,205,975 | $3 \cdot 5^2 \cdot 7 \cdot 19 \cdot 181 \cdot 51581$ | $+210$ | 210 | $+1$ |
+
+Of the 46 odd near misses, 32 miss by exactly $\pm D(N)$, and 17 of the 21 above $10^7$ do: as little as their prime structure allows. The rest, mostly small numbers, miss by between 2 and 68 steps. Equivalently, in lowest terms $\sigma(N)/2N = 1 \pm 1/m$ with $m = 2N/D(N)$, the nearest a fraction with that denominator can be to 1 without equalling it.
+
+This reframes the question. A miss of 0 needs $D(N) = 2N$, which means every prime power of $2N$ divides $\sigma(N)$. That makes $N$ perfect, or *multiply perfect* if $\sigma(N)$ is a larger multiple of $N$, and no odd multiply perfect number other than 1 is known either. Near misses get close by having a large $D(N)$, a lot of matching structure between $N$ and its divisor sum, and then miss by exactly one step. A perfect odd number would need the structure to match completely.
+
 This is a measurement, not a proof. The known bound $N > 10^{1500}$ for an odd perfect number is far beyond any search. What it shows is the shape of the problem: even numbers land on the mark whenever the spine meets a Mersenne prime, while odd numbers come ever closer in relative terms but, in the range searched, miss by whole steps. Raw data are in `data/nearest-misses.json`, and the viewer's fourth panel shows the chart and the decade-by-decade results.
 
 **What is known.** Computer-assisted work has pushed the constraints very far:
@@ -621,6 +660,7 @@ node tests/run-study.js charts   # rebuild the charts from data/ only
 node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
 node tools/certify-square.js     # the computer-assisted proof of Theorem 6 (exit code 0 = valid)
 node tools/certify-tetra.js      # the computer-assisted proof of Theorem 7 (add --quick for a fast, smaller T)
+python3 tools/verify_certificates.py   # independent check of both certificates in Python/mpmath (pip install mpmath)
 node tools/nearest-misses.js     # every number up to 10^11: nearest misses to perfection, ~20 min (add e.g. 1e9 for a quick run)
 ```
 
