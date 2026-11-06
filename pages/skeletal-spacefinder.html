@@ -29,6 +29,9 @@
   .mval.warn{color:#ca6;}
   .status{margin-top:6px;font-size:9px;color:#3a3a4a;letter-spacing:0.05em;text-transform:uppercase;min-height:10px;text-align:center;max-width:640px;}
   .status.found{color:#4a9;}
+  .timing{margin-top:4px;font-size:9px;color:#555;letter-spacing:0.05em;text-transform:uppercase;text-align:center;min-height:10px;}
+  .chk{display:flex;align-items:center;gap:4px;font-size:9px;color:#888;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;}
+  .chk input{accent-color:#4a9;}
   .status.active{color:#ca6;}
   .note{margin-top:6px;font-size:9px;color:#3a3a4a;max-width:640px;text-align:center;line-height:1.5;}
   .nav{margin-top:20px;font-size:10px;}
@@ -52,6 +55,7 @@
     <select id="surfType" onchange="newSurface(false)"></select>
     <button onclick="newSurface(true)">New surface</button>
     <button onclick="toggleScan()" id="scanBtn">Auto-find Equilibrium</button>
+    <label class="chk" title="Keep the skeleton's rotation fixed and only move the central pivot"><input type="checkbox" id="pivotOnly" onchange="resetJig()">Pivot only</label>
   </div>
   <div class="sl-grid">
     <div class="slrow">Pitch<input type="range" id="pSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="pV">0°</span></div>
@@ -63,10 +67,12 @@
 
 <div class="meters" id="meterGrid"></div>
 <div class="status" id="status">Ready</div>
+<div class="timing" id="timing"></div>
 <div class="note">Drag the view to look around. The jig's rays run from a common centre along the cube diagonals, tetrahedral directions or octahedral axes; a shape is only marked locked after an independent check of every pairwise vertex distance and every vertex's distance to the surface.</div>
 
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
+<script src="surfaces3d.js"></script>
 <script>
 'use strict';
 const TOL = 1e-9;                       // max relative error for a verified shape
@@ -74,48 +80,8 @@ const c3d = document.getElementById('c3d'), x3 = c3d.getContext('2d');
 const $ = id => document.getElementById(id);
 let W = 440, H = 340;
 
-function rng(seed) {
-  let a = seed >>> 0;
-  return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-}
-function randUnit(R) { for (;;) { const v = [R() * 2 - 1, R() * 2 - 1, R() * 2 - 1], L = Math.hypot(...v); if (L > 0.1 && L <= 1) return v.map(x => x / L); } }
-
-// ---------- surfaces ----------
-// Each surface is star-shaped about the origin and given by rad(u): the distance
-// to the surface along unit direction u. Being a function of u (not of polar
-// angles) makes every surface seam-free. 'egg' is an implicit convex surface with
-// no symmetry at all; its rad() is found by bisection.
-const SURFACES = [
-  ['ellipsoid', 'Ellipsoid'], ['egg', 'Lopsided egg (convex, no symmetry)'], ['blob', 'Random blob'],
-  ['bumpy', 'Bumpy sphere'], ['star3d', '3D Star'], ['heart', 'Heart-like'], ['ring', 'Ring-like'],
-  ['cube', 'Cube-like'], ['fractal', 'Fractal blob (Weierstrass)'], ['ridged', 'Fractal ridged'], ['sphere', 'Sphere'],
-];
-// For the fractal surfaces, 'octaves' limits how many layers of detail are used.
-// The search solves on a smoothed surface first and then adds detail one octave
-// at a time (continuation); verification and drawing always use full detail.
-let octaves = Infinity;
-const FRACTAL = new Set(['fractal', 'ridged']);
-function makeSurface(type, seed) {
-  const R = rng(seed), dirs = n => Array.from({ length: n }, () => randUnit(R)), dot = (u, d) => u[0] * d[0] + u[1] * d[1] + u[2] * d[2];
-  switch (type) {
-    case 'sphere': return () => 1;
-    case 'ellipsoid': { const a = 0.7 + R() * 0.4, b = 0.9 + R() * 0.5, c = 0.7 + R() * 0.4; return u => 1 / Math.sqrt((u[0] / a) ** 2 + (u[1] / b) ** 2 + (u[2] / c) ** 2); }
-    case 'egg': {
-      const a = 1, b = 1.25, c = 0.85, e = 0.15;   // verified strictly convex (see README)
-      const F = (x, y, z) => x * x / a / a + y * y / b / b + z * z / c / c + e * (0.5 * x ** 3 + x * y * z + 0.7 * y * y * z + 0.3 * z ** 3) - 1;
-      return u => { let lo = 0, hi = 3; for (let i = 0; i < 64; i++) { const m = (lo + hi) / 2; if (F(m * u[0], m * u[1], m * u[2]) < 0) lo = m; else hi = m; } return (lo + hi) / 2; };
-    }
-    case 'blob': { const D = dirs(6), A = D.map(() => 0.04 + R() * 0.06), f = D.map(() => 2 + R() * 2), p = D.map(() => R() * 6.283); return u => 1 + D.reduce((s, d, k) => s + A[k] * Math.sin(f[k] * dot(u, d) + p[k]), 0); }
-    case 'bumpy': { const f = [4, 4, 4].map(v => v + R() * 4), p = [R(), R(), R()].map(v => v * 6.283); return u => 1 + 0.12 * Math.sin(f[0] * u[0] + p[0]) * Math.sin(f[1] * u[1] + p[1]) * Math.sin(f[2] * u[2] + p[2]); }
-    case 'star3d': { const D = dirs(6 + Math.floor(R() * 4)); return u => 0.75 + 0.55 * D.reduce((s, d) => s + Math.max(0, dot(u, d)) ** 14, 0); }
-    case 'heart': { const A = 0.2 + R() * 0.1; return u => 1 + A * (1 - u[1]) * u[0] + 0.1 * u[1] * u[1]; }
-    case 'ring': { const A = 0.2 + R() * 0.25; return u => 1 + A * (u[0] * u[0] - u[2] * u[2]); }
-    case 'cube': { const q = 4 + R() * 5; return u => Math.pow(Math.abs(u[0]) ** q + Math.abs(u[1]) ** q + Math.abs(u[2]) ** q, -1 / q); }
-    case 'fractal': { const D = dirs(10), p = D.map(() => R() * 6.283); return u => { let s = 1; for (let k = 0; k < D.length && k < octaves; k++) s += 0.1 * 2 ** (-k / 2) * Math.sin(3 * 2 ** k * dot(u, D[k]) + p[k]); return s; }; }
-    case 'ridged': { const D = dirs(9), p = D.map(() => R() * 6.283); return u => { let s = 0.92; for (let k = 0; k < D.length && k < octaves; k++) s += 0.07 * 2 ** (-0.45 * k) * (1 - 2 * Math.abs(Math.sin(2 * 2 ** k * dot(u, D[k]) + p[k]))); return s; }; }
-  }
-}
-
+const { rng, randUnit, FRACTAL } = Surfaces3D, SURFACES = Surfaces3D.list, makeSurface = Surfaces3D.make;
+const setOctaves = n => Surfaces3D.setOctaves(n);
 let rad, Rmax = 1.5, SAMPLES = 160, surfType = 'ellipsoid', seed = 1, mesh = [];
 const MR = 40, MC = 80;
 function outside(x, y, z) { const L = Math.hypot(x, y, z); return L > 0 && L > rad([x / L, y / L, z / L]); }
@@ -342,18 +308,19 @@ function onUIChange() {
   jig.R = euler(...['p', 'r', 'y'].map(k => (+$(k + 'Sl').value * Math.PI) / 180));
   recenter(); refresh();
 }
-function resetJig() { stopScan(); locked = null; onUIChange(); updateURL(); }
+function resetJig() { stopScan(); locked = null; onUIChange(); updateURL(); showEstimate(); }
 
 function newSurface(fresh) {
   stopScan(); locked = null;
   if (fresh) seed = (Math.random() * 2 ** 31) | 0;
   surfType = $('surfType').value; rad = makeSurface(surfType, seed);
   SAMPLES = FRACTAL.has(surfType) ? 360 : 160;
-  buildMesh(); onUIChange(); updateURL();
+  buildMesh(); onUIChange(); updateURL(); showEstimate();
 }
 function updateURL() {
   const url = new URL(location.href);
   url.searchParams.set('shape', $('insType').value); url.searchParams.set('surface', surfType); url.searchParams.set('seed', seed);
+  if (pivotOnly()) url.searchParams.set('pivot', '1'); else url.searchParams.delete('pivot');
   history.replaceState(null, '', url);
 }
 
@@ -361,23 +328,34 @@ function updateURL() {
 // Multi-start: random orientation, rattle the centre, then a full 6-DoF
 // Levenberg–Marquardt solve of "all ray lengths equal". Only results that pass
 // verify() are accepted. If none does, the best candidate's error is reported.
+// "Pivot only": the rotation stays as set by the sliders and only the centre
+// moves (3 DoF). A regular tetrahedron needs only 3 equalities, so it is found at
+// any rotation; a cube (7) or octahedron (5) generally needs the rotation too.
 const ATTEMPTS = { cube: 120, tetrahedron: 30, octahedron: 30 };
+const pivotOnly = () => $('pivotOnly').checked;
 // Fractal surfaces are slow to solve on, so the cube search uses fewer starts there.
-const attempts = () => Math.min(ATTEMPTS[$('insType').value], FRACTAL.has(surfType) ? 40 : Infinity);
+const attempts = () => pivotOnly() ? 30 : Math.min(ATTEMPTS[$('insType').value], FRACTAL.has(surfType) ? 40 : Infinity);
+const est = () => Surfaces3D.estimate($('insType').value, surfType, pivotOnly());
+function showEstimate() { $('timing').textContent = `Estimated search time: ${est()}${est() === '∞' ? ' (no exact solution expected here)' : ''}`; }
+function showTiming(s) {
+  const el = (performance.now() - s.t0) / 1000, left = s.k > 0 ? (el * (attempts() - s.k)) / s.k : NaN;
+  $('timing').textContent = `Elapsed ${el.toFixed(0)} s · estimate ${est()}` + (isFinite(left) ? ` · at most ~${Math.ceil(left)} s left` : '');
+}
 function* searchGen(s) {
   const Rn = rng(seed * 31 + 7), N = attempts();
   for (s.k = 0; s.k < N; s.k++) {
-    const R0 = s.k === 0 ? jig.R : randRot(Rn), off = s.k === 0 ? [0, 0, 0] : randUnit(Rn).map(v => v * 0.2 * Rn());
+    const R0 = s.k === 0 || pivotOnly() ? jig.R : randRot(Rn);
+    const off = s.k === 0 ? [0, 0, 0] : randUnit(Rn).map(v => v * (pivotOnly() ? 0.5 : 0.2) * Rn());
     const levels = FRACTAL.has(surfType) ? [1, 3, 5, 7, Infinity] : [Infinity];
     let c = off, R = R0, st = null;
     for (const lev of levels) {
-      octaves = lev;
+      setOctaves(lev);
       if (!st) c = rattle(c, R, 30);
-      st = lmInit(c, R, true); if (!st) break;
-      while (!st.done) { lmIterate(st, 2); jig = { c: st.c, R: st.R }; octaves = Infinity; yield; octaves = lev; }
+      st = lmInit(c, R, !pivotOnly()); if (!st) break;
+      while (!st.done) { lmIterate(st, 2); jig = { c: st.c, R: st.R }; setOctaves(Infinity); yield; setOctaves(lev); }
       c = st.c; R = st.R;
     }
-    octaves = Infinity;
+    setOctaves(Infinity);
     if (!st) { yield; continue; }
     const v = verify(st.c, st.R); if (!v) continue;
     if (!s.best || v.err < s.best.v.err) s.best = { c: st.c, R: st.R, v };
@@ -386,11 +364,11 @@ function* searchGen(s) {
   return false;
 }
 function startScan() {
-  locked = null; search = { k: 0, best: null }; search.gen = searchGen(search);
+  locked = null; search = { k: 0, best: null, t0: performance.now() }; search.gen = searchGen(search);
   $('scanBtn').textContent = 'Stop'; $('scanBtn').classList.add('active');
   scanId = requestAnimationFrame(scanStep);
 }
-function stopScan() { octaves = Infinity; search = null; cancelAnimationFrame(scanId); $('scanBtn').textContent = 'Auto-find Equilibrium'; $('scanBtn').classList.remove('active'); }
+function stopScan() { setOctaves(Infinity); search = null; cancelAnimationFrame(scanId); $('scanBtn').textContent = 'Auto-find Equilibrium'; $('scanBtn').classList.remove('active'); }
 function toggleScan() { search ? (stopScan(), refresh()) : startScan(); }
 function scanStep() {
   if (!search) return;
@@ -402,12 +380,14 @@ function scanStep() {
       if (s.best) { jig = { c: s.best.c, R: s.best.R }; syncSlidersQuiet(); }
       if (r.value) locked = Object.assign({ c: s.best.c, R: s.best.R }, s.best.v);
       refresh();
-      if (!r.value) setStatus(`No ${$('insType').value} verified to ${TOL} after ${s.k} starts — best candidate error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
+      if (!r.value) setStatus(`No ${$('insType').value} verified to ${TOL} after ${s.k} starts${pivotOnly() ? ' at this fixed rotation' : ''} — best candidate error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
+      $('timing').textContent = `Search took ${((performance.now() - s.t0) / 1000).toFixed(1)} s (estimate ${est()})`;
       return;
     }
   }
   cur = verify(jig.c, jig.R); draw3D(); updateMeters(cur);
-  setStatus(`Rattling skeleton — start ${s.k + 1}/${attempts()}, best error ${s.best ? fmt(s.best.v.err) : '—'}`, 'active');
+  setStatus(`${pivotOnly() ? 'Jiggling pivot' : 'Rattling skeleton'} — start ${s.k + 1}/${attempts()}, best error ${s.best ? fmt(s.best.v.err) : '—'}`, 'active');
+  showTiming(s);
   scanId = requestAnimationFrame(scanStep);
 }
 function syncSlidersQuiet() { syncSliders(); }
@@ -424,6 +404,7 @@ c3d.addEventListener('pointermove', e => { if (!dragging) return; vY += (e.clien
   for (const [v, l] of SURFACES) { const o = document.createElement('option'); o.value = v; o.textContent = l; $('surfType').appendChild(o); }
   const q = new URLSearchParams(location.search);
   if (SHAPES[q.get('shape')]) $('insType').value = q.get('shape');
+  $('pivotOnly').checked = q.get('pivot') === '1';
   if (SURFACES.some(([v]) => v === q.get('surface'))) $('surfType').value = q.get('surface');
   seed = q.has('seed') ? (+q.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;
   newSurface(false);

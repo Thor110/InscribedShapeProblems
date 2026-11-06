@@ -292,5 +292,13 @@
     return { x, f, nf };
   }
 
-  global.Shapes2D = { list: LIST, generate, fit, populateSelect, rng, accel, newton };
+  // Expected search times (rough, measured on a laptop). '∞' means no exact
+  // solution is expected, e.g. a square with the rotation held fixed.
+  const SQUARE_EST = { comb: '~1 s', crescent: '~2 s', spiral: '~2 s', weierstrass: '~2–20 s', coastline: '~10–60 s' };
+  function estimate(shape, type, pivotOnly) {
+    if (pivotOnly) return shape !== 'triangle' ? '∞' : type === 'coastline' || type === 'weierstrass' ? '~1–3 s' : '< 1 s';
+    return shape === 'square' ? SQUARE_EST[type] || '< 1 s' : '< 1 s';
+  }
+
+  global.Shapes2D = { list: LIST, generate, fit, populateSelect, rng, accel, newton, estimate };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -25,6 +25,9 @@
   .mval.warn{color:#ca6;}
   .status{margin-top:8px;font-size:11px;color:#3a3a4a;letter-spacing:0.08em;text-transform:uppercase;min-height:16px;text-align:center;max-width:700px;}
   .status.found{color:#4a9;}
+  .timing{margin-top:4px;font-size:10px;color:#555;letter-spacing:0.08em;text-transform:uppercase;text-align:center;min-height:14px;}
+  .chk{display:flex;align-items:center;gap:5px;font-size:11px;color:#888;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;}
+  .chk input{accent-color:#4a9;}
   .status.active{color:#ca6;}
   .note{margin-top:6px;font-size:10px;color:#3a3a4a;max-width:700px;text-align:center;line-height:1.5;}
   .nav{margin-top:20px;font-size:10px;}
@@ -45,10 +48,12 @@
   <select id="shapeType" onchange="newCurve(false)"></select>
   <button onclick="newCurve(true)">New curve</button>
   <button onclick="toggleScan()" id="scanBtn">Auto-find Equilibrium</button>
+  <label class="chk" title="Keep the skeleton's rotation fixed and only move the central pivot"><input type="checkbox" id="pivotOnly" onchange="onPivotToggle()">Pivot only</label>
   <div class="slrow">Rotate<input type="range" id="rtSl" min="0" max="360" value="0" step="0.1" oninput="onRt(this.value)"><span id="rtV">0.0°</span></div>
 </div>
 <div class="meters" id="meterGrid"></div>
 <div class="status" id="status">Ready</div>
+<div class="timing" id="timing"></div>
 <div class="note" id="note">Click inside the curve to move the jig centre. A shape is only marked as locked after an independent check of every pairwise vertex distance and every vertex's distance to the curve.</div>
 
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
@@ -372,10 +377,73 @@ function newCurve(fresh) {
   stopScan();
   if (fresh) seed = (Math.random() * 2 ** 31) | 0;
   buildCurve(Shapes2D.fit(Shapes2D.generate($('shapeType').value, seed), W, H, 24));
-  $('rtSl').value = 0; resetJig();
+  $('rtSl').value = 0; resetJig(); updateURL();
+}
+function onPivotToggle() { stopScan(); locked = null; hitMode = 'far'; refresh(); updateURL(); }
+function updateURL() {
   const url = new URL(location.href);
   url.searchParams.set('shape', insType()); url.searchParams.set('curve', $('shapeType').value); url.searchParams.set('seed', seed);
+  if (pivotOnly()) url.searchParams.set('pivot', '1'); else url.searchParams.delete('pivot');
   history.replaceState(null, '', url);
+  showEstimate();
+}
+
+// ---------- pivot only + timing ----------
+// "Pivot only" keeps the skeleton's rotation fixed and only jiggles the central
+// pivot (2 DoF). An equilateral triangle needs only 2 equalities, so it is found
+// at any rotation; a square needs 3, so it generally needs the rotation as well.
+const pivotOnly = () => $('pivotOnly').checked;
+const est = () => Shapes2D.estimate(insType(), $('shapeType').value, pivotOnly());
+function showEstimate() { $('timing').textContent = `Estimated search time: ${est()}${est() === '∞' ? ' (no exact solution expected here)' : ''}`; }
+function showTiming(s) {
+  const el = (performance.now() - s.t0) / 1000, left = s.y > 0 ? (el * Math.max(0, s.total - s.y)) / s.y : NaN;
+  $('timing').textContent = `Elapsed ${el.toFixed(0)} s · estimate ${est()}` + (isFinite(left) ? ` · at most ~${Math.ceil(left)} s left` : '');
+}
+const PIVOT_TRIES = 80;
+function* pivotGen(s) {
+  s.phase = 0;
+  const ang = jig.ang, R = Shapes2D.rng(seed * 17 + 3), pts = s.starts.slice();
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of curve) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
+  for (let i = 0; i < PIVOT_TRIES; i++) pts.push({ x: x0 + R() * (x1 - x0), y: y0 + R() * (y1 - y0) });
+  s.k = 0;
+  for (const mode of ['far', 'near']) {
+    hitMode = s.mode = mode;
+    for (const p of pts) {
+      s.k++; s.ang = ang;
+      // Hand every centred candidate to verify(); on rough fractals Newton may stall
+      // short of its own threshold while the result still verifies.
+      const q = rattle(p.x, p.y, ang, 60) || p, nr = newton(z => centerRes(z[0], z[1], ang), [q.x, q.y], H2(), 100);
+      const c = nr && { x: nr.x[0], y: nr.x[1] }; s.tries++;
+      if (c) { if (accept(c.x, c.y, ang)) return true; Object.assign(jig, { x: c.x, y: c.y, ang }); }
+      yield;
+    }
+  }
+  // Tracking jig: each arm starts on a randomly chosen crossing of its ray.
+  hitMode = s.mode = 'track';
+  const n = nRays();
+  for (let t = 0; t < PIVOT_TRIES * 4; t++) {
+    s.k++;
+    const x = x0 + R() * (x1 - x0), y = y0 + R() * (y1 - y0);
+    trackTargets = [];
+    for (let k = 0; k < n; k++) {
+      const a = ang + (2 * Math.PI * k) / n, all = rayHitsAll(x, y, Math.cos(a), Math.sin(a));
+      if (!all.length) break;
+      trackTargets.push(all[Math.floor(R() * all.length)]);
+    }
+    if (trackTargets.length === n) {
+      let z = [x, y];
+      for (let outer = 0; outer < 25; outer++) {
+        const nr = newton(q => centerRes(q[0], q[1], ang), z, H2(), 3); if (!nr) break;
+        z = nr.x; const r = rays(z[0], z[1], ang, n); if (!r) break; trackTargets = r;
+        if (nr.nf < 1e-15) break;
+      }
+      s.tries++;
+      if (accept(z[0], z[1], ang)) return true;
+    }
+    yield;
+  }
+  return false;
 }
 
 // ---------- automatic search ----------
@@ -474,9 +542,11 @@ function* searchGen(s) {
 
 function startScan() {
   locked = null;
-  search = { starts: interiorStarts(), si: 0, ang: 0, jumps: 0, tries: 0, best: null, phase: 1, k: 0, mode: 'far' };
+  search = { starts: interiorStarts(), si: 0, ang: 0, jumps: 0, tries: 0, best: null, phase: 1, k: 0, mode: 'far', t0: performance.now(), y: 0 };
   jig.ang0 = jig.ang;
-  search.gen = searchGen(search);
+  const n = search.starts.length;
+  search.total = pivotOnly() ? 2 * (n + PIVOT_TRIES) + 4 * PIVOT_TRIES : 2 * n * (insType() === 'triangle' ? 8 : Math.ceil(Math.PI / 2 / STEP) + 2) + RANDOM_TRIES + TRACK_TRIES;
+  search.gen = pivotOnly() ? pivotGen(search) : searchGen(search);
   $('scanBtn').textContent = 'Stop Scan'; $('scanBtn').classList.add('active');
   scanId = requestAnimationFrame(scanStep);
 }
@@ -501,7 +571,10 @@ function finishScan(found) {
   refresh();
   if (found && locked.mode !== 'far') $('status').textContent += locked.mode === 'near' ? ' (nearest-hit jig)' : ' (tracking jig)';
   if (found && locked.mode === 'track') trackTargets = locked.P.map(p => Math.hypot(p.x - locked.x, p.y - locked.y));
-  if (!found) setStatus(`No verified shape found (${s.tries} candidates, ${s.jumps} rejected at discontinuities). Best error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
+  if (!found) setStatus(pivotOnly()
+    ? `No verified ${insType()} at this fixed rotation (${s.tries} pivot positions). Best error ${s.best ? fmt(s.best.v.err) : 'n/a'}${insType() === 'square' ? ' — a square also needs the rotation' : ''}`
+    : `No verified shape found (${s.tries} candidates, ${s.jumps} rejected at discontinuities). Best error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
+  $('timing').textContent = `Search took ${((performance.now() - s.t0) / 1000).toFixed(1)} s (estimate ${est()})`;
   hitMode = 'far';
 }
 
@@ -509,11 +582,12 @@ function scanStep() {
   if (!search) return;
   const t0 = performance.now(), s = search;
   while (performance.now() - t0 < 14) {
-    const r = s.gen.next();
+    const r = s.gen.next(); s.y++;
     if (r.done) { finishScan(r.value); return; }
   }
-  computeView(); syncSlider(); draw(); updateMeters();
-  setStatus(s.phase === 1
+  computeView(); syncSlider(); draw(); updateMeters(); showTiming(s);
+  setStatus(s.phase === 0 ? `Jiggling pivot ${s.k}/${s.total} (${s.mode}-hit jig), rotation fixed`
+    : s.phase === 1
     ? `Sweep (${s.mode}-hit jig) ${((s.ang * 180) / Math.PI).toFixed(1)}° — start ${s.si + 1}/${s.starts.length}, ${s.tries} candidates, ${s.jumps} discontinuities`
     : s.phase === 2 ? `Random restarts ${s.k}/${RANDOM_TRIES} (${s.mode}-hit jig), ${s.tries} candidates`
     : `Tracking-jig restarts ${s.k}/${TRACK_TRIES}, ${s.tries} candidates`, 'active');
@@ -530,6 +604,7 @@ cv.addEventListener('pointerdown', e => {
 Shapes2D.populateSelect($('shapeType'));
 const params = new URLSearchParams(location.search);
 if (params.get('shape') === 'triangle' || params.get('shape') === 'square') $('insType').value = params.get('shape');
+$('pivotOnly').checked = params.get('pivot') === '1';
 if (params.get('curve') && Shapes2D.list.some(([v]) => v === params.get('curve'))) $('shapeType').value = params.get('curve');
 seed = params.has('seed') ? (+params.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;
 resize();

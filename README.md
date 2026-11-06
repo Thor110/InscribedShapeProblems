@@ -9,12 +9,15 @@ This repository also contains some other proposed arguments of mine.
 You can view the **Inscribed Square & Cube Viewfinder** in action here:
 [Run the Live Viewfinder](https://thor110.github.io/InscribedSquareProblem/)
 
-Note that the viewfinders are merely demonstration while the skeletal finders more accurately showcase the method.
+Note that the viewfinders are simpler demonstrations, while the skeletal finders more accurately showcase the method.
 
 ### What the finders do
 
 - **Skeletal Shape Finder (2D).** A jig of rays from a common centre $I$, at 90° for the square and 120° for the triangle, grips the curve. The centre is "rattled" toward the chord midpoints, then Newton's method solves the equilibrium to machine precision. For the square the jig sweeps its rotation looking for the sign change in the diagonal difference (the IVT step). If that sweep fails, it tries a nearest-hit jig, then random restarts, then a *tracking* jig whose arms follow a chosen crossing. The tracking jig is needed on curves that are not star-shaped, where a square's vertex can be a middle crossing of a ray.
 - **Skeletal Space Finder (3D).** The same idea with rays along the cube diagonals, the tetrahedral directions or the octahedral axes. A Levenberg–Marquardt solver adjusts the centre (3 DoF) and rotation (3 DoF) to make every ray length equal. On fractal surfaces it solves a smoothed surface first and adds detail one octave at a time.
+- **Pivot only.** Both skeletal finders have a *Pivot only* checkbox. It keeps the skeleton's rotation fixed and only jiggles the central pivot, which isolates the bisection step. An equilateral triangle (2D) or regular tetrahedron (3D) is still found at any rotation, because centring alone forces equal ray lengths. A square, cube or octahedron generally is not, because it needs the rotation as well.
+- **Inscribed Cube Viewfinder.** Searches directly for a cube with all eight vertices on the surface, adjusting centre, rotation and size (7 parameters for 8 vertex conditions). Moving the sliders shows the closest cube at that orientation. (Earlier versions grew the largest cube that fits *inside* the surface, which is a different problem.)
+- **Search time estimates.** Each finder shows an estimated search time for the chosen shape and curve or surface, plus elapsed time and remaining time while it runs. Where no exact solution is expected, such as a cube on a surface without symmetry or a square with its rotation held fixed, the estimate is **∞**. The search still runs through its set number of starting points and then reports the closest candidate.
 - **Curves:** smooth blobs, star, ellipse, polygons, a true crescent, a comb, a spiral (not star-shaped from any point), and the fractals: Koch snowflake (12,288 edges), hexagonal anti-snowflake, Minkowski island (16,384 edges), Weierstrass blob and a random fractal coastline. `tests/jordan-check.js` confirms each is a simple closed curve.
 - **Surfaces:** sphere, ellipsoid, a lopsided egg (strictly convex, no symmetry), random blob, bumpy sphere, 3D star, heart-like, ring-like, cube-like, and two fractal surfaces. All are seam-free.
 
@@ -108,7 +111,7 @@ Define a 3D "Skeletal Jig" representing the four internal diagonals of a cube. T
 > | Lopsided egg (strictly convex) | none | none; best 2.35e-2 |
 > | Fractal blob / fractal ridged | none | none; best 5.2e-4, 1.0e-3 / 2.6e-4, 7.6e-4 |
 >
-> On the same surfaces, regular tetrahedra and octahedra verify to about 1e-16 every time. The lopsided egg was cross-checked with an independent optimiser: 400 random starts over all cubes in space found no vertex closer than 2.8% (relative to the cube's size) to the surface. As the egg's asymmetry parameter $\varepsilon$ shrinks, the best cube's error shrinks in proportion (about $0.16\,\varepsilon$). Failing to find a cube numerically is not a proof that none exists, but these results are consistent with the dimension count.
+> The Inscribed Cube Viewfinder searches cubes directly and gives the same split: cubes are verified on every symmetric surface, and on the others the closest cube found has error 5e-5 to 4e-2. On the same surfaces, regular tetrahedra and octahedra verify to about 1e-16 every time. The lopsided egg was cross-checked with an independent optimiser: 400 random starts over all cubes in space found no vertex closer than 2.8% (relative to the cube's size) to the surface. As the egg's asymmetry parameter $\varepsilon$ shrinks, the best cube's error shrinks in proportion (about $0.16\,\varepsilon$). Failing to find a cube numerically is not a proof that none exists, but these results are consistent with the dimension count.
 
 ![Inscribed Cube Spacefinder Demo](images/cube_demonstration.gif)
 
@@ -259,6 +262,7 @@ The pages are plain HTML and need no build step. The scripts in `tests/` use Nod
 node tests/jordan-check.js       # every 2D curve is a simple closed polygon
 node tests/run-2d.js 3           # square and triangle search on every curve, 3 seeds
 node tests/run-3d.js 2           # cube, tetrahedron and octahedron search on every surface
+node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every surface
 ```
 
 ## References

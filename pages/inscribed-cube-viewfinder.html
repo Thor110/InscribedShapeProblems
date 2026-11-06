@@ -9,23 +9,29 @@
   body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px;}
   h1{font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#666;margin-bottom:6px;}
   .sub{font-size:11px;color:#444;margin-bottom:16px;letter-spacing:0.1em;text-align:center;}
-  canvas{display:block;background:#0d0d14;border:1px solid #1e1e2a; border-radius:4px; cursor: grab;}
-  canvas:active{cursor: grabbing;}
+  canvas{display:block;background:#0d0d14;border:1px solid #1e1e2a;border-radius:4px;cursor:grab;touch-action:none;max-width:100%;}
   .controls{display:flex;flex-direction:column;align-items:center;gap:15px;margin-top:15px;}
   .btn-group{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
   button{background:transparent;border:1px solid #2a2a3a;color:#888;padding:6px 14px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;}
   button:hover{border-color:#555;color:#ccc;background:#111;}
   button.active{border-color:#4a9;color:#4a9;}
   select{background:#0d0d14;border:1px solid #2a2a3a;color:#888;padding:6px 10px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;text-transform:uppercase;}
-  .sl-group{display:grid;grid-template-columns: repeat(2, 1fr); gap:15px; justify-content:center;}
+  .sl-group{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;justify-content:center;}
   .slrow{display:flex;align-items:center;gap:10px;font-size:11px;color:#555;}
-  .slrow span{display:inline-block;width:35px;text-align:right;}
+  .slrow span{display:inline-block;width:46px;text-align:right;}
   input[type=range]{width:120px;accent-color:#4a9;}
-  .meters{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:8px;max-width:440px;width:100%;}
-  .meter{background:#0d0d14;border:1px solid #1a1a24;padding:6px 9px;}
-  .mlabel{font-size:9px;color:#3a3a4a;letter-spacing:0.1em;text-transform:uppercase;}
-  .mval{font-size:13px;font-weight:bold;color:#555;margin-top:1px;}
-  .status{margin-top:10px; font-size:10px; color:#4a9; letter-spacing:0.05em; text-transform:uppercase; height:15px;}
+  .meters{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px;max-width:440px;width:100%;}
+  .meter{background:#0d0d14;border:1px solid #1a1a24;padding:5px 7px;text-align:center;}
+  .meter.wide{grid-column:span 2;}
+  .mlabel{font-size:8px;color:#3a3a4a;letter-spacing:0.1em;text-transform:uppercase;}
+  .mval{font-size:11px;font-weight:bold;color:#555;margin-top:1px;font-variant-numeric:tabular-nums;}
+  .mval.match{color:#4a9;}
+  .mval.warn{color:#ca6;}
+  .status{margin-top:10px;font-size:10px;color:#3a3a4a;letter-spacing:0.05em;text-transform:uppercase;min-height:15px;text-align:center;max-width:440px;}
+  .status.found{color:#4a9;}
+  .status.active{color:#ca6;}
+  .timing{margin-top:4px;font-size:9px;color:#555;letter-spacing:0.05em;text-transform:uppercase;text-align:center;min-height:12px;}
+  .note{margin-top:8px;font-size:10px;color:#3a3a4a;max-width:440px;text-align:center;line-height:1.5;}
   .nav{margin-top:20px;font-size:10px;}
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
   .nav a:hover{color:#888;}
@@ -35,222 +41,276 @@
 <h1>Inscribed Cube Viewfinder</h1>
 <div class="sub">Edward James Gordon — Inscribed Cube Problem</div>
 
-<canvas id="c3d" width="440" height="400"></canvas>
+<canvas id="c3d"></canvas>
 
 <div class="controls">
   <div class="btn-group">
-    <select id="surfType" onchange="newSurface()">
-      <option value="ellipsoid">Ellipsoid</option>
-      <option value="blob">Random blob</option>
-      <option value="bumpy">Bumpy sphere</option>
-      <option value="star3d">3D Star</option>
-      <option value="heart">Heart-like</option>
-      <option value="ring">Ring-like</option>
-      <option value="cube">Cube-like</option>
-    </select>
-    <button onclick="newSurface()">New surface</button>
+    <select id="surfType" onchange="newSurface(false)"></select>
+    <button onclick="newSurface(true)">New surface</button>
     <button onclick="toggleScan()" id="scanBtn">Auto-find Cube</button>
   </div>
-
   <div class="sl-group">
-    <div class="slrow">Pitch<input type="range" id="pitchSl" min="0" max="180" value="45" oninput="onUIChange()"><span id="pitchV">45°</span></div>
-    <div class="slrow">Roll<input type="range" id="rollSl" min="0" max="180" value="0" oninput="onUIChange()"><span id="rollV">0°</span></div>
-    <div class="slrow">Yaw<input type="range" id="yawSl" min="0" max="360" value="0" oninput="onUIChange()"><span id="yawV">0°</span></div>
-    <div class="slrow">Ghost<input type="range" id="alphaSl" min="0" max="100" value="25" oninput="onUIChange()"><span id="alphaV">25%</span></div>
+    <div class="slrow">Pitch<input type="range" id="pitchSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="pitchV">0°</span></div>
+    <div class="slrow">Roll<input type="range" id="rollSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="rollV">0°</span></div>
+    <div class="slrow">Yaw<input type="range" id="yawSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="yawV">0°</span></div>
+    <div class="slrow">Ghost<input type="range" id="alphaSl" min="0" max="100" value="25" oninput="draw3D()"><span id="alphaV">25%</span></div>
   </div>
 </div>
 
-<div class="meters">
-  <div class="meter"><div class="mlabel">Cube Side Length</div><div class="mval" id="mSz">—</div></div>
-  <div class="meter"><div class="mlabel">Max Found Scale</div><div class="mval" id="mMax">—</div></div>
-</div>
+<div class="meters" id="meterGrid"></div>
 <div class="status" id="status">Ready</div>
-<div class="sub" style="margin-top:8px;max-width:440px;">Demonstration only: this grows the largest cube that fits <em>inside</em> the surface. Its vertices are not all on the surface, so it is not an inscribed cube. Use the Skeletal Space Finder for verified inscribed shapes.</div>
+<div class="timing" id="timing"></div>
+<div class="note">Looks for a cube with all eight vertices on the surface. Turning the sliders shows the closest cube at that orientation (centre and size adjusted); Auto-find also adjusts the orientation. A cube is only marked found when every vertex is on the surface to a relative error of 1e-9.</div>
 
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
+<script src="surfaces3d.js"></script>
 <script>
-const c3d=document.getElementById('c3d'),x3=c3d.getContext('2d');
-let surface=[], scanning=false, scanId=null, N=32, maxFoundSz=0, scanCounter=0;
-let bestCX=0, bestCY=0, bestCZ=0, bestP=0.78, bestR=0, bestY=0; 
-const SCAN_LIMIT = 800; 
-let viewPitch = 0.4, viewYaw = 0.6, isDragging = false, lastMouseX = 0, lastMouseY = 0;
-let gridR = [];
+'use strict';
+const TOL = 1e-9;
+const c3d = document.getElementById('c3d'), x3 = c3d.getContext('2d'), $ = id => document.getElementById(id);
+const { rng, randUnit, FRACTAL } = Surfaces3D;
+let W = 440, H = 400, rad, surfType = 'ellipsoid', seed = 1, mesh = [], Rmax = 1.5;
+let viewPitch = 0.4, viewYaw = 0.6, dragging = false, lastX = 0, lastY = 0;
+let cube = null, locked = null, search = null, scanId = null;
+const MR = 36, MC = 72;
 
-function genSurface(){
-  const type=document.getElementById('surfType').value;
-  gridR = []; surface = [];
-  const rows = N + 1, cols = 2 * N + 1;
+// ---------- rotations ----------
+const matMul = (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
+const matVec = (A, v) => A.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+function rotVec(w) {
+  const th = Math.hypot(...w); if (th < 1e-300) return [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  const [x, y, z] = w.map(v => v / th), c = Math.cos(th), s = Math.sin(th), C = 1 - c;
+  return [[c + x * x * C, x * y * C - z * s, x * z * C + y * s], [y * x * C + z * s, c + y * y * C, y * z * C - x * s], [z * x * C - y * s, z * y * C + x * s, c + z * z * C]];
+}
+function euler(p, r, y) {
+  const Rx = [[1, 0, 0], [0, Math.cos(p), -Math.sin(p)], [0, Math.sin(p), Math.cos(p)]];
+  const Ry = [[Math.cos(r), 0, Math.sin(r)], [0, 1, 0], [-Math.sin(r), 0, Math.cos(r)]];
+  const Rz = [[Math.cos(y), -Math.sin(y), 0], [Math.sin(y), Math.cos(y), 0], [0, 0, 1]];
+  return matMul(Rz, matMul(Ry, Rx));
+}
+function toEuler(R) { return [Math.atan2(R[2][1], R[2][2]), Math.asin(Math.max(-1, Math.min(1, -R[2][0]))), Math.atan2(R[1][0], R[0][0])]; }
+function randRot(Rn) {
+  const [u1, u2, u3] = [Rn(), Rn(), Rn()], a = Math.sqrt(1 - u1), b = Math.sqrt(u1);
+  const [w, x, y, z] = [a * Math.sin(2 * Math.PI * u2), a * Math.cos(2 * Math.PI * u2), b * Math.sin(2 * Math.PI * u3), b * Math.cos(2 * Math.PI * u3)];
+  return [[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)], [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)], [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]];
+}
 
-  // Randomized Seeds
-  const rx = 0.7+Math.random()*0.4, ry = 0.9+Math.random()*0.5, rz = 0.7+Math.random()*0.4;
-  const blobFreq = Array.from({length:5},()=>({f:2+Math.random()*2, a:0.08+Math.random()*0.1, p:Math.random()*6}));
-  const bumpyF1 = 3 + Math.floor(Math.random()*5), bumpyF2 = 3 + Math.floor(Math.random()*5);
-  const heartAmp = 0.3 + Math.random()*0.2;
-  const ringAmp = 0.2 + Math.random()*0.3;
-  const starN = 4 + Math.floor(Math.random()*3);
-  const cubePwr = 0.2 + Math.random()*0.35;
+// ---------- cube model ----------
+// A cube is a centre c, rotation R and side s. Corners are c + R·(±s/2, ±s/2, ±s/2).
+const CORNERS = [0, 1, 2, 3, 4, 5, 6, 7].map(i => [i & 1 ? 0.5 : -0.5, i & 2 ? 0.5 : -0.5, i & 4 ? 0.5 : -0.5]);
+const EDGES = []; for (let i = 0; i < 8; i++) for (const b of [1, 2, 4]) if (!(i & b)) EDGES.push([i, i | b]);
+function verts(q) { return CORNERS.map(u => { const v = matVec(q.R, u); return [q.c[0] + q.s * v[0], q.c[1] + q.s * v[1], q.c[2] + q.s * v[2]]; }); }
+// Residual per vertex: radial distance from the surface, relative to the side.
+function residual(q) {
+  if (!(q.s > 0.02)) return null;
+  return verts(q).map(p => { const L = Math.hypot(...p); return L > 1e-12 ? (L - rad(p.map(v => v / L))) / q.s : null; });
+}
+// Independent check: all 28 vertex distances against a perfect cube, and every
+// vertex's distance to the surface.
+function verify(q) {
+  const P = verts(q), d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  let shapeErr = 0, surfErr = 0;
+  for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) shapeErr = Math.max(shapeErr, Math.abs(d(P[i], P[j]) - q.s * d(CORNERS[i], CORNERS[j])) / q.s);
+  const off = P.map(p => { const L = Math.hypot(...p); return (L - rad(p.map(v => v / L))) / q.s; });
+  for (const o of off) surfErr = Math.max(surfErr, Math.abs(o));
+  const err = Math.max(shapeErr, surfErr);
+  return { P, off, shapeErr, surfErr, err, ok: err < TOL && q.s > 0.05 };
+}
 
-  for(let i = 0; i < rows; i++){
-    gridR[i] = [];
-    const phi = (i / N) * Math.PI; 
-    for(let j = 0; j < cols; j++){
-      const theta = (j / (2 * N)) * Math.PI * 2;
-      let r = 1, x, y, z;
-
-      switch(type) {
-        case 'ellipsoid':
-          x = rx * Math.sin(phi) * Math.cos(theta); y = ry * Math.cos(phi); z = rz * Math.sin(phi) * Math.sin(theta);
-          r = Math.hypot(x, y, z); break;
-        case 'blob':
-          r = 1; for(const h of blobFreq) r += h.a * Math.sin(Math.round(h.f) * phi + h.p) * Math.cos(Math.round(h.f) * theta + h.p);
-          x = r * Math.sin(phi) * Math.cos(theta); y = r * Math.cos(phi); z = r * Math.sin(phi) * Math.sin(theta); break;
-        case 'bumpy':
-          r = 1 + 0.15 * Math.sin(bumpyF1 * phi) * Math.cos(bumpyF2 * theta);
-          x = r * Math.sin(phi) * Math.cos(theta); y = r * Math.cos(phi); z = r * Math.sin(phi) * Math.sin(theta); break;
-        case 'star3d':
-          r = 0.8 + 0.4 * Math.pow(Math.abs(Math.sin(starN * phi) * Math.cos(starN * theta)), 0.6);
-          x = r * Math.sin(phi) * Math.cos(theta); y = r * Math.cos(phi); z = r * Math.sin(phi) * Math.sin(theta); break;
-        case 'heart':
-          r = 1.0 + heartAmp * (1 - Math.sin(phi)) * Math.cos(theta);
-          x = r * Math.sin(phi) * Math.cos(theta); y = r * Math.cos(phi); z = r * Math.sin(phi) * Math.sin(theta); break;
-        case 'ring':
-          r = 1 + ringAmp * Math.sin(phi) * Math.cos(2 * theta);
-          x = r * Math.sin(phi) * Math.cos(theta); y = r * Math.cos(phi); z = r * Math.sin(phi) * Math.sin(theta); break;
-        case 'cube':
-          const cp = Math.cos(phi - Math.PI/2), sp = Math.sin(phi - Math.PI/2), ct = Math.cos(theta), st = Math.sin(theta);
-          x = Math.sign(cp * ct) * Math.pow(Math.abs(cp * ct), cubePwr);
-          y = Math.sign(sp) * Math.pow(Math.abs(sp), cubePwr);
-          z = Math.sign(cp * st) * Math.pow(Math.abs(cp * st), cubePwr);
-          r = Math.hypot(x, y, z); break;
+// ---------- Levenberg–Marquardt over centre (3), side (1) and optionally rotation (3) ----------
+function apply(q, d) {
+  return { c: [q.c[0] + d[0], q.c[1] + d[1], q.c[2] + d[2]], s: q.s + d[3], R: d.length > 4 ? matMul(rotVec([d[4], d[5], d[6]]), q.R) : q.R };
+}
+function solveSym(A, b) {
+  const n = b.length, M = A.map((r, i) => r.concat([b[i]]));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-300) return null; [M[c], M[p]] = [M[p], M[c]];
+    for (let r = c + 1; r < n; r++) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+  }
+  const x = new Array(n).fill(0);
+  for (let r = n - 1; r >= 0; r--) { let s = M[r][n]; for (let k = r + 1; k < n; k++) s -= M[r][k] * x[k]; x[r] = s / M[r][r]; }
+  return x;
+}
+const cost = f => f.reduce((a, v) => a + v * v, 0);
+const valid = f => f && f.every(v => v !== null);
+function lmInit(q, rotate) { const f = residual(q); return valid(f) ? { q, f, cost: cost(f), lam: 1e-3, rotate, done: false, it: 0, stall: 0 } : null; }
+function lmIterate(st, iters) {
+  const np = st.rotate ? 7 : 4, h = 1e-7;
+  for (let it = 0; it < iters && !st.done; it++) {
+    if (Math.max(...st.f.map(Math.abs)) < 1e-15) { st.done = true; break; }
+    const J = st.f.map(() => new Array(np));
+    for (let j = 0; j < np; j++) {
+      const dp = new Array(np).fill(0), dm = new Array(np).fill(0); dp[j] = h; dm[j] = -h;
+      const fp = residual(apply(st.q, dp)), fm = residual(apply(st.q, dm));
+      if (!valid(fp) || !valid(fm)) { st.done = true; return st; }
+      for (let i = 0; i < 8; i++) J[i][j] = (fp[i] - fm[i]) / (2 * h);
+    }
+    const A = [], g = [];
+    for (let a = 0; a < np; a++) { A.push([]); g.push(J.reduce((s, row, i) => s + row[a] * st.f[i], 0)); for (let b = 0; b < np; b++) A[a].push(J.reduce((s, row) => s + row[a] * row[b], 0)); }
+    const tr = A.reduce((s, r, i) => s + r[i], 0) / np + 1e-300;
+    let improved = false;
+    while (st.lam < 1e14) {
+      const d = solveSym(A.map((r, i) => r.map((v, j) => (i === j ? v + st.lam * (v + 1e-9 * tr) : v))), g.map(v => -v));
+      if (d) {
+        const q = apply(st.q, d), f = residual(q);
+        if (valid(f) && cost(f) < st.cost) {
+          st.stall = st.cost - cost(f) < 1e-6 * st.cost ? st.stall + 1 : 0;
+          Object.assign(st, { q, f, cost: cost(f) }); st.lam = Math.max(st.lam / 4, 1e-15); improved = true; break;
+        }
       }
-      gridR[i][j] = r; surface.push({x, y, z, phi, theta});
+      st.lam *= 6;
     }
-    if(i === 0 || i === rows-1) { for(let j=1; j<cols; j++) gridR[i][j] = gridR[i][0]; }
+    if (!improved || ++st.it >= 300 || (st.stall >= 8 && st.cost > 1e-24)) st.done = true;
   }
+  return st;
 }
+function startCube(R) { const r = rad(matVec(R, [1, 1, 1].map(v => v / Math.sqrt(3)))); return { c: [0, 0, 0], R, s: (2 * r) / Math.sqrt(3) * 0.95 }; }
 
-function project(p,W,H){
-  let x1 = p.x*Math.cos(viewYaw) + p.z*Math.sin(viewYaw), z1 = -p.x*Math.sin(viewYaw) + p.z*Math.cos(viewYaw);
-  let y2 = p.y*Math.cos(viewPitch) - z1*Math.sin(viewPitch), z2 = p.y*Math.sin(viewPitch) + z1*Math.cos(viewPitch);
-  const f=2.5/(3.5-z2);
-  return{sx:W/2+x1*f*H*0.4, sy:H/2-y2*f*H*0.4, depth: z2};
+// ---------- drawing ----------
+function project(p) {
+  const x1 = p[0] * Math.cos(viewYaw) + p[2] * Math.sin(viewYaw), z1 = -p[0] * Math.sin(viewYaw) + p[2] * Math.cos(viewYaw);
+  const y2 = p[1] * Math.cos(viewPitch) - z1 * Math.sin(viewPitch), z2 = p[1] * Math.sin(viewPitch) + z1 * Math.cos(viewPitch);
+  const f = 2.5 / (5.5 - z2), k = (H * 0.95) / Rmax;
+  return { x: W / 2 + x1 * f * k, y: H / 2 - y2 * f * k, z: z2 };
 }
-
-function isInside3D(p) {
-  const rV = Math.hypot(p.x, p.y, p.z);
-  const phi = Math.acos(Math.max(-1, Math.min(1, p.y / (rV || 1))));
-  const theta = (Math.atan2(p.z, p.x) + Math.PI * 2) % (Math.PI * 2);
-  const i = (phi / Math.PI) * N, j = (theta / (Math.PI * 2)) * (2 * N);
-  const i0 = Math.floor(i), i1 = Math.min(N, i0 + 1), j0 = Math.floor(j), j1 = (j0 + 1) % (2 * N);
-  const fI = i - i0, fJ = j - j0;
-  const r00 = gridR[i0][j0], r01 = gridR[i0][j1], r10 = gridR[i1][j0], r11 = gridR[i1][j1];
-  const rSkin = (r00 * (1 - fJ) + r01 * fJ) * (1 - fI) + (r10 * (1 - fJ) + r11 * fJ) * fI;
-  return rV <= rSkin * 0.985; // Adjusted buffer for visual stability
-}
-
-function getCubeVerts(cx, cy, cz, sz, pitch, roll, yaw) {
-  const h = sz / 2;
-  const corners = [{x:-h,y:-h,z:-h}, {x:h,y:-h,z:-h}, {x:h,y:h,z:-h}, {x:-h,y:h,z:-h}, {x:-h,y:-h,z:h}, {x:h,y:-h,z:h}, {x:h,y:h,z:h}, {x:-h,y:h,z:h}];
-  return corners.map(p => {
-    let {x, y, z} = p;
-    let y1 = y*Math.cos(pitch)-z*Math.sin(pitch), z1 = y*Math.sin(pitch)+z*Math.cos(pitch);
-    let x2 = x*Math.cos(roll)-y1*Math.sin(roll), y2 = x*Math.sin(roll)+y1*Math.cos(roll);
-    let x3 = x2*Math.cos(yaw)+z1*Math.sin(yaw), z3 = -x2*Math.sin(yaw)+z1*Math.cos(yaw);
-    return { x: x3 + cx, y: y2 + cy, z: z3 + cz };
-  });
-}
-
-function findMaxCubeScale(cx, cy, cz, p, r, y) {
-  let lo = 0, hi = 2.0;
-  for(let i=0; i<24; i++){
-    let m = (lo+hi)/2;
-    if(getCubeVerts(cx, cy, cz, m, p, r, y).every(v => isInside3D(v))) lo = m; else hi = m;
+function buildMesh() {
+  mesh = [];
+  for (let i = 0; i <= MR; i++) {
+    const ph = (i / MR) * Math.PI, row = [];
+    for (let j = 0; j < MC; j++) { const th = (j / MC) * 2 * Math.PI, u = [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)], r = rad(u); row.push(u.map(v => v * r)); }
+    mesh.push(row);
   }
-  return lo;
+  Rmax = 0; for (const row of mesh) for (const p of row) Rmax = Math.max(Rmax, Math.hypot(...p)); Rmax *= 1.15;
 }
-
 function draw3D() {
-  const W = c3d.width, H = c3d.height; x3.clearRect(0, 0, W, H);
-  const cP = document.getElementById('pitchSl').value*Math.PI/180, cR = document.getElementById('rollSl').value*Math.PI/180, cY = document.getElementById('yawSl').value*Math.PI/180, alpha = document.getElementById('alphaSl').value/100;
-  const cols = 2*N+1; let faces = [];
-  for(let i=0; i<N; i++){
-    for(let j=0; j<N*2; j++){
-      const p1=surface[i*cols+j], p2=surface[i*cols+j+1], p3=surface[(i+1)*cols+j+1], p4=surface[(i+1)*cols+j];
-      faces.push({pts:[p1,p2,p3,p4], z: project({x:(p1.x+p3.x)/2, y:(p1.y+p3.y)/2, z:(p1.z+p3.z)/2},W,H).depth});
-    }
+  x3.clearRect(0, 0, W, H);
+  const alpha = $('alphaSl').value / 100; $('alphaV').textContent = $('alphaSl').value + '%';
+  const faces = [];
+  for (let i = 0; i < MR; i++) for (let j = 0; j < MC; j++) {
+    const ps = [mesh[i][j], mesh[i][(j + 1) % MC], mesh[i + 1][(j + 1) % MC], mesh[i + 1][j]].map(project);
+    faces.push({ ps, z: (ps[0].z + ps[2].z) / 2 });
   }
-  faces.sort((a,b) => a.z - b.z);
-  faces.forEach(f => {
-    x3.beginPath(); f.pts.forEach((p,idx) => { const {sx,sy} = project(p,W,H); idx===0?x3.moveTo(sx,sy):x3.lineTo(sx,sy); });
-    x3.closePath(); const shade = Math.floor(120 + f.z * 50); x3.fillStyle = `rgba(${shade-40},${shade},${shade+40},${alpha})`;
-    x3.fill(); x3.strokeStyle = `rgba(255,255,255,${alpha*0.4})`; x3.lineWidth = 0.5; x3.stroke();
-  });
-  
-  const sz = findMaxCubeScale(bestCX, bestCY, bestCZ, cP, cR, cY); 
-  const v = getCubeVerts(bestCX, bestCY, bestCZ, sz, cP, cR, cY);
-  const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-  x3.strokeStyle = '#4a9'; x3.lineWidth = 2.5;
-  for(let e of edges){
-    let p1 = project(v[e[0]],W,H), p2 = project(v[e[1]],W,H);
-    x3.beginPath(); x3.moveTo(p1.sx, p1.sy); x3.lineTo(p2.sx, p2.sy); x3.stroke();
+  faces.sort((a, b) => a.z - b.z);
+  for (const f of faces) {
+    x3.beginPath(); f.ps.forEach((p, k) => (k ? x3.lineTo(p.x, p.y) : x3.moveTo(p.x, p.y))); x3.closePath();
+    const sh = Math.floor(120 + f.z * 50); x3.fillStyle = `rgba(${sh - 40},${sh},${sh + 40},${alpha})`; x3.fill();
+    x3.strokeStyle = `rgba(255,255,255,${alpha * 0.4})`; x3.lineWidth = 0.5; x3.stroke();
   }
-  document.getElementById('mSz').textContent = sz.toFixed(3);
+  const q = locked || cube; if (!q) return;
+  const v = verify(q), P = v.P.map(project);
+  x3.lineWidth = 2.5; x3.strokeStyle = v.ok ? '#4a9' : '#ca6';
+  for (const [i, j] of EDGES) { x3.beginPath(); x3.moveTo(P[i].x, P[i].y); x3.lineTo(P[j].x, P[j].y); x3.stroke(); }
+  P.forEach((p, i) => { x3.beginPath(); x3.arc(p.x, p.y, 3.5, 0, Math.PI * 2); x3.fillStyle = Math.abs(v.off[i]) < 1e-6 ? '#4a9' : '#e55'; x3.fill(); });
 }
 
-c3d.addEventListener('mousedown', e => { isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY; });
-window.addEventListener('mouseup', () => isDragging = false);
-window.addEventListener('mousemove', e => {
-  if (!isDragging) return; viewYaw += (e.clientX - lastMouseX)*0.01; viewPitch += (e.clientY - lastMouseY)*0.01;
-  lastMouseX = e.clientX; lastMouseY = e.clientY; draw3D();
-});
-
+// ---------- UI ----------
+function fmt(e) { return e === 0 ? '0' : e.toExponential(2); }
+function setStatus(t, cls) { $('status').textContent = t; $('status').className = 'status ' + (cls || ''); }
+function updateMeters(q) {
+  const g = $('meterGrid'); g.innerHTML = ''; if (!q) return;
+  const v = verify(q), add = (l, val, cls, wide) => { const m = document.createElement('div'); m.className = 'meter' + (wide ? ' wide' : ''); m.innerHTML = `<div class="mlabel">${l}</div><div class="mval ${cls || ''}">${val}</div>`; g.appendChild(m); };
+  v.off.forEach((o, i) => add(`Vertex ${i + 1} off`, fmt(Math.abs(o)), Math.abs(o) < TOL ? 'match' : 'warn'));
+  add('Cube side', q.s.toFixed(9), v.ok ? 'match' : '', true);
+  add('Max relative error', fmt(v.err), v.ok ? 'match' : 'warn', true);
+  return v;
+}
+function refresh() {
+  draw3D(); const v = updateMeters(locked || cube);
+  if (search) return;
+  if (!v) setStatus('No cube here', '');
+  else if (v.ok) setStatus(`Inscribed cube verified — max relative error ${fmt(v.err)}`, 'found');
+  else setStatus(`Closest cube at this orientation — vertices off the surface by up to ${fmt(v.surfErr)}`, '');
+}
+function syncSliders(R) {
+  const [p, r, y] = toEuler(R).map(a => ((((a * 180) / Math.PI) % 360) + 360) % 360);
+  [['pitch', p], ['roll', r], ['yaw', y]].forEach(([k, v]) => { $(k + 'Sl').value = v.toFixed(1); $(k + 'V').textContent = v.toFixed(1) + '°'; });
+}
+// Slider change: rotation fixed; fit centre and size (4 parameters).
 function onUIChange() {
-  ['pitch','roll','yaw','alpha'].forEach(k => {
-    const el = document.getElementById(k+'Sl'), valEl = document.getElementById(k+'V');
-    if(el && valEl) valEl.textContent = el.value + (k==='alpha'?'%':'°');
-  });
-  draw3D();
+  stopScan(); locked = null;
+  ['pitch', 'roll', 'yaw'].forEach(k => ($(k + 'V').textContent = (+$(k + 'Sl').value).toFixed(1) + '°'));
+  const R = euler(...['pitch', 'roll', 'yaw'].map(k => (+$(k + 'Sl').value * Math.PI) / 180));
+  const st = lmInit(startCube(R), false); if (st) { lmIterate(st, 80); cube = st.q; } else cube = startCube(R);
+  refresh();
+}
+const est = () => Surfaces3D.estimate('cube', surfType, false);
+function showEstimate() { $('timing').textContent = `Estimated search time: ${est()}${est() === '∞' ? ' (no exact cube expected on this surface)' : ''}`; }
+function newSurface(fresh) {
+  stopScan(); locked = null;
+  if (fresh) seed = (Math.random() * 2 ** 31) | 0;
+  surfType = $('surfType').value; rad = Surfaces3D.make(surfType, seed);
+  buildMesh(); onUIChange(); showEstimate();
+  const url = new URL(location.href); url.searchParams.set('surface', surfType); url.searchParams.set('seed', seed); history.replaceState(null, '', url);
 }
 
+// ---------- automatic search ----------
+// Multi-start Levenberg–Marquardt over all 7 cube parameters. Fractal surfaces
+// are solved with detail added one octave at a time. Only verified cubes are accepted.
+const attempts = () => (FRACTAL.has(surfType) ? 40 : 120);
+function* searchGen(s) {
+  const Rn = rng(seed * 41 + 11), N = attempts();
+  for (s.k = 0; s.k < N; s.k++) {
+    let q = startCube(s.k === 0 ? cube.R : randRot(Rn));
+    if (s.k > 0) q.c = randUnit(Rn).map(v => v * 0.15 * Rn());
+    let st = null;
+    for (const lev of FRACTAL.has(surfType) ? [1, 3, 5, 7, Infinity] : [Infinity]) {
+      Surfaces3D.setOctaves(lev);
+      st = lmInit(q, true); if (!st) break;
+      while (!st.done) { lmIterate(st, 2); cube = st.q; Surfaces3D.setOctaves(Infinity); yield; Surfaces3D.setOctaves(lev); }
+      q = st.q;
+    }
+    Surfaces3D.setOctaves(Infinity);
+    if (!st) { yield; continue; }
+    const v = verify(st.q);
+    if (!s.best || v.err < s.best.v.err) s.best = { q: st.q, v };
+    if (v.ok) return true;
+  }
+  return false;
+}
+function startScan() {
+  locked = null; search = { k: 0, best: null, t0: performance.now() }; search.gen = searchGen(search);
+  $('scanBtn').textContent = 'Stop'; $('scanBtn').classList.add('active');
+  scanId = requestAnimationFrame(scanStep);
+}
+function stopScan() { Surfaces3D.setOctaves(Infinity); search = null; cancelAnimationFrame(scanId); $('scanBtn').textContent = 'Auto-find Cube'; $('scanBtn').classList.remove('active'); }
+function toggleScan() { search ? (stopScan(), refresh()) : startScan(); }
 function scanStep() {
-  if (!scanning) return;
-  scanCounter++;
-  if (scanCounter > SCAN_LIMIT) { stopScan(); document.getElementById('status').textContent = 'Largest contained cube found (not an inscribed cube)'; return; }
-  document.getElementById('status').textContent = `Growing contained cube... ${Math.floor(scanCounter/SCAN_LIMIT*100)}%`;
-  
-  let temp = 1.0 - (scanCounter / SCAN_LIMIT);
-  for(let i=0; i<6; i++){ 
-    let tP = bestP + (Math.random()-0.5) * 1.5 * temp;
-    let tR = bestR + (Math.random()-0.5) * 1.5 * temp;
-    let tY = bestY + (Math.random()-0.5) * 3.0 * temp;
-    let tX = bestCX + (Math.random()-0.5) * 0.3 * temp;
-    let tYc = bestCY + (Math.random()-0.5) * 0.3 * temp;
-    let tZ = bestCZ + (Math.random()-0.5) * 0.3 * temp;
-
-    let sz = findMaxCubeScale(tX, tYc, tZ, tP, tR, tY);
-    if (sz > maxFoundSz) {
-      maxFoundSz = sz; bestCX = tX; bestCY = tYc; bestCZ = tZ;
-      bestP = tP; bestR = tR; bestY = tY;
-      document.getElementById('pitchSl').value = Math.round(tP*180/Math.PI); 
-      document.getElementById('rollSl').value = Math.round(tR*180/Math.PI); 
-      document.getElementById('yawSl').value = Math.round(tY*180/Math.PI);
-      document.getElementById('mMax').textContent = sz.toFixed(3); 
+  if (!search) return;
+  const s = search, t0 = performance.now();
+  while (performance.now() - t0 < 16) {
+    const r = s.gen.next();
+    if (r.done) {
+      stopScan();
+      if (s.best) { cube = s.best.q; syncSliders(cube.R); }
+      if (r.value) locked = s.best.q;
+      refresh();
+      if (!r.value) setStatus(`No inscribed cube verified to ${TOL} after ${s.k} starts — closest cube has error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
+      $('timing').textContent = `Search took ${((performance.now() - s.t0) / 1000).toFixed(1)} s (estimate ${est()})`;
+      return;
     }
   }
-  onUIChange(); scanId = requestAnimationFrame(scanStep);
+  draw3D(); updateMeters(cube);
+  const el = (performance.now() - s.t0) / 1000, left = s.k > 0 ? (el * (attempts() - s.k)) / s.k : NaN;
+  setStatus(`Searching — start ${s.k + 1}/${attempts()}, closest so far ${s.best ? fmt(s.best.v.err) : '—'}`, 'active');
+  $('timing').textContent = `Elapsed ${el.toFixed(0)} s · estimate ${est()}` + (isFinite(left) ? ` · at most ~${Math.ceil(left)} s left` : '');
+  scanId = requestAnimationFrame(scanStep);
 }
 
-function startScan() {
-  cancelAnimationFrame(scanId); scanning = true; maxFoundSz = 0; scanCounter = 0;
-  bestCX=0; bestCY=0; bestCZ=0; bestP=0.78; bestR=0; bestY=0;
-  document.getElementById('scanBtn').textContent = 'Stop'; scanStep();
-}
-function stopScan() { scanning = false; cancelAnimationFrame(scanId); document.getElementById('scanBtn').textContent = 'Auto-find Cube'; }
-function newSurface() { stopScan(); genSurface(); maxFoundSz = 0; bestCX=0; bestCY=0; bestCZ=0; bestP=0.78; bestR=0; bestY=0; document.getElementById('mMax').textContent = '—'; document.getElementById('pitchSl').value = 45; document.getElementById('rollSl').value = 0; document.getElementById('yawSl').value = 0; onUIChange(); document.getElementById('status').textContent = 'New surface generated'; }
-function toggleScan() { scanning ? stopScan() : startScan(); }
+c3d.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; c3d.setPointerCapture(e.pointerId); });
+c3d.addEventListener('pointerup', () => (dragging = false));
+c3d.addEventListener('pointermove', e => { if (!dragging) return; viewYaw += (e.clientX - lastX) * 0.01; viewPitch += (e.clientY - lastY) * 0.01; lastX = e.clientX; lastY = e.clientY; draw3D(); });
 
-genSurface(); draw3D();
+(function init() {
+  const dpr = window.devicePixelRatio || 1; W = Math.min(440, window.innerWidth - 32); H = Math.round(W * 0.9);
+  c3d.width = W * dpr; c3d.height = H * dpr; c3d.style.width = W + 'px'; c3d.style.height = H + 'px'; x3.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const [v, l] of Surfaces3D.list) { const o = document.createElement('option'); o.value = v; o.textContent = l; $('surfType').appendChild(o); }
+  const q = new URLSearchParams(location.search);
+  if (Surfaces3D.list.some(([v]) => v === q.get('surface'))) $('surfType').value = q.get('surface');
+  seed = q.has('seed') ? (+q.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;
+  newSurface(false);
+})();
 </script>
 </body>
 </html>
