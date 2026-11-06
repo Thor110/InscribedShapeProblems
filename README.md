@@ -431,11 +431,35 @@ The results below make this precise, and the [Number Stability viewer](https://t
 
    *Proof.* $\sigma$ is multiplicative and $\sigma(N) = 2N \equiv 2 \pmod 4$, so exactly one factor $\sigma(p^a)$ is even, and it is $\equiv 2 \pmod 4$. For an odd prime $q$, $\sigma(q^b) = 1 + q + \dots + q^b$ is a sum of $b + 1$ odd numbers, so it is odd exactly when $b$ is even. That makes every other exponent even. For the special prime, $a$ is odd and $\sigma(p^a) = (1 + p)(1 + p^2 + \dots + p^{a-1})$. If $p \equiv 3 \pmod 4$, then $4 \mid 1 + p$, which is impossible. So $p \equiv 1 \pmod 4$, each $p^i \equiv 1$, and $\sigma(p^a) \equiv a + 1 \equiv 2 \pmod 4$ gives $a \equiv 1 \pmod 4$. $\blacksquare$
 
+3. **Near misses come in steps of 6.** If $N$ is odd, not a perfect square, divisible by 3, and has a prime factor $p \equiv 2 \pmod 3$ (such as 5, 11 or 17) to an odd power, then $\sigma(N) - 2N$ is a multiple of 6. So such an $N$ either lands exactly on $2N$ or misses it by at least 6.
+
+   *Proof.* $\sigma$ is multiplicative.
+   - *Even.* $N$ is odd and not a square, so some prime $q$ has an odd exponent $b$. Then $\sigma(q^b) = 1 + q + \dots + q^b$ is a sum of $b + 1$ odd numbers, an even count, so it is even. Hence $\sigma(N)$ is even, and so is $2N$.
+   - *Divisible by 3.* For $p \equiv 2 \pmod 3$ with odd exponent $a$, the terms of $1 + p + \dots + p^a$ are $\equiv 1, 2, 1, 2, \dots \pmod 3$. There are $a + 1$ of them, an even count, so they pair up into multiples of 3 and $3 \mid \sigma(N)$. And $3 \mid N$ gives $3 \mid 2N$. $\blacksquare$
+
+   Every odd number that comes close to perfect in the search below is of this kind, which is why the closest misses are all exactly 6. An odd miss ($\pm1, \pm3, \dots$) is only possible when $N$ is a perfect square, because only then is $\sigma(N)$ odd. No odd $N$ with $\sigma(N) = 2N \pm 1$ has ever been found either.
+
 **Why the size argument cannot work.** Three facts rule out any proof that uses only how large the divisors are:
 
 - **Odd numbers can pass $N$.** Odd *abundant* numbers exist. $945 = 3^3 \cdot 5 \cdot 7$ has no $N/2$ (its largest proper divisor is $315 = N/3$), yet its proper divisors add up to $975$, which is $30$ more than $945$. So an argument that odd divisors are *too small* to get to $N$ cannot work. What remains open is whether they can ever land *exactly* on $N$.
 - **Odd numbers come arbitrarily close.** Up to 4,000,000 the nearest misses are $\sigma(N) - 2N = \pm 6$, for example $N = 442{,}365 = 3 \cdot 5 \cdot 7 \cdot 11 \cdot 383$ with $\sigma(N)/N = 2.000014$. A simple construction gets as close as you like: multiply distinct odd primes, each time taking the smallest one that keeps $\sigma(N)/N$ below 2 (3, 5, 7, 11, 389, 29959, 128194589, …). The gap to 2 roughly squares at each step, reaching $7 \times 10^{-29}$ after 8 primes. So there is no gap that odd numbers must leave.
 - **Descartes' spoof.** $D = 3^2 \cdot 7^2 \cdot 11^2 \cdot 13^2 \cdot 22021$ has "$\sigma(D) = 2D$" exactly if 22021 is treated as a prime. It is not ($22021 = 19^2 \cdot 61$). So a proof must use the fact that the factors are actually prime, not just the shape of the divisor sum.
+
+**Nearest misses: best undersized and best oversized.** `tools/nearest-misses.js` computes $\sigma(N)$ for every odd $N$ up to $10^{10}$ (5 billion numbers, under a minute on 4 cores). It records how close each comes to $2N$ from below (deficient) and from above (abundant), in the spirit of the best undersized and best oversized constructions in [ClassicalGeometryProblems](https://github.com/Thor110/ClassicalGeometryProblems). The two sides close in on the target from either side, and the target, an odd perfect number, lies between them.
+
+![Record nearest misses of odd numbers to perfection](images/nearest-misses.svg)
+
+| Closest odd misses up to $10^{10}$ | $N$ | $\sigma(N) - 2N$ | $\sigma(N)/N$ |
+|---|---|---|---|
+| From below | 815,634,435 $= 3 \cdot 5 \cdot 7 \cdot 11 \cdot 547 \cdot 1291$ | $-6$ | $2 - 7.4 \times 10^{-9}$ |
+| From above | 2,586,415,095 | $+18$ | $2 + 7.0 \times 10^{-9}$ |
+| Smallest miss from above | 8,925, 32,445 and 442,365 | $+6$ | |
+
+- **Relative misses keep shrinking.** On a log scale the records fall steadily as $N$ grows, so odd numbers come ever closer to perfect as a fraction of $N$. This matches the construction above, which gets arbitrarily close.
+- **The absolute miss never gets below 6.** Apart from 3, 5 and 9, no odd number up to $10^{10}$ misses by less than 6. Only eight miss by exactly 6: 7, 15, 315, 1155 and 815,634,435 from below, and 8925, 32,445 and 442,365 from above. The dashed line in the chart is a miss of exactly 6, and the records approach it but never cross it. Result 3 above explains the steps of 6. Whether a miss of exactly 0 is possible is the open problem.
+- About 0.41% of odd numbers are abundant (20.5 million up to $10^{10}$).
+
+This is a measurement, not a proof. The known bound $N > 10^{1500}$ for an odd perfect number is far beyond any search. What it shows is the shape of the problem: misses shrink relative to $N$, but come in whole steps that never reach zero in the range searched. Raw data are in `data/nearest-misses.json`, and the viewer's fourth panel shows the chart and the decade-by-decade results.
 
 **What is known.** Computer-assisted work has pushed the constraints very far:
 - $N > 10^{1500}$, with at least 101 prime factors counted with multiplicity (Ochem–Rao 2012);
@@ -448,7 +472,7 @@ Pomerance has given a probabilistic heuristic suggesting that none exist. It is 
 
 **The viewer.** The [Number Stability viewer](https://thor110.github.io/InscribedShapeProblems/pages/number-stability.html):
 - shows each odd number's divisors against $N$, with its abundancy and whether it has Euler's form;
-- has panels for the prime-count bound, the closest odd numbers and the construction above, and Descartes' spoof.
+- has panels for the prime-count bound, the closest odd numbers and the construction above, Descartes' spoof, and the nearest-misses study.
 
 <details><summary>The original heuristic (kept for reference)</summary>
 
@@ -550,6 +574,7 @@ node tests/run-study.js charts   # rebuild the charts from data/ only
 node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
 node tools/certify-square.js     # the computer-assisted proof of Theorem 6 (exit code 0 = valid)
 node tools/certify-tetra.js      # the computer-assisted proof of Theorem 7 (add --quick for a fast, smaller T)
+node tools/nearest-misses.js     # odd numbers up to 10^10: nearest misses to perfection (add e.g. 1e8 for a quick run)
 ```
 
 ## References

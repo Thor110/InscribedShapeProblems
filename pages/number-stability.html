@@ -37,6 +37,8 @@
   .panel td,.panel th{border:1px solid #1e1e2a;padding:4px 8px;text-align:left;font-weight:normal;color:#999;word-break:break-all;}
   .panel th{color:#555;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;}
   .panel td.ok{color:#4a9;} .panel td.bad{color:#ca6;}
+  #missChart svg{width:100%;height:auto;display:block;}
+  .viz.viz-dark{--surface:#0d0d14;--text1:#e0ddd8;--text2:#8d8a84;--grid:#1e1e2a;--axis:#4a4a55;--s1:#3987e5;--s2:#d95926;}
   .nav{margin-top:20px;font-size:10px;}
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
   .nav a:hover{color:#888;}
@@ -102,8 +104,17 @@
   <table id="spoof"></table>
 </div>
 
+<div class="panel">
+  <h2>4 · Nearest misses: best undersized and best oversized</h2>
+  <p>Every odd number up to ten billion, checked: how close does σ(N) come to 2N, from below (deficient) and from above (abundant)? Like the best undersized and best oversized approximations of the <a href="https://thor110.github.io/ClassicalGeometryProblems/pages/charts.html" style="color:#6a8">classical geometry problems</a>, the two sides close in on the target from either side, and the target itself, a perfect odd number, lies between them. The dashed line is a miss of exactly 6: as a fraction of N the misses keep shrinking, but none lands on the mark, and apart from 3, 5 and 9 none comes closer than 6. The steps of 6 are provable for most of them: if N is odd, not a square, divisible by 3, and has a prime 5, 11, 17, … (two more than a multiple of 3) to an odd power, then σ(N) − 2N is a multiple of 6. Hover the points for values.</p>
+  <div id="missChart" style="width:100%;overflow-x:auto"></div>
+  <table id="missDecades" style="margin-top:8px"></table>
+  <p id="missSmall" style="margin-top:8px"></p>
+</div>
+
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
+<script src="study-charts.js"></script>
 <script>
 const cv=document.getElementById('canvas'),ctx=cv.getContext('2d');
 
@@ -324,6 +335,18 @@ function greedyShow(){
   document.getElementById('greedy').innerHTML='<tr><th>Step</th><th>Prime added</th><th>N (product)</th><th>2 − σ(N)/N</th></tr>'+(rows||'<tr><td colspan="4">Press "Add a prime".</td></tr>');
 }
 greedyShow();
+
+// ---- nearest misses (data from tools/nearest-misses.js) ----
+fetch('../data/nearest-misses.json').then(r=>r.json()).then(d=>{
+  // this page is always dark, so the chart uses its dark palette whatever the system setting
+  document.getElementById('missChart').innerHTML=StudyCharts.missesChart(d,{dark:true}).replace('<g class="viz">','<g class="viz viz-dark">');
+  const f=x=>x.toLocaleString('en-US'),side=b=>b?`${f(b.n)} (${b.gap>0?'+':''}${f(b.gap)})`:'—';
+  document.getElementById('missDecades').innerHTML='<tr><th>Odd N between</th><th>Closest from below: N (σ − 2N)</th><th>Closest from above: N (σ − 2N)</th><th>Odd abundant</th></tr>'+
+    d.decades.map(D=>`<tr><td>10^${D.decade} – 10^${D.decade+1}</td><td>${side(D.below)}</td><td>${side(D.above)}</td><td>${f(D.abundant)} of ${f(D.odd)}</td></tr>`).join('');
+  const c=d.smallGaps.counts,keys=Object.keys(c).map(Number).sort((a,b)=>a-b);
+  document.getElementById('missSmall').innerHTML=`Odd N up to ${f(d.limit)} that miss 2N by ${d.smallGaps.max} or less: `+keys.map(k=>`<b>${k>0?'+':''}${k}</b> × ${c[k]}`).join(', ')+
+    `. Perfect (miss 0): ${d.perfect}. An odd miss (±1, ±3, …) needs σ(N) odd, which happens only when N is a perfect square.`;
+}).catch(()=>{document.getElementById('missChart').textContent='Data not available here (open the page through a web server, or run node tools/nearest-misses.js).';});
 
 document.getElementById('nSl').addEventListener('input',update);
 new ResizeObserver(()=>render(+document.getElementById('nSl').value)).observe(cv);
