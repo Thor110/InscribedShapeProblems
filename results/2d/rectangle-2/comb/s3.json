@@ -1,0 +1,29 @@
+{
+ "dim": 2,
+ "shape": "rectangle",
+ "aspect": 2,
+ "curve": {
+  "type": "comb",
+  "seed": 3
+ },
+ "vertices": [
+  [
+   1,
+   0.5000000000554807
+  ],
+  [
+   0,
+   0.5000000000554808
+  ],
+  [
+   0,
+   5.5480814387109945e-11
+  ],
+  [
+   1,
+   5.5480564586929404e-11
+  ]
+ ],
+ "finder": "baseline search",
+ "author": "repository baseline"
+}

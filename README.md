@@ -59,7 +59,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 
 **Where the three open problems stand.**
 1. **Square:** open. Every test agrees with the conjecture, including the [shrinkage study](#square-shrinkage-study-and-rectangle-sweep): on ever-rougher fractals the largest square converges rather than shrinking. The jig argument is a proof for convex curves (Emch's); for non-convex curves the step "the bisecting centre moves continuously as the jig rotates" fails, and that gap is the open problem.
-2. **Tetrahedron:** solved for smooth surfaces (Gromov), so what remains open is non-smooth (merely continuous) surfaces. Your centring jig gives an elementary proof in the smooth strictly convex case, in every dimension ([PROOFS.md](PROOFS.md), Theorem 2).
+2. **Tetrahedron:** solved for smooth surfaces (Gromov), so what remains open is non-smooth (merely continuous) surfaces. The [3D shrinkage study](#square-shrinkage-study-and-rectangle-sweep) finds the tetrahedra converging, not shrinking, as surfaces get rougher. Your centring jig gives an elementary proof in the smooth strictly convex case, in every dimension ([PROOFS.md](PROOFS.md), Theorem 2).
 3. **Cube:** settled in the negative for general surfaces ([PROOFS.md](PROOFS.md), Theorem 1): a cube has 7 degrees of freedom but 8 vertex conditions, so generic surfaces have none. The same holds for every hypercube in dimension ≥ 3.
 
 <details><summary>Full n-dimensional results (seed 1; ✅ verified with its error, ❌ closest miss)</summary>
@@ -99,6 +99,18 @@ The open part of the square problem is rough, merely continuous curves. For smoo
 
 **Result.** The squares do not shrink. In every family the largest square levels off at a fixed size. The squares followed from one level to the next change size by less than 1% at the highest levels, so they settle onto limiting squares instead of collapsing. Some smaller squares appear and disappear in pairs between levels, as expected, but the large ones persist.
 
+**Tetrahedra in 3D.** The tetrahedron problem is also open only for merely continuous surfaces. Three fractal surface families are refined level by level: Weierstrass-type (Hölder exponent 0.5), ridged, and a rougher Hölder-0.3 family. Each level adds one octave of detail, up to 16 octaves. Regular tetrahedra on a smooth surface come in a 3-parameter family (one per orientation), so instead of "the largest" the study follows 16 tetrahedra that start at fixed orientations. Each new octave is blended in gradually while every tetrahedron's position and orientation adjust.
+
+![Smallest tracked regular tetrahedron as the surfaces get rougher](images/tetrahedron-shrinkage.svg)
+
+| Family | Carried to level 16 | Smallest tetrahedron, level 8 → level 16 | Size change per level at level 16 |
+|---|---|---|---|
+| Weierstrass (Hölder 0.5) | 12 of 16 | 0.895 → 0.894 | 1.000 |
+| Ridged | 9 of 16 | 0.899 → 0.948 | 1.000 |
+| Rough (Hölder 0.3) | 7 of 16 | 0.939 → 0.927 | 1.000 |
+
+(Sizes are circumradius ÷ the surface's mean radius.) As in 2D, the tetrahedra that are carried through converge onto fixed sizes instead of shrinking. Some are lost along the way, more on the rougher surfaces: either a pair of solutions annihilates, which is expected, or the tracking fails, which looks the same. The rise in the ridged family's minimum at level 15 is a survivor effect, since the smallest ones were among those lost.
+
 **Rectangle sweep.** The same search for rectangles, across aspect ratios from 1:1 to 16:1 on smooth, non-convex and fractal curves. The search sweeps the aspect ratio upward and back down, continuing rectangles from one ratio to the next.
 
 ![Inscribed rectangles across aspect ratios](images/rectangle-sweep.svg)
@@ -111,7 +123,33 @@ A verified rectangle was found in **all 81 cells**: every aspect ratio, on every
 - "Largest" means largest found, so it is a guaranteed lower bound on the true largest.
 - From level 13 on, the Weierstrass polygon is capped at 131,072 points.
 
-Explore it on the [Square Shrinkage & Rectangle Sweep](https://thor110.github.io/InscribedSquareProblem/pages/inscribed-study.html) page: run the studies live, hover for values, and click any point to see the curve and its largest verified shape. Raw results are in `data/study-squares.json` and `data/study-rectangles.json`.
+Explore it on the [Square Shrinkage & Rectangle Sweep](https://thor110.github.io/InscribedSquareProblem/pages/inscribed-study.html) page: run the studies live, hover for values, and click any point to see the curve and its largest verified shape. Raw results are in `data/study-squares.json`, `data/study-rectangles.json` and `data/study-tetrahedra.json`.
+
+## Submitting results
+
+The finders can contribute to a shared registry of verified results ([`data/registry.json`](data/registry.json), one file per result in [`results/`](results/), browsable on the [Verified Results](https://thor110.github.io/InscribedSquareProblem/pages/registry.html) page).
+
+**How it works.**
+1. When the Skeletal Shape Finder, Skeletal Space Finder or Inscribed Cube Viewfinder verifies a shape, a *Registry* line under the status checks it against the registry.
+2. If no verified result exists for that exact problem (shape, curve or surface, seed and roughness level), it offers **Submit it**. This opens a prefilled GitHub issue (the *Submit a verified result* form).
+3. A GitHub Action (`.github/workflows/results.yml`) rebuilds the curve or surface from its seed and verifies the shape independently with `tools/check-result.js`: every pairwise distance, and every vertex's distance from the curve or surface, to a relative error of 1e-9.
+4. If the result is valid and new, the action opens a **pull request** adding it to `results/` and `data/registry.json` for the maintainer to review and merge. Otherwise it comments with the reason and closes the issue.
+5. A second workflow (`verify-results.yml`) re-verifies every recorded result on every change, and refuses pull requests that would change or remove a recorded result.
+
+**What is collected (and why it can't be spammed).**
+- **Only the first verified result for each problem.** Repeats are rejected automatically.
+- **Only catalogued curves and surfaces:** seeds 1–10 of every curve and surface, at their standard roughness levels. Curves that ignore the seed (circle, heart, Minkowski island, sphere, egg) count once, as seed 1. If a finder is on another seed, it offers a catalogued one.
+- **Only the open or interesting shapes:** squares, rectangles (aspect 1.5–16), regular pentagons and hexagons in 2D; regular tetrahedra, octahedra and cubes in 3D. Triangles are not collected, because that problem is solved.
+- **The registry starts with 243 results from the repository's own searches** (`tools/seed-registry.js`), so the easy cases are already taken. What is left open is the hard part, for example a cube on any surface without symmetry, or a regular pentagon or hexagon on most curves.
+
+**Maintainer setup (one time).** In the repository settings, enable *Actions → General → Allow GitHub Actions to create and approve pull requests*, and create a label named `result`. Without the label the workflow still runs, because it also recognises the "Result:" title.
+
+```bash
+node tools/check-result.js result.json      # check a result file by hand
+node tools/build-registry.js                # rebuild data/registry.json from results/
+node tools/build-registry.js --check        # re-verify everything (what CI runs)
+node tools/seed-registry.js                 # add the baseline entries (keeps existing files)
+```
 
 ## What holds weight
 
@@ -396,8 +434,9 @@ node tests/run-2d.js 1 rectangle,trianglex,pentagon,hexagon   # the other 2D tar
 node tests/run-3d.js 2           # cube, tetrahedron and octahedron search on every surface
 node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every surface
 node tests/run-nd.js 5           # n-dimensional table (dimensions 2–5)
-node tests/run-study.js both     # square shrinkage study + rectangle sweep (writes data/ and the two SVG charts)
-node tests/run-study.js charts   # rebuild the two charts from data/ only
+node tests/run-study.js all      # square shrinkage + rectangle sweep + tetrahedron study (writes data/ and the SVG charts)
+node tests/run-study.js tetra    # just the 3D tetrahedron study
+node tests/run-study.js charts   # rebuild the charts from data/ only
 node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
 ```
 

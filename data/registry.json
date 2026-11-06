@@ -1,0 +1,1965 @@
+{
+ "count": 243,
+ "counts": {
+  "2d/hexagon": 1,
+  "2d/pentagon": 1,
+  "2d/rectangle-1.5": 9,
+  "2d/rectangle-12": 9,
+  "2d/rectangle-16": 9,
+  "2d/rectangle-2": 33,
+  "2d/rectangle-3": 9,
+  "2d/rectangle-4": 9,
+  "2d/rectangle-6": 9,
+  "2d/rectangle-8": 9,
+  "2d/square": 73,
+  "3d/cube": 13,
+  "3d/octahedron": 27,
+  "3d/tetrahedron": 32
+ },
+ "entries": {
+  "2d/hexagon/circle/s1": {
+   "label": "regular hexagon on circle, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "2d/pentagon/circle/s1": {
+   "label": "regular pentagon on circle, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "2d/rectangle-1.5/coastline-L12/s1": {
+   "label": "rectangle (aspect 1.5:1) on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.842795,
+   "err": 3.36e-15
+  },
+  "2d/rectangle-1.5/comb/s1": {
+   "label": "rectangle (aspect 1.5:1) on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.20185,
+   "err": 3.33e-16
+  },
+  "2d/rectangle-1.5/crescent/s1": {
+   "label": "rectangle (aspect 1.5:1) on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.999999,
+   "err": 6e-16
+  },
+  "2d/rectangle-1.5/ellipse/s1": {
+   "label": "rectangle (aspect 1.5:1) on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.687357,
+   "err": 3.37e-16
+  },
+  "2d/rectangle-1.5/koch-L5/s1": {
+   "label": "rectangle (aspect 1.5:1) on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.991488,
+   "err": 2.08e-16
+  },
+  "2d/rectangle-1.5/minkowski-L4/s1": {
+   "label": "rectangle (aspect 1.5:1) on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.833282,
+   "err": 6.12e-16
+  },
+  "2d/rectangle-1.5/spiral/s1": {
+   "label": "rectangle (aspect 1.5:1) on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.95428,
+   "err": 2.27e-16
+  },
+  "2d/rectangle-1.5/star/s1": {
+   "label": "rectangle (aspect 1.5:1) on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.793834,
+   "err": 5.29e-16
+  },
+  "2d/rectangle-1.5/weierstrass-L10/s1": {
+   "label": "rectangle (aspect 1.5:1) on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.941172,
+   "err": 5.14e-15
+  },
+  "2d/rectangle-12/coastline-L12/s1": {
+   "label": "rectangle (aspect 12:1) on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.913864,
+   "err": 3.91e-14
+  },
+  "2d/rectangle-12/comb/s1": {
+   "label": "rectangle (aspect 12:1) on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.137417,
+   "err": 2.35e-15
+  },
+  "2d/rectangle-12/crescent/s1": {
+   "label": "rectangle (aspect 12:1) on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.999999,
+   "err": 1.34e-15
+  },
+  "2d/rectangle-12/ellipse/s1": {
+   "label": "rectangle (aspect 12:1) on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.987716,
+   "err": 3.13e-15
+  },
+  "2d/rectangle-12/koch-L5/s1": {
+   "label": "rectangle (aspect 12:1) on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.977819,
+   "err": 2.82e-15
+  },
+  "2d/rectangle-12/minkowski-L4/s1": {
+   "label": "rectangle (aspect 12:1) on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.737992,
+   "err": 3.08e-15
+  },
+  "2d/rectangle-12/spiral/s1": {
+   "label": "rectangle (aspect 12:1) on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.069091,
+   "err": 9.57e-16
+  },
+  "2d/rectangle-12/star/s1": {
+   "label": "rectangle (aspect 12:1) on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.982232,
+   "err": 1.07e-14
+  },
+  "2d/rectangle-12/weierstrass-L10/s1": {
+   "label": "rectangle (aspect 12:1) on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.933853,
+   "err": 2.47e-14
+  },
+  "2d/rectangle-16/coastline-L12/s1": {
+   "label": "rectangle (aspect 16:1) on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.905132,
+   "err": 9.29e-15
+  },
+  "2d/rectangle-16/comb/s1": {
+   "label": "rectangle (aspect 16:1) on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.156028,
+   "err": 3.08e-15
+  },
+  "2d/rectangle-16/crescent/s1": {
+   "label": "rectangle (aspect 16:1) on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 4.45e-15
+  },
+  "2d/rectangle-16/ellipse/s1": {
+   "label": "rectangle (aspect 16:1) on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.993014,
+   "err": 2.85e-15
+  },
+  "2d/rectangle-16/koch-L5/s1": {
+   "label": "rectangle (aspect 16:1) on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.989105,
+   "err": 1.91e-15
+  },
+  "2d/rectangle-16/minkowski-L4/s1": {
+   "label": "rectangle (aspect 16:1) on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.735112,
+   "err": 8.23e-15
+  },
+  "2d/rectangle-16/spiral/s1": {
+   "label": "rectangle (aspect 16:1) on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.071636,
+   "err": 1.8e-15
+  },
+  "2d/rectangle-16/star/s1": {
+   "label": "rectangle (aspect 16:1) on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.991321,
+   "err": 3.76e-15
+  },
+  "2d/rectangle-16/weierstrass-L10/s1": {
+   "label": "rectangle (aspect 16:1) on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.941343,
+   "err": 3.26e-15
+  },
+  "2d/rectangle-2/circle/s1": {
+   "label": "rectangle (aspect 2:1) on circle, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 4.97e-16
+  },
+  "2d/rectangle-2/coastline-L12/s1": {
+   "label": "rectangle (aspect 2:1) on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.869721,
+   "err": 4.94e-15
+  },
+  "2d/rectangle-2/comb/s1": {
+   "label": "rectangle (aspect 2:1) on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.118034,
+   "err": 8.88e-16
+  },
+  "2d/rectangle-2/comb/s2": {
+   "label": "rectangle (aspect 2:1) on comb, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.118034,
+   "err": 4.44e-16
+  },
+  "2d/rectangle-2/comb/s3": {
+   "label": "rectangle (aspect 2:1) on comb, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.118034,
+   "err": 4.44e-16
+  },
+  "2d/rectangle-2/crescent/s1": {
+   "label": "rectangle (aspect 2:1) on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.999999,
+   "err": 2.48e-16
+  },
+  "2d/rectangle-2/crescent/s2": {
+   "label": "rectangle (aspect 2:1) on crescent, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.999999,
+   "err": 4.97e-16
+  },
+  "2d/rectangle-2/crescent/s3": {
+   "label": "rectangle (aspect 2:1) on crescent, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 4.97e-16
+  },
+  "2d/rectangle-2/ellipse/s1": {
+   "label": "rectangle (aspect 2:1) on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.761215,
+   "err": 3.78e-16
+  },
+  "2d/rectangle-2/ellipse/s2": {
+   "label": "rectangle (aspect 2:1) on ellipse, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.866565,
+   "err": 3.12e-16
+  },
+  "2d/rectangle-2/ellipse/s3": {
+   "label": "rectangle (aspect 2:1) on ellipse, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.757636,
+   "err": 7.2e-16
+  },
+  "2d/rectangle-2/heart/s1": {
+   "label": "rectangle (aspect 2:1) on heart, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.854296,
+   "err": 4.27e-16
+  },
+  "2d/rectangle-2/koch-L5/s1": {
+   "label": "rectangle (aspect 2:1) on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.988956,
+   "err": 7.77e-16
+  },
+  "2d/rectangle-2/minkowski-L4/s1": {
+   "label": "rectangle (aspect 2:1) on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.847689,
+   "err": 4.98e-16
+  },
+  "2d/rectangle-2/polygon/s1": {
+   "label": "rectangle (aspect 2:1) on polygon, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.931996,
+   "err": 9.61e-16
+  },
+  "2d/rectangle-2/polygon/s2": {
+   "label": "rectangle (aspect 2:1) on polygon, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.934268,
+   "err": 2.57e-16
+  },
+  "2d/rectangle-2/polygon/s3": {
+   "label": "rectangle (aspect 2:1) on polygon, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.974526,
+   "err": 7.94e-16
+  },
+  "2d/rectangle-2/random/s1": {
+   "label": "rectangle (aspect 2:1) on random, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.877643,
+   "err": 9.24e-16
+  },
+  "2d/rectangle-2/random/s2": {
+   "label": "rectangle (aspect 2:1) on random, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.898819,
+   "err": 4.57e-16
+  },
+  "2d/rectangle-2/random/s3": {
+   "label": "rectangle (aspect 2:1) on random, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.887935,
+   "err": 4.83e-16
+  },
+  "2d/rectangle-2/spiral/s1": {
+   "label": "rectangle (aspect 2:1) on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.011345,
+   "err": 2.66e-16
+  },
+  "2d/rectangle-2/spiral/s2": {
+   "label": "rectangle (aspect 2:1) on spiral, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.958615,
+   "err": 1.14e-14
+  },
+  "2d/rectangle-2/spiral/s3": {
+   "label": "rectangle (aspect 2:1) on spiral, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.963352,
+   "err": 4.76e-15
+  },
+  "2d/rectangle-2/star/s1": {
+   "label": "rectangle (aspect 2:1) on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.621622,
+   "err": 4.19e-16
+  },
+  "2d/rectangle-2/star/s2": {
+   "label": "rectangle (aspect 2:1) on star, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.988995,
+   "err": 3.79e-16
+  },
+  "2d/rectangle-2/star/s3": {
+   "label": "rectangle (aspect 2:1) on star, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.988616,
+   "err": 5.06e-16
+  },
+  "2d/rectangle-2/teardrop/s1": {
+   "label": "rectangle (aspect 2:1) on teardrop, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.879232,
+   "err": 3.74e-16
+  },
+  "2d/rectangle-2/teardrop/s2": {
+   "label": "rectangle (aspect 2:1) on teardrop, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.914504,
+   "err": 7e-16
+  },
+  "2d/rectangle-2/teardrop/s3": {
+   "label": "rectangle (aspect 2:1) on teardrop, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.876778,
+   "err": 7.33e-16
+  },
+  "2d/rectangle-2/triangle/s1": {
+   "label": "rectangle (aspect 2:1) on triangle, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.731318,
+   "err": 1.62e-15
+  },
+  "2d/rectangle-2/triangle/s2": {
+   "label": "rectangle (aspect 2:1) on triangle, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.71229,
+   "err": 8.09e-16
+  },
+  "2d/rectangle-2/triangle/s3": {
+   "label": "rectangle (aspect 2:1) on triangle, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.721391,
+   "err": 4.04e-16
+  },
+  "2d/rectangle-2/weierstrass-L10/s1": {
+   "label": "rectangle (aspect 2:1) on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.952632,
+   "err": 1.35e-15
+  },
+  "2d/rectangle-3/coastline-L12/s1": {
+   "label": "rectangle (aspect 3:1) on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.856706,
+   "err": 1.61e-16
+  },
+  "2d/rectangle-3/comb/s1": {
+   "label": "rectangle (aspect 3:1) on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.054093,
+   "err": 4.08e-11
+  },
+  "2d/rectangle-3/crescent/s1": {
+   "label": "rectangle (aspect 3:1) on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.999999,
+   "err": 3.51e-16
+  },
+  "2d/rectangle-3/ellipse/s1": {
+   "label": "rectangle (aspect 3:1) on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.856583,
+   "err": 9.49e-16
+  },
+  "2d/rectangle-3/koch-L5/s1": {
+   "label": "rectangle (aspect 3:1) on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.940739,
+   "err": 3.85e-16
+  },
+  "2d/rectangle-3/minkowski-L4/s1": {
+   "label": "rectangle (aspect 3:1) on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.832411,
+   "err": 3.58e-16
+  },
+  "2d/rectangle-3/spiral/s1": {
+   "label": "rectangle (aspect 3:1) on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.034568,
+   "err": 7.35e-16
+  },
+  "2d/rectangle-3/star/s1": {
+   "label": "rectangle (aspect 3:1) on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.740503,
+   "err": 4.97e-16
+  },
+  "2d/rectangle-3/weierstrass-L10/s1": {
+   "label": "rectangle (aspect 3:1) on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.881298,
+   "err": 6.87e-16
+  },
+  "2d/rectangle-4/coastline-L12/s1": {
+   "label": "rectangle (aspect 4:1) on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.89883,
+   "err": 4.01e-15
+  },
+  "2d/rectangle-4/comb/s1": {
+   "label": "rectangle (aspect 4:1) on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.030776,
+   "err": 1.94e-12
+  },
+  "2d/rectangle-4/crescent/s1": {
+   "label": "rectangle (aspect 4:1) on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 8.01e-16
+  },
+  "2d/rectangle-4/ellipse/s1": {
+   "label": "rectangle (aspect 4:1) on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.907792,
+   "err": 5.84e-16
+  },
+  "2d/rectangle-4/koch-L5/s1": {
+   "label": "rectangle (aspect 4:1) on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.925732,
+   "err": 5.1e-16
+  },
+  "2d/rectangle-4/minkowski-L4/s1": {
+   "label": "rectangle (aspect 4:1) on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.841257,
+   "err": 4.62e-16
+  },
+  "2d/rectangle-4/spiral/s1": {
+   "label": "rectangle (aspect 4:1) on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.046386,
+   "err": 1.42e-15
+  },
+  "2d/rectangle-4/star/s1": {
+   "label": "rectangle (aspect 4:1) on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.838049,
+   "err": 1e-15
+  },
+  "2d/rectangle-4/weierstrass-L10/s1": {
+   "label": "rectangle (aspect 4:1) on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.854758,
+   "err": 9.24e-16
+  },
+  "2d/rectangle-6/coastline-L12/s1": {
+   "label": "rectangle (aspect 6:1) on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.904919,
+   "err": 1.17e-15
+  },
+  "2d/rectangle-6/comb/s1": {
+   "label": "rectangle (aspect 6:1) on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.075975,
+   "err": 1.88e-15
+  },
+  "2d/rectangle-6/crescent/s1": {
+   "label": "rectangle (aspect 6:1) on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.999999,
+   "err": 6.75e-16
+  },
+  "2d/rectangle-6/ellipse/s1": {
+   "label": "rectangle (aspect 6:1) on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.954296,
+   "err": 8.19e-16
+  },
+  "2d/rectangle-6/koch-L5/s1": {
+   "label": "rectangle (aspect 6:1) on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.914527,
+   "err": 2.48e-15
+  },
+  "2d/rectangle-6/minkowski-L4/s1": {
+   "label": "rectangle (aspect 6:1) on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.750926,
+   "err": 2.29e-15
+  },
+  "2d/rectangle-6/spiral/s1": {
+   "label": "rectangle (aspect 6:1) on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.058045,
+   "err": 6.91e-16
+  },
+  "2d/rectangle-6/star/s1": {
+   "label": "rectangle (aspect 6:1) on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.923487,
+   "err": 2.3e-15
+  },
+  "2d/rectangle-6/weierstrass-L10/s1": {
+   "label": "rectangle (aspect 6:1) on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.885722,
+   "err": 1.32e-15
+  },
+  "2d/rectangle-8/coastline-L12/s1": {
+   "label": "rectangle (aspect 8:1) on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.902178,
+   "err": 4.69e-15
+  },
+  "2d/rectangle-8/comb/s1": {
+   "label": "rectangle (aspect 8:1) on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.104202,
+   "err": 1.62e-15
+  },
+  "2d/rectangle-8/crescent/s1": {
+   "label": "rectangle (aspect 8:1) on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 1.79e-15
+  },
+  "2d/rectangle-8/ellipse/s1": {
+   "label": "rectangle (aspect 8:1) on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.973202,
+   "err": 1.26e-15
+  },
+  "2d/rectangle-8/koch-L5/s1": {
+   "label": "rectangle (aspect 8:1) on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.895202,
+   "err": 2.06e-15
+  },
+  "2d/rectangle-8/minkowski-L4/s1": {
+   "label": "rectangle (aspect 8:1) on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.850303,
+   "err": 1.79e-15
+  },
+  "2d/rectangle-8/spiral/s1": {
+   "label": "rectangle (aspect 8:1) on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.063693,
+   "err": 1.25e-15
+  },
+  "2d/rectangle-8/star/s1": {
+   "label": "rectangle (aspect 8:1) on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.957022,
+   "err": 3.55e-15
+  },
+  "2d/rectangle-8/weierstrass-L10/s1": {
+   "label": "rectangle (aspect 8:1) on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.897056,
+   "err": 5.16e-15
+  },
+  "2d/square/circle/s1": {
+   "label": "square on circle, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 1.57e-16
+  },
+  "2d/square/coastline-L10/s1": {
+   "label": "square on coastline level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.847534,
+   "err": 1.47e-16
+  },
+  "2d/square/coastline-L11/s1": {
+   "label": "square on coastline level 11, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.84966,
+   "err": 2.93e-16
+  },
+  "2d/square/coastline-L12/s1": {
+   "label": "square on coastline level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.848499,
+   "err": 2.91e-16
+  },
+  "2d/square/coastline-L13/s1": {
+   "label": "square on coastline level 13, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.839092,
+   "err": 4.4e-16
+  },
+  "2d/square/coastline-L14/s1": {
+   "label": "square on coastline level 14, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.835255,
+   "err": 1.76e-15
+  },
+  "2d/square/coastline-L15/s1": {
+   "label": "square on coastline level 15, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.835955,
+   "err": 2.93e-16
+  },
+  "2d/square/coastline-L16/s1": {
+   "label": "square on coastline level 16, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.832367,
+   "err": 2.2e-15
+  },
+  "2d/square/coastline-L2/s1": {
+   "label": "square on coastline level 2, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.905339,
+   "err": 3.36e-16
+  },
+  "2d/square/coastline-L3/s1": {
+   "label": "square on coastline level 3, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.967182,
+   "err": 4.72e-16
+  },
+  "2d/square/coastline-L4/s1": {
+   "label": "square on coastline level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.876614,
+   "err": 1.7e-16
+  },
+  "2d/square/coastline-L5/s1": {
+   "label": "square on coastline level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.882537,
+   "err": 1.63e-16
+  },
+  "2d/square/coastline-L6/s1": {
+   "label": "square on coastline level 6, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.906969,
+   "err": 1.47e-16
+  },
+  "2d/square/coastline-L7/s1": {
+   "label": "square on coastline level 7, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.902112,
+   "err": 2.91e-16
+  },
+  "2d/square/coastline-L8/s1": {
+   "label": "square on coastline level 8, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.876807,
+   "err": 2.95e-16
+  },
+  "2d/square/coastline-L9/s1": {
+   "label": "square on coastline level 9, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.869929,
+   "err": 8.82e-16
+  },
+  "2d/square/comb/s1": {
+   "label": "square on comb, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.989949,
+   "err": 3.17e-16
+  },
+  "2d/square/comb/s2": {
+   "label": "square on comb, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.964696,
+   "err": 2.59e-10
+  },
+  "2d/square/comb/s3": {
+   "label": "square on comb, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.964696,
+   "err": 2.59e-10
+  },
+  "2d/square/crescent/s1": {
+   "label": "square on crescent, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.422615,
+   "err": 3.72e-16
+  },
+  "2d/square/crescent/s2": {
+   "label": "square on crescent, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.440961,
+   "err": 3.56e-16
+  },
+  "2d/square/crescent/s3": {
+   "label": "square on crescent, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.416901,
+   "err": 1.88e-16
+  },
+  "2d/square/ellipse/s1": {
+   "label": "square on ellipse, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.596079,
+   "err": 1.53e-16
+  },
+  "2d/square/ellipse/s2": {
+   "label": "square on ellipse, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.739387,
+   "err": 2.32e-16
+  },
+  "2d/square/ellipse/s3": {
+   "label": "square on ellipse, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.591798,
+   "err": 1.46e-16
+  },
+  "2d/square/heart/s1": {
+   "label": "square on heart, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.727757,
+   "err": 3.17e-16
+  },
+  "2d/square/koch-L0/s1": {
+   "label": "square on koch level 0, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.677185,
+   "err": 3.45e-16
+  },
+  "2d/square/koch-L1/s1": {
+   "label": "square on koch level 1, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.729565,
+   "err": 2.22e-16
+  },
+  "2d/square/koch-L2/s1": {
+   "label": "square on koch level 2, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.890132,
+   "err": 1.82e-16
+  },
+  "2d/square/koch-L3/s1": {
+   "label": "square on koch level 3, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.90631,
+   "err": 1.25e-14
+  },
+  "2d/square/koch-L4/s1": {
+   "label": "square on koch level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.909912,
+   "err": 3.56e-16
+  },
+  "2d/square/koch-L5/s1": {
+   "label": "square on koch level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.909988,
+   "err": 1.78e-16
+  },
+  "2d/square/koch-L6/s1": {
+   "label": "square on koch level 6, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.909988,
+   "err": 1.78e-16
+  },
+  "2d/square/koch-L7/s1": {
+   "label": "square on koch level 7, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.909988,
+   "err": 1.78e-16
+  },
+  "2d/square/minkowski-L0/s1": {
+   "label": "square on minkowski level 0, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.414214,
+   "err": 1.57e-16
+  },
+  "2d/square/minkowski-L1/s1": {
+   "label": "square on minkowski level 1, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.054088,
+   "err": 4.42e-10
+  },
+  "2d/square/minkowski-L2/s1": {
+   "label": "square on minkowski level 2, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.025864,
+   "err": 2.66e-16
+  },
+  "2d/square/minkowski-L3/s1": {
+   "label": "square on minkowski level 3, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.020487,
+   "err": 2.63e-16
+  },
+  "2d/square/minkowski-L4/s1": {
+   "label": "square on minkowski level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.019591,
+   "err": 3.93e-16
+  },
+  "2d/square/minkowski-L5/s1": {
+   "label": "square on minkowski level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.017201,
+   "err": 1.31e-16
+  },
+  "2d/square/polygon/s1": {
+   "label": "square on polygon, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.886056,
+   "err": 1.6e-16
+  },
+  "2d/square/polygon/s2": {
+   "label": "square on polygon, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.907567,
+   "err": 5.03e-16
+  },
+  "2d/square/polygon/s3": {
+   "label": "square on polygon, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.923832,
+   "err": 1.77e-16
+  },
+  "2d/square/random/s1": {
+   "label": "square on random, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.873375,
+   "err": 1.47e-16
+  },
+  "2d/square/random/s2": {
+   "label": "square on random, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.848089,
+   "err": 1.53e-16
+  },
+  "2d/square/random/s3": {
+   "label": "square on random, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.893058,
+   "err": 1.53e-16
+  },
+  "2d/square/spiral/s1": {
+   "label": "square on spiral, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.927435,
+   "err": 1.83e-16
+  },
+  "2d/square/spiral/s2": {
+   "label": "square on spiral, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.880749,
+   "err": 1.82e-16
+  },
+  "2d/square/spiral/s3": {
+   "label": "square on spiral, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.635278,
+   "err": 6.34e-16
+  },
+  "2d/square/star/s1": {
+   "label": "square on star, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.899863,
+   "err": 5.49e-16
+  },
+  "2d/square/star/s2": {
+   "label": "square on star, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.764328,
+   "err": 4.13e-16
+  },
+  "2d/square/star/s3": {
+   "label": "square on star, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.759171,
+   "err": 1.04e-15
+  },
+  "2d/square/teardrop/s1": {
+   "label": "square on teardrop, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.759421,
+   "err": 2.74e-16
+  },
+  "2d/square/teardrop/s2": {
+   "label": "square on teardrop, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.819427,
+   "err": 2.47e-16
+  },
+  "2d/square/teardrop/s3": {
+   "label": "square on teardrop, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.755481,
+   "err": 1.5e-16
+  },
+  "2d/square/triangle/s1": {
+   "label": "square on triangle, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.677185,
+   "err": 3.45e-16
+  },
+  "2d/square/triangle/s2": {
+   "label": "square on triangle, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.659565,
+   "err": 4.63e-16
+  },
+  "2d/square/triangle/s3": {
+   "label": "square on triangle, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.667993,
+   "err": 4.14e-16
+  },
+  "2d/square/weierstrass-L0/s1": {
+   "label": "square on weierstrass level 0, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 1.57e-16
+  },
+  "2d/square/weierstrass-L1/s1": {
+   "label": "square on weierstrass level 1, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.961349,
+   "err": 3.18e-16
+  },
+  "2d/square/weierstrass-L10/s1": {
+   "label": "square on weierstrass level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.837337,
+   "err": 3.23e-16
+  },
+  "2d/square/weierstrass-L11/s1": {
+   "label": "square on weierstrass level 11, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.8289,
+   "err": 1.3e-15
+  },
+  "2d/square/weierstrass-L12/s1": {
+   "label": "square on weierstrass level 12, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.828964,
+   "err": 8.14e-16
+  },
+  "2d/square/weierstrass-L13/s1": {
+   "label": "square on weierstrass level 13, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.828361,
+   "err": 3.25e-16
+  },
+  "2d/square/weierstrass-L14/s1": {
+   "label": "square on weierstrass level 14, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.828533,
+   "err": 9.76e-16
+  },
+  "2d/square/weierstrass-L2/s1": {
+   "label": "square on weierstrass level 2, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.912967,
+   "err": 1.62e-16
+  },
+  "2d/square/weierstrass-L3/s1": {
+   "label": "square on weierstrass level 3, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.870833,
+   "err": 1.66e-16
+  },
+  "2d/square/weierstrass-L4/s1": {
+   "label": "square on weierstrass level 4, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.849613,
+   "err": 3.26e-16
+  },
+  "2d/square/weierstrass-L5/s1": {
+   "label": "square on weierstrass level 5, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.847667,
+   "err": 3.25e-16
+  },
+  "2d/square/weierstrass-L6/s1": {
+   "label": "square on weierstrass level 6, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.840627,
+   "err": 3.26e-16
+  },
+  "2d/square/weierstrass-L7/s1": {
+   "label": "square on weierstrass level 7, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.845476,
+   "err": 1.61e-16
+  },
+  "2d/square/weierstrass-L8/s1": {
+   "label": "square on weierstrass level 8, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.837984,
+   "err": 8.11e-16
+  },
+  "2d/square/weierstrass-L9/s1": {
+   "label": "square on weierstrass level 9, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.835571,
+   "err": 6.47e-16
+  },
+  "3d/cube/cube/s1": {
+   "label": "cube on cube, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.484888,
+   "err": 1.04e-15
+  },
+  "3d/cube/cube/s2": {
+   "label": "cube on cube, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.500945,
+   "err": 5.12e-16
+  },
+  "3d/cube/cube/s3": {
+   "label": "cube on cube, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.498963,
+   "err": 2.57e-16
+  },
+  "3d/cube/ellipsoid/s1": {
+   "label": "cube on ellipsoid, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.920326,
+   "err": 2.09e-16
+  },
+  "3d/cube/ellipsoid/s2": {
+   "label": "cube on ellipsoid, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.938328,
+   "err": 8.2e-16
+  },
+  "3d/cube/ellipsoid/s3": {
+   "label": "cube on ellipsoid, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.926943,
+   "err": 8.3e-16
+  },
+  "3d/cube/heart/s1": {
+   "label": "cube on heart, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.053706,
+   "err": 7.3e-16
+  },
+  "3d/cube/heart/s2": {
+   "label": "cube on heart, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.055242,
+   "err": 9.11e-16
+  },
+  "3d/cube/heart/s3": {
+   "label": "cube on heart, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.055038,
+   "err": 7.29e-16
+  },
+  "3d/cube/ring/s1": {
+   "label": "cube on ring, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "3d/cube/ring/s2": {
+   "label": "cube on ring, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "3d/cube/ring/s3": {
+   "label": "cube on ring, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "3d/cube/sphere/s1": {
+   "label": "cube on sphere, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "3d/octahedron/blob/s1": {
+   "label": "regular octahedron on blob, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.020049,
+   "err": 9.24e-16
+  },
+  "3d/octahedron/blob/s2": {
+   "label": "regular octahedron on blob, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.994814,
+   "err": 6.31e-16
+  },
+  "3d/octahedron/blob/s3": {
+   "label": "regular octahedron on blob, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.997023,
+   "err": 6.3e-16
+  },
+  "3d/octahedron/bumpy/s1": {
+   "label": "regular octahedron on bumpy, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.002808,
+   "err": 3.13e-16
+  },
+  "3d/octahedron/bumpy/s2": {
+   "label": "regular octahedron on bumpy, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.006993,
+   "err": 3.12e-16
+  },
+  "3d/octahedron/bumpy/s3": {
+   "label": "regular octahedron on bumpy, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.02142,
+   "err": 4.61e-16
+  },
+  "3d/octahedron/cube/s1": {
+   "label": "regular octahedron on cube, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "3d/octahedron/cube/s2": {
+   "label": "regular octahedron on cube, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "3d/octahedron/cube/s3": {
+   "label": "regular octahedron on cube, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "3d/octahedron/egg/s1": {
+   "label": "regular octahedron on egg, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.996508,
+   "err": 3.15e-16
+  },
+  "3d/octahedron/ellipsoid/s1": {
+   "label": "regular octahedron on ellipsoid, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.920326,
+   "err": 3.41e-16
+  },
+  "3d/octahedron/ellipsoid/s2": {
+   "label": "regular octahedron on ellipsoid, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.938328,
+   "err": 6.69e-16
+  },
+  "3d/octahedron/ellipsoid/s3": {
+   "label": "regular octahedron on ellipsoid, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.926943,
+   "err": 8.47e-16
+  },
+  "3d/octahedron/fractal-L10/s1": {
+   "label": "regular octahedron on fractal level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.957383,
+   "err": 1.31e-15
+  },
+  "3d/octahedron/heart/s1": {
+   "label": "regular octahedron on heart, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.053751,
+   "err": 5.96e-16
+  },
+  "3d/octahedron/heart/s2": {
+   "label": "regular octahedron on heart, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.055275,
+   "err": 2.98e-16
+  },
+  "3d/octahedron/heart/s3": {
+   "label": "regular octahedron on heart, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.055074,
+   "err": 2.98e-16
+  },
+  "3d/octahedron/ridged-L9/s3": {
+   "label": "regular octahedron on ridged level 9, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.880093,
+   "err": 5.35e-16
+  },
+  "3d/octahedron/ring/s1": {
+   "label": "regular octahedron on ring, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 6.28e-16
+  },
+  "3d/octahedron/ring/s2": {
+   "label": "regular octahedron on ring, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 3.14e-16
+  },
+  "3d/octahedron/ring/s3": {
+   "label": "regular octahedron on ring, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 3.14e-16
+  },
+  "3d/octahedron/rough-L10/s2": {
+   "label": "regular octahedron on rough level 10, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.015946,
+   "err": 9.27e-16
+  },
+  "3d/octahedron/rough-L10/s3": {
+   "label": "regular octahedron on rough level 10, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.02532,
+   "err": 1.38e-15
+  },
+  "3d/octahedron/sphere/s1": {
+   "label": "regular octahedron on sphere, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 0
+  },
+  "3d/octahedron/star3d/s1": {
+   "label": "regular octahedron on star3d, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.976862,
+   "err": 8.04e-16
+  },
+  "3d/octahedron/star3d/s2": {
+   "label": "regular octahedron on star3d, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.84025,
+   "err": 7.47e-16
+  },
+  "3d/octahedron/star3d/s3": {
+   "label": "regular octahedron on star3d, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.82398,
+   "err": 1.33e-15
+  },
+  "3d/tetrahedron/blob/s1": {
+   "label": "regular tetrahedron on blob, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.978793,
+   "err": 1.39e-16
+  },
+  "3d/tetrahedron/blob/s2": {
+   "label": "regular tetrahedron on blob, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.887387,
+   "err": 3.06e-16
+  },
+  "3d/tetrahedron/blob/s3": {
+   "label": "regular tetrahedron on blob, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.99493,
+   "err": 1.37e-16
+  },
+  "3d/tetrahedron/bumpy/s1": {
+   "label": "regular tetrahedron on bumpy, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.016829,
+   "err": 2.67e-16
+  },
+  "3d/tetrahedron/bumpy/s2": {
+   "label": "regular tetrahedron on bumpy, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.004209,
+   "err": 1.35e-16
+  },
+  "3d/tetrahedron/bumpy/s3": {
+   "label": "regular tetrahedron on bumpy, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.978816,
+   "err": 2.78e-16
+  },
+  "3d/tetrahedron/cube/s1": {
+   "label": "regular tetrahedron on cube, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.204472,
+   "err": 1.13e-16
+  },
+  "3d/tetrahedron/cube/s2": {
+   "label": "regular tetrahedron on cube, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.208611,
+   "err": 3.38e-16
+  },
+  "3d/tetrahedron/cube/s3": {
+   "label": "regular tetrahedron on cube, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.208123,
+   "err": 2.25e-16
+  },
+  "3d/tetrahedron/egg/s1": {
+   "label": "regular tetrahedron on egg, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.967038,
+   "err": 4.22e-16
+  },
+  "3d/tetrahedron/ellipsoid/s1": {
+   "label": "regular tetrahedron on ellipsoid, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.919825,
+   "err": 2.96e-16
+  },
+  "3d/tetrahedron/ellipsoid/s2": {
+   "label": "regular tetrahedron on ellipsoid, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.926948,
+   "err": 1.47e-16
+  },
+  "3d/tetrahedron/ellipsoid/s3": {
+   "label": "regular tetrahedron on ellipsoid, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.924865,
+   "err": 4.41e-16
+  },
+  "3d/tetrahedron/fractal-L10/s1": {
+   "label": "regular tetrahedron on fractal level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.024024,
+   "err": 7.97e-16
+  },
+  "3d/tetrahedron/fractal-L10/s2": {
+   "label": "regular tetrahedron on fractal level 10, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.008074,
+   "err": 1.21e-15
+  },
+  "3d/tetrahedron/fractal-L10/s3": {
+   "label": "regular tetrahedron on fractal level 10, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.034827,
+   "err": 1.05e-15
+  },
+  "3d/tetrahedron/heart/s1": {
+   "label": "regular tetrahedron on heart, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.04741,
+   "err": 2.6e-16
+  },
+  "3d/tetrahedron/heart/s2": {
+   "label": "regular tetrahedron on heart, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.049285,
+   "err": 2.59e-16
+  },
+  "3d/tetrahedron/heart/s3": {
+   "label": "regular tetrahedron on heart, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.049034,
+   "err": 2.59e-16
+  },
+  "3d/tetrahedron/ridged-L9/s1": {
+   "label": "regular tetrahedron on ridged level 9, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.804091,
+   "err": 5.07e-16
+  },
+  "3d/tetrahedron/ridged-L9/s2": {
+   "label": "regular tetrahedron on ridged level 9, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.860891,
+   "err": 3.95e-16
+  },
+  "3d/tetrahedron/ridged-L9/s3": {
+   "label": "regular tetrahedron on ridged level 9, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.806796,
+   "err": 5.06e-16
+  },
+  "3d/tetrahedron/ring/s1": {
+   "label": "regular tetrahedron on ring, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.825982,
+   "err": 3.29e-16
+  },
+  "3d/tetrahedron/ring/s2": {
+   "label": "regular tetrahedron on ring, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.81644,
+   "err": 1.67e-16
+  },
+  "3d/tetrahedron/ring/s3": {
+   "label": "regular tetrahedron on ring, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.817517,
+   "err": 1.66e-16
+  },
+  "3d/tetrahedron/rough-L10/s1": {
+   "label": "regular tetrahedron on rough level 10, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.05166,
+   "err": 7.76e-16
+  },
+  "3d/tetrahedron/rough-L10/s2": {
+   "label": "regular tetrahedron on rough level 10, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.021903,
+   "err": 5.32e-16
+  },
+  "3d/tetrahedron/rough-L10/s3": {
+   "label": "regular tetrahedron on rough level 10, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1.0167,
+   "err": 5.35e-16
+  },
+  "3d/tetrahedron/sphere/s1": {
+   "label": "regular tetrahedron on sphere, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 1,
+   "err": 4.08e-16
+  },
+  "3d/tetrahedron/star3d/s1": {
+   "label": "regular tetrahedron on star3d, seed 1",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.897993,
+   "err": 1.21e-15
+  },
+  "3d/tetrahedron/star3d/s2": {
+   "label": "regular tetrahedron on star3d, seed 2",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.794364,
+   "err": 3.42e-16
+  },
+  "3d/tetrahedron/star3d/s3": {
+   "label": "regular tetrahedron on star3d, seed 3",
+   "author": "repository baseline",
+   "date": null,
+   "issue": null,
+   "size": 0.774218,
+   "err": 1.76e-15
+  }
+ }
+}

@@ -1,0 +1,29 @@
+# Re-verifies every result in results/ and checks data/registry.json is up to date,
+# on pull requests and pushes that touch the results or the code that checks them.
+name: Verify results
+
+on:
+  push:
+    paths: ['results/**', 'data/registry.json', 'pages/registry.js', 'pages/shapes2d.js', 'pages/surfaces3d.js', 'pages/inscribed-nd.js', 'tools/build-registry.js']
+  pull_request:
+    paths: ['results/**', 'data/registry.json', 'pages/registry.js', 'pages/shapes2d.js', 'pages/surfaces3d.js', 'pages/inscribed-nd.js', 'tools/build-registry.js']
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Recorded results are never replaced
+        if: github.event_name == 'pull_request'
+        run: |
+          changed=$(git diff --name-only --diff-filter=MD "origin/${{ github.base_ref }}...HEAD" -- results/)
+          if [ -n "$changed" ]; then echo "These recorded results would be changed or removed:"; echo "$changed"; exit 1; fi
+      - name: Re-verify every result and check the registry
+        run: node tools/build-registry.js --check

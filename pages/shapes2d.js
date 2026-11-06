@@ -200,12 +200,18 @@
   }
   // Roughness levels available for each fractal family: [min, max].
   const LEVELS = { koch: [0, 7], antikoch: [0, 6], minkowski: [0, 5], weierstrass: [0, 14], coastline: [2, 16] };
+  // The level each fractal uses when no level is given (as in the finders).
+  const DEFAULT_LEVEL = { koch: 6, antikoch: 5, minkowski: 4, weierstrass: 11, coastline: 14 };
 
-  function fit(pts, W, H, margin) {
+  // The scale and offset fit() uses: canvas = (ox + s·x, oy + s·y).
+  function fitTransform(pts, W, H, margin) {
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (const p of pts) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
     const s = Math.min((W - 2 * margin) / (x1 - x0), (H - 2 * margin) / (y1 - y0));
-    const ox = W / 2 - (s * (x0 + x1)) / 2, oy = H / 2 - (s * (y0 + y1)) / 2;
+    return { s, ox: W / 2 - (s * (x0 + x1)) / 2, oy: H / 2 - (s * (y0 + y1)) / 2 };
+  }
+  function fit(pts, W, H, margin) {
+    const { s, ox, oy } = fitTransform(pts, W, H, margin);
     return pts.map(p => ({ x: ox + s * p.x, y: oy + s * p.y }));
   }
 
@@ -321,5 +327,5 @@
     return ROUGH.has(type) ? '~1–3 s' : '< 1 s';
   }
 
-  global.Shapes2D = { list: LIST, generate, fit, populateSelect, rng, accel, newton, estimate, LEVELS };
+  global.Shapes2D = { list: LIST, generate, fit, fitTransform, populateSelect, rng, accel, newton, estimate, LEVELS, DEFAULT_LEVEL };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -60,11 +60,14 @@
 <div class="meters" id="meterGrid"></div>
 <div class="status" id="status">Ready</div>
 <div class="timing" id="timing"></div>
+<div class="registry" id="registry" style="display:none"></div>
 <div class="note">Looks for a cube with all eight vertices on the surface. Turning the sliders shows the closest cube at that orientation (centre and size adjusted); Auto-find also adjusts the orientation. A cube is only marked found when every vertex is on the surface to a relative error of 1e-9.</div>
 
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script src="surfaces3d.js"></script>
+<script src="inscribed-nd.js"></script>
+<script src="registry.js"></script>
 <script>
 'use strict';
 const TOL = 1e-9;
@@ -216,8 +219,16 @@ function updateMeters(q) {
   add('Max relative error', fmt(v.err), v.ok ? 'match' : 'warn', true);
   return v;
 }
+// Registry: offer verified cubes that are not recorded yet.
+function showRegistry(q, v) {
+  const el = $('registry');
+  if (!q || !v || !v.ok) { el.style.display = 'none'; return; }
+  const L = Surfaces3D.LEVELS[surfType];
+  Registry.panel(el, { dim: 3, shape: 'cube', curve: L ? { type: surfType, seed, level: L[2] } : { type: surfType, seed }, vertices: v.P.map(p => p.slice()), finder: 'Inscribed Cube Viewfinder' });
+}
 function refresh() {
   draw3D(); const v = updateMeters(locked || cube);
+  showRegistry(search ? null : locked || cube, v);
   if (search) return;
   if (!v) setStatus('No cube here', '');
   else if (v.ok) setStatus(`Inscribed cube verified — max relative error ${fmt(v.err)}`, 'found');
@@ -270,6 +281,7 @@ function* searchGen(s) {
   return false;
 }
 function startScan() {
+  $('registry').style.display = 'none';
   locked = null; search = { k: 0, best: null, t0: performance.now() }; search.gen = searchGen(search);
   $('scanBtn').textContent = 'Stop'; $('scanBtn').classList.add('active');
   scanId = requestAnimationFrame(scanStep);
@@ -311,6 +323,7 @@ c3d.addEventListener('pointermove', e => { if (!dragging) return; viewYaw += (e.
   seed = q.has('seed') ? (+q.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;
   newSurface(false);
 })();
+document.head.insertAdjacentHTML('beforeend', `<style>${Registry.PANEL_CSS}</style>`);
 </script>
 </body>
 </html>

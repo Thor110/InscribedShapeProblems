@@ -60,6 +60,17 @@
 <div class="status" id="rcStatus"></div>
 <details><summary>Table view</summary><div id="rcTable"></div></details>
 
+<h2>Tetrahedron shrinkage (3D)</h2>
+<div class="sub">Regular tetrahedra on a smooth surface come in a 3-parameter family, one for every orientation. Sixteen of them, at fixed starting orientations, are carried through every level of roughness: each new octave of detail is blended in gradually while each tetrahedron's position and orientation adjust. The chart shows the smallest one still being carried.</div>
+<div class="controls">
+  <label><input type="radio" name="temode" value="quick" checked> Quick (levels 0–10)</label>
+  <label><input type="radio" name="temode" value="full"> Full (levels 0–16)</label>
+  <button id="teBtn" onclick="toggleTetra()">Run</button>
+</div>
+<div class="chart" id="teChart"></div>
+<div class="status" id="teStatus"></div>
+<details><summary>Table view</summary><div id="teTable"></div></details>
+
 <div class="viewer">
   <canvas id="view" width="420" height="420"></canvas>
   <div class="caption" id="caption">Click a point in either chart to draw that curve and its largest verified square or rectangle.</div>
@@ -72,11 +83,13 @@
 <script src="shapes2d.js"></script>
 <script src="inscribed-2d.js"></script>
 <script src="study.js"></script>
+<script src="surfaces3d.js"></script>
+<script src="inscribed-nd.js"></script>
 <script src="study-charts.js"></script>
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
-let sqData = null, rcData = null, sqRun = null, rcRun = null;
+let sqData = null, rcData = null, sqRun = null, rcRun = null, teData = null, teRun = null;
 
 // ---------- rendering ----------
 function renderSquares(families, note) {
@@ -120,6 +133,39 @@ function toggleSquares() {
     if (p.levelDone || performance.now() - lastDraw > 1500) { renderSquares(sqData.families); lastDraw = performance.now(); }
   }, res => { sqRun = null; sqData.families = res.families; renderSquares(res.families, `Done in ${((performance.now() - t0) / 1000).toFixed(0)} s`); $('sqBtn').textContent = 'Run'; $('sqBtn').classList.remove('active'); }, () => sqRun === run);
 }
+function renderTetra(families, note) {
+  $('teChart').innerHTML = families.length ? StudyCharts.tetraChart(families, { dark: true }) : '';
+  let h = '<table><tr><th>Family</th><th>Level</th><th>Carried over</th><th>Smallest</th><th>Median</th><th>Largest</th><th>Smallest size ratio</th></tr>';
+  for (const f of families) for (const l of f.levels) h += `<tr><td>${f.label}</td><td>${l.level}</td><td>${l.count}/${l.tracked}</td><td>${l.smallest ? l.smallest.toFixed(4) : '—'}</td><td>${Number.isFinite(l.median) ? l.median.toFixed(4) : '—'}</td><td>${l.largest ? l.largest.toFixed(4) : '—'}</td><td>${Number.isFinite(l.minRatio) ? l.minRatio.toFixed(3) : '—'}</td></tr>`;
+  $('teTable').innerHTML = h + '</table>';
+  if (note) $('teStatus').textContent = note;
+}
+function toggleTetra() {
+  if (teRun) { teRun = null; $('teBtn').textContent = 'Run'; $('teBtn').classList.remove('active'); $('teStatus').textContent = 'Stopped'; return; }
+  const quick = document.querySelector('input[name=temode]:checked').value === 'quick', t0 = performance.now();
+  const run = teRun = {}; $('teBtn').textContent = 'Stop'; $('teBtn').classList.add('active');
+  teData = { families: [] };
+  stepper(Study.tetraStudy({ quick }), p => {
+    teData.families = p.data;
+    $('teStatus').textContent = `${p.family}, level ${p.level} of ${p.maxLevel} · ${((performance.now() - t0) / 1000).toFixed(0)} s`;
+    if (p.levelDone) renderTetra(teData.families);
+  }, res => { teRun = null; teData = res; renderTetra(res.families, `Done in ${((performance.now() - t0) / 1000).toFixed(0)} s`); $('teBtn').textContent = 'Run'; $('teBtn').classList.remove('active'); }, () => teRun === run);
+}
+// Orthographic view of a star-shaped surface (latitude/longitude wireframe) and a tetrahedron.
+function drawTetra(rad, P, caption) {
+  const cv = $('view'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height, k = W * 0.3, a = 0.5, b = 0.35;
+  const rot = p => { const x = p[0] * Math.cos(a) + p[2] * Math.sin(a), z = -p[0] * Math.sin(a) + p[2] * Math.cos(a), y = p[1] * Math.cos(b) - z * Math.sin(b); return [W / 2 + k * x, H / 2 - k * y]; };
+  ctx.clearRect(0, 0, W, H); ctx.strokeStyle = 'rgba(80,120,180,0.35)'; ctx.lineWidth = 0.6;
+  const at = (ph, th) => { const u = [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)], r = rad(u); return rot(u.map(v => v * r)); };
+  for (let i = 1; i < 18; i++) { ctx.beginPath(); for (let j = 0; j <= 120; j++) { const q = at((i / 18) * Math.PI, (j / 120) * 2 * Math.PI); j ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); } ctx.stroke(); }
+  for (let j = 0; j < 24; j++) { ctx.beginPath(); for (let i = 0; i <= 90; i++) { const q = at((i / 90) * Math.PI, (j / 24) * 2 * Math.PI); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); } ctx.stroke(); }
+  if (P) {
+    const Q = P.map(rot); ctx.strokeStyle = '#4a9'; ctx.lineWidth = 2.5;
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) { ctx.beginPath(); ctx.moveTo(...Q[i]); ctx.lineTo(...Q[j]); ctx.stroke(); }
+    Q.forEach(q => { ctx.beginPath(); ctx.arc(q[0], q[1], 4, 0, 7); ctx.fillStyle = '#4a9'; ctx.fill(); });
+  }
+  $('caption').textContent = caption;
+}
 function toggleRects() {
   if (rcRun) { rcRun = null; $('rcBtn').textContent = 'Run'; $('rcBtn').classList.remove('active'); $('rcStatus').textContent = 'Stopped'; return; }
   const quick = document.querySelector('input[name=rcmode]:checked').value === 'quick', t0 = performance.now();
@@ -155,6 +201,9 @@ document.addEventListener('click', e => {
   if (kind === 'sq' && sqData) {
     const f = sqData.families[+a], l = f.levels.find(v => v.level === +b);
     drawShape(Shapes2D.generate(f.family, sqData.seed || 1, l.level), l.best, `${f.label}, level ${l.level} (${l.vertices.toLocaleString()} edges): largest verified square, diagonal ${l.largest.toFixed(4)} of the curve's width; ${l.count} distinct squares verified at this level.`);
+  } else if (kind === 'te' && teData) {
+    const f = teData.families[+a], l = f.levels.find(v => v.level === +b);
+    drawTetra(Surfaces3D.make(f.family, f.seed || 1, l.level), l.best, `${f.label}, level ${l.level}: ${l.count} of ${l.tracked} tetrahedra carried over. Shown: the largest, circumradius ${l.largest.toFixed(4)} of the mean surface radius (smallest ${l.smallest.toFixed(4)}).`);
   } else if (kind === 'rc' && rcData) {
     const r = rcData.curves.filter(c => c.cells.length)[+a], c = r.cells[+b];
     const pts = r.level === undefined ? Shapes2D.generate(r.type, rcData.seed || 1) : Shapes2D.generate(r.type, rcData.seed || 1, r.level);
@@ -171,6 +220,7 @@ document.addEventListener('mousemove', e => {
 
 // ---------- saved results from the full run (when served over http) ----------
 fetch('../data/study-squares.json').then(r => r.json()).then(d => { if (!sqRun) { sqData = Object.assign(d, { seed: d.families[0]?.seed || 1 }); renderSquares(d.families, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('sqStatus').textContent = 'Press Run to start'; });
+fetch('../data/study-tetrahedra.json').then(r => r.json()).then(d => { if (!teRun) { teData = d; renderTetra(d.families, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('teStatus').textContent = 'Press Run to start'; });
 fetch('../data/study-rectangles.json').then(r => r.json()).then(d => { if (!rcRun) { rcData = Object.assign({ seed: 1 }, d); renderRects(d, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('rcStatus').textContent = 'Press Run to start'; });
 </script>
 </body>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verified Results</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px;}
+  h1{font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#666;margin-bottom:6px;}
+  .sub{font-size:11px;color:#555;margin-bottom:14px;letter-spacing:0.06em;text-align:center;max-width:760px;line-height:1.6;}
+  .sub a,td a{color:#6a8;text-decoration:none;}
+  .counts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:900px;margin-bottom:12px;}
+  .count{border:1px solid #1e1e2a;background:#0d0d14;padding:6px 10px;font-size:10px;color:#888;cursor:pointer;}
+  .count b{color:#4a9;font-size:12px;margin-left:4px;}
+  .count.on{border-color:#4a9;}
+  input{background:#0d0d14;border:1px solid #2a2a3a;color:#aaa;padding:6px 8px;font-family:inherit;font-size:11px;width:320px;max-width:100%;margin-bottom:10px;}
+  .wrap{width:100%;max-width:900px;overflow-x:auto;}
+  table{border-collapse:collapse;width:100%;font-size:11px;}
+  th,td{border:1px solid #1e1e2a;padding:5px 8px;text-align:left;}
+  th{color:#666;font-weight:normal;text-transform:uppercase;font-size:9px;letter-spacing:0.08em;background:#0d0d14;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;color:#999;}
+  .status{margin-top:10px;font-size:10px;color:#666;letter-spacing:0.08em;text-transform:uppercase;}
+  .nav{margin-top:20px;font-size:10px;}
+  .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
+</style>
+</head>
+<body>
+<h1>Verified Results</h1>
+<div class="sub">Every inscribed shape recorded here was rebuilt from its curve or surface seed and verified independently (all pairwise distances and every vertex's distance from the curve or surface, to a relative error of 1e-9). Only the first result for each problem is recorded. When a finder verifies a shape that is not listed, it offers to submit it; an automated check opens a pull request. Results are collected for seeds 1–10 of every curve and surface. <a href="https://github.com/Thor110/InscribedSquareProblem#submitting-results">How it works</a>.</div>
+<div class="counts" id="counts"></div>
+<input id="q" placeholder="Filter, e.g. cube, coastline, rectangle-16, s3" oninput="render()">
+<div class="wrap"><table id="tbl"></table></div>
+<div class="status" id="status">Loading…</div>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+let reg = null, group = '';
+function render() {
+  const q = $('q').value.trim().toLowerCase(), rows = Object.entries(reg.entries).filter(([k, e]) => (!group || k.startsWith(group + '/')) && (!q || (k + ' ' + e.label + ' ' + e.author).toLowerCase().includes(q)));
+  $('tbl').innerHTML = '<tr><th>Problem</th><th>Size</th><th>Error</th><th>Found by</th><th>File</th></tr>' + rows.map(([k, e]) =>
+    `<tr><td>${e.label}</td><td class="num">${e.size.toFixed(4)}</td><td class="num">${e.err.toExponential(1)}</td><td>${e.author}${e.issue ? ` (<a href="https://github.com/Thor110/InscribedSquareProblem/issues/${e.issue}" target="_blank" rel="noopener">#${e.issue}</a>)` : ''}</td><td><a href="https://github.com/Thor110/InscribedSquareProblem/blob/main/results/${k}.json" target="_blank" rel="noopener">${k}</a></td></tr>`).join('');
+  $('status').textContent = `${rows.length} of ${reg.count} results shown · size = diagonal (2D) or circumdiameter (3D) ÷ curve width`;
+}
+fetch('../data/registry.json').then(r => r.json()).then(d => {
+  reg = d;
+  $('counts').innerHTML = `<div class="count on" data-g="">All<b>${d.count}</b></div>` + Object.entries(d.counts).map(([g, n]) => `<div class="count" data-g="${g}">${g}<b>${n}</b></div>`).join('');
+  $('counts').onclick = e => { const c = e.target.closest('.count'); if (!c) return; group = c.dataset.g; document.querySelectorAll('.count').forEach(x => x.classList.toggle('on', x === c)); render(); };
+  render();
+}).catch(() => { $('status').textContent = 'Could not load data/registry.json (open the site online)'; });
+</script>
+</body>
+</html>

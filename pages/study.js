@@ -12,6 +12,12 @@
   'use strict';
   const Shapes2D = global.Shapes2D || (require('./shapes2d.js'), globalThis.Shapes2D);
   const Inscribed2D = global.Inscribed2D || require('./inscribed-2d.js');
+  // 3D modules are only needed for the tetrahedron study; looked up when it starts,
+  // so the page may load them after this file.
+  const mod3D = () => ({
+    Surfaces3D: global.Surfaces3D || (require('./surfaces3d.js'), globalThis.Surfaces3D),
+    InscribedND: global.InscribedND || require('./inscribed-nd.js'),
+  });
 
   const FAMILIES = [
     { family: 'koch', label: 'Koch snowflake', levels: [0, 7] },
@@ -99,6 +105,66 @@
     return out;
   }
 
-  const api = { FAMILIES, SWEEP_CURVES, ASPECTS, QUICK_MAX, squareStudy, rectangleSweep };
+  // ---------- tetrahedron shrinkage (3D) ----------
+  // Regular tetrahedra on a smooth surface form a 3-parameter family (one for every
+  // orientation), so instead of "the largest" we follow a fixed set of them. Level 0:
+  // K tetrahedra at K fixed random orientations (pivot-only solve). Each later level
+  // adds one octave of detail; every tetrahedron is carried across by blending the
+  // new octave in gradually while position and orientation are both free to adjust.
+  // Sizes are circumradius ÷ the surface's mean radius at that level.
+  const TETRA_FAMILIES = [
+    { family: 'fractal', label: 'Weierstrass (Hölder 0.5)', levels: [0, 16] },
+    { family: 'ridged', label: 'Ridged', levels: [0, 16] },
+    { family: 'rough', label: 'Rough (Hölder 0.3)', levels: [0, 16] },
+  ];
+  function meanRadius(rad, R) {
+    let s = 0; const N = 2000;
+    for (let i = 0; i < N; i++) { let v = [R() - 0.5, R() - 0.5, R() - 0.5]; const L = Math.hypot(...v); v = v.map(x => x / L); s += rad(v); }
+    return s / N;
+  }
+  function* tetraStudy(opts = {}) {
+    const { Surfaces3D, InscribedND } = mod3D();
+    const seed = opts.seed || 1, K = opts.orientations || 16, out = [];
+    for (const F of opts.families || TETRA_FAMILIES) {
+      const maxL = opts.quick ? 10 : F.levels[1], rec = { family: F.family, label: F.label, seed, orientations: K, levels: [] };
+      out.push(rec);
+      const Rn = InscribedND.rng(seed * 977 + 3), Qs = Array.from({ length: K }, (_, i) => (i === 0 ? [[1, 0, 0], [0, 1, 0], [0, 0, 1]] : InscribedND.randomRotation(3, Rn)));
+      const problem = rad => InscribedND.makeProblem('simplex', 3, null, seed, { rad, rmax: 1.6 });
+      let sols = [];
+      for (let L = F.levels[0]; L <= maxL; L++) {
+        const t0 = Date.now(), b = Surfaces3D.make(F.family, seed, L), next = [];
+        if (L === F.levels[0]) {
+          const P = problem(b);
+          for (const Q of Qs) { const v = P.solvePose(Q, [0, 0, 0]); next.push(v && v.ok ? v : null); yield { kind: 'tetra', family: F.label, level: L, maxLevel: maxL, data: out }; }
+        } else {
+          const a = Surfaces3D.make(F.family, seed, L - 1);
+          for (const v0 of sols) {
+            if (!v0) { next.push(null); continue; }
+            // adaptive homotopy from the previous level's surface to this one
+            let t = 0, h = 1, cur = v0.st, last = null;
+            while (t < 1) {
+              const tt = Math.min(1, t + h), v = problem(u => (1 - tt) * a(u) + tt * b(u)).refine(cur, { maxIt: 60 });
+              if (v && v.ok) { t = tt; cur = v.st; last = v; h = Math.min(1, h * 2); } else { h /= 2; if (h < 1 / 128) break; }
+              yield { kind: 'tetra', family: F.label, level: L, maxLevel: maxL, data: out };
+            }
+            next.push(t >= 1 ? last : null);
+          }
+        }
+        const mr = meanRadius(b, InscribedND.rng(seed + L)), live = next.filter(Boolean), sizes = live.map(v => v.size / mr);
+        const ratios = next.map((v, i) => (v && sols[i] ? v.size / sols[i].size : null)).filter(x => x !== null);
+        const big = live.reduce((m, v) => (!m || v.size > m.size ? v : m), null);
+        rec.levels.push({
+          level: L, vertices: L, count: live.length, tracked: sols.filter(Boolean).length || K,
+          smallest: sizes.length ? Math.min(...sizes) : 0, largest: sizes.length ? Math.max(...sizes) : 0, median: median(sizes),
+          minRatio: ratios.length ? Math.min(...ratios) : NaN, best: big ? big.P : null, ms: Date.now() - t0,
+        });
+        sols = next;
+        yield { kind: 'tetra', family: F.label, level: L, maxLevel: maxL, data: out, levelDone: true };
+      }
+    }
+    return { families: out };
+  }
+
+  const api = { FAMILIES, SWEEP_CURVES, ASPECTS, QUICK_MAX, TETRA_FAMILIES, squareStudy, rectangleSweep, tetraStudy };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.Study = api;
 })(typeof window !== 'undefined' ? window : globalThis);

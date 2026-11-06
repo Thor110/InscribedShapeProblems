@@ -1,0 +1,42 @@
+{
+ "dim": 3,
+ "shape": "octahedron",
+ "curve": {
+  "type": "cube",
+  "seed": 3
+ },
+ "vertices": [
+  [
+   1,
+   0,
+   0
+  ],
+  [
+   -1,
+   0,
+   0
+  ],
+  [
+   0,
+   1,
+   0
+  ],
+  [
+   0,
+   -1,
+   0
+  ],
+  [
+   0,
+   0,
+   1
+  ],
+  [
+   0,
+   0,
+   -1
+  ]
+ ],
+ "finder": "baseline search",
+ "author": "repository baseline"
+}

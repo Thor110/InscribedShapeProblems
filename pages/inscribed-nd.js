@@ -118,8 +118,9 @@
   }
 
   // ---------- the solver ----------
-  function makeProblem(shape, n, surfType, seed) {
-    const S = makeSurface(surfType, n, seed), U = directions(shape, n), m = U.length;
+  // `surface` (optional) supplies a ready-made surface { rad(u), rmax } instead of surfType/seed.
+  function makeProblem(shape, n, surfType, seed, surface) {
+    const S = surface || makeSurface(surfType, n, seed), U = directions(shape, n), m = U.length;
     const outside = p => { const L = norm(p); return L > 0 && L > S.rad(p.map(v => v / L)); };
     // Farthest crossing of the ray o + t·u, or -1. With a guess, bracket locally
     // (keeps finite-difference derivatives on the same crossing).
@@ -127,8 +128,21 @@
       const at = t => o.map((v, i) => v + t * u[i]);
       let lo, hi;
       if (guess > 0) {
-        lo = guess * 0.97; hi = guess * 1.03;
-        if (outside(at(lo)) || !outside(at(hi))) guess = 0;
+        // Find the exit crossing (inside -> outside, moving outward) nearest the
+        // remembered one, scanning ever-wider windows. On rough surfaces this keeps
+        // each arm on the same crossing as the jig moves.
+        let found = false;
+        for (const w of [1e-4, 1e-3, 1e-2, 3e-2]) {
+          const N = 48, a0 = guess * (1 - w), step = (2 * guess * w) / N;
+          let prevOut = outside(at(a0)), bestD = Infinity;
+          for (let i = 1; i <= N; i++) {
+            const t = a0 + i * step, out = outside(at(t));
+            if (out && !prevOut) { const d = Math.abs(t - step / 2 - guess); if (d < bestD) { bestD = d; lo = t - step; hi = t; } }
+            prevOut = out;
+          }
+          if (bestD < Infinity) { found = true; break; }
+        }
+        if (!found) guess = 0;
       }
       if (!(guess > 0)) {
         const tmax = S.rmax * 1.2 + norm(o), N = 96; let prev = tmax; lo = -1;
@@ -243,7 +257,26 @@
       }
       return Object.assign({ found: !!best && best.err < tol && best.size > 0.05 }, best || { err: Infinity });
     }
-    return { search, verify, directions: U, surface: S, np: npAll };
+    // Fixed orientation R ("pivot only"): rattle the pivot toward the mean of the
+    // hits, then solve "all rays equal" over the position only. For a simplex this
+    // is n equations in n unknowns, so a solution exists at every orientation on a
+    // smooth convex surface (PROOFS.md, Theorem 2).
+    function solvePose(R, c0, opts = {}) {
+      let st = { c: c0.slice(), R };
+      for (let i = 0; i < (opts.rattle ?? 20); i++) { const r = rays(st); if (!r) break; const P = points(st, r); st = { c: st.c.map((v, d) => v + 0.7 * (P.reduce((s2, p) => s2 + p[d], 0) / m - v)), R }; }
+      const g = lm(st, opts.maxIt || 100, spread, true); let x; while (!(x = g.next()).done);
+      st = x.value || st;
+      const v = verify(st);
+      return v && Object.assign({ st, ok: v.err < (opts.tol || 1e-9) && v.size > 0.02 }, v);
+    }
+    // Continue a known solution (position and orientation both free): solve
+    // "all rays equal" from st with Levenberg–Marquardt over every degree of freedom.
+    function refine(st0, opts = {}) {
+      const g = lm({ c: st0.c.slice(), R: st0.R }, opts.maxIt || 100); let x; while (!(x = g.next()).done);
+      const st = x.value || st0, v = verify(st);
+      return v && Object.assign({ st, ok: v.err < (opts.tol || 1e-9) && v.size > 0.02 }, v);
+    }
+    return { search, verify, solvePose, refine, directions: U, surface: S, np: npAll };
   }
 
   // Run a search to completion (Node / tests).
@@ -265,6 +298,6 @@
     return 'False for generic smooth hypersurfaces (PROOFS.md)';
   }
 
-  const api = { rng, SHAPES, SURFACES, shapeName, directions, simDim, expectedDim, makeSurface, makeProblem, run, literature };
+  const api = { rng, randomRotation, SHAPES, SURFACES, shapeName, directions, simDim, expectedDim, makeSurface, makeProblem, run, literature };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.InscribedND = api;
 })(typeof window !== 'undefined' ? window : globalThis);

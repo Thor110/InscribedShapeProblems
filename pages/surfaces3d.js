@@ -18,14 +18,19 @@
   const SURFACES = [
     ['ellipsoid', 'Ellipsoid'], ['egg', 'Lopsided egg (convex, no symmetry)'], ['blob', 'Random blob'],
     ['bumpy', 'Bumpy sphere'], ['star3d', '3D Star'], ['heart', 'Heart-like'], ['ring', 'Ring-like'],
-    ['cube', 'Cube-like'], ['fractal', 'Fractal blob (Weierstrass)'], ['ridged', 'Fractal ridged'], ['sphere', 'Sphere'],
+    ['cube', 'Cube-like'], ['fractal', 'Fractal blob (Weierstrass)'], ['ridged', 'Fractal ridged'], ['rough', 'Fractal rough (Hölder 0.3)'], ['sphere', 'Sphere'],
   ];
   // For the fractal surfaces, 'octaves' limits how many layers of detail are used.
   // The search solves on a smoothed surface first and then adds detail one octave
   // at a time (continuation); verification and drawing always use full detail.
   let octaves = Infinity;
-  const FRACTAL = new Set(['fractal', 'ridged']);
-  function makeSurface(type, seed) {
+  const FRACTAL = new Set(['fractal', 'ridged', 'rough']);
+  // Roughness levels (number of octaves) for the fractal surfaces: [min, max, default].
+  // Extra octave directions are drawn after the original ones, so the default
+  // level reproduces the earlier surfaces exactly.
+  const LEVELS = { fractal: [0, 16, 10], ridged: [0, 16, 9], rough: [0, 16, 10] };
+  function makeSurface(type, seed, level) {
+    if (FRACTAL.has(type) && level === undefined) level = LEVELS[type][2];
     const R = rng(seed), dirs = n => Array.from({ length: n }, () => randUnit(R)), dot = (u, d) => u[0] * d[0] + u[1] * d[1] + u[2] * d[2];
     switch (type) {
       case 'sphere': return () => 1;
@@ -41,8 +46,13 @@
       case 'heart': { const A = 0.2 + R() * 0.1; return u => 1 + A * (1 - u[1]) * u[0] + 0.1 * u[1] * u[1]; }
       case 'ring': { const A = 0.2 + R() * 0.25; return u => 1 + A * (u[0] * u[0] - u[2] * u[2]); }
       case 'cube': { const q = 4 + R() * 5; return u => Math.pow(Math.abs(u[0]) ** q + Math.abs(u[1]) ** q + Math.abs(u[2]) ** q, -1 / q); }
-      case 'fractal': { const D = dirs(10), p = D.map(() => R() * 6.283); return u => { let s = 1; for (let k = 0; k < D.length && k < octaves; k++) s += 0.1 * 2 ** (-k / 2) * Math.sin(3 * 2 ** k * dot(u, D[k]) + p[k]); return s; }; }
-      case 'ridged': { const D = dirs(9), p = D.map(() => R() * 6.283); return u => { let s = 0.92; for (let k = 0; k < D.length && k < octaves; k++) s += 0.07 * 2 ** (-0.45 * k) * (1 - 2 * Math.abs(Math.sin(2 * 2 ** k * dot(u, D[k]) + p[k]))); return s; }; }
+      case 'fractal': { const D = dirs(10), p = D.map(() => R() * 6.283); const D2 = dirs(6); D.push(...D2); p.push(...D2.map(() => R() * 6.283)); const K = Math.min(level, D.length);
+        return u => { let s = 1; for (let k = 0; k < K && k < octaves; k++) s += 0.1 * 2 ** (-k / 2) * Math.sin(3 * 2 ** k * dot(u, D[k]) + p[k]); return s; }; }
+      case 'ridged': { const D = dirs(9), p = D.map(() => R() * 6.283); const D2 = dirs(7); D.push(...D2); p.push(...D2.map(() => R() * 6.283)); const K = Math.min(level, D.length);
+        return u => { let s = 0.92; for (let k = 0; k < K && k < octaves; k++) s += 0.07 * 2 ** (-0.45 * k) * (1 - 2 * Math.abs(Math.sin(2 * 2 ** k * dot(u, D[k]) + p[k]))); return s; }; }
+      case 'rough': { const D = dirs(16), p = D.map(() => R() * 6.283); const K = Math.min(level, D.length);
+        // Hölder exponent 0.3: rougher than the Weierstrass blob (0.5).
+        return u => { let s = 1; for (let k = 0; k < K && k < octaves; k++) s += 0.06 * 2 ** (-0.3 * k) * Math.sin(2 * 2 ** k * dot(u, D[k]) + p[k]); return s; }; }
     }
   }
 
@@ -63,6 +73,7 @@
   }
 
   global.Surfaces3D = {
+    LEVELS,
     list: SURFACES, make: makeSurface, rng, randUnit, FRACTAL, estimate,
     setOctaves(n) { octaves = n; },
   };

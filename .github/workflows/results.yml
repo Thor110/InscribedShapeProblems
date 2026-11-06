@@ -1,0 +1,78 @@
+# Checks results submitted through the "Submit a verified result" issue form.
+# A valid, new result is added to results/ and data/registry.json in a pull request
+# for the maintainer to review; anything else gets a comment explaining why and the
+# issue is closed. Requires Settings > Actions > General >
+# "Allow GitHub Actions to create and approve pull requests".
+name: Check submitted result
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: results
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: contains(github.event.issue.labels.*.name, 'result') || startsWith(github.event.issue.title, 'Result:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify the result independently
+        id: verdict
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          node tools/check-result.js --issue --write --issue-number "$ISSUE_NUMBER" > verdict.json
+          cat verdict.json
+          echo "status=$(node -p "require('./verdict.json').status")" >> "$GITHUB_OUTPUT"
+          echo "key=$(node -p "require('./verdict.json').key || ''")" >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild the registry
+        if: steps.verdict.outputs.status == 'new'
+        run: node tools/build-registry.js
+
+      - name: Open a pull request
+        if: steps.verdict.outputs.status == 'new'
+        id: pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: result/issue-${{ github.event.issue.number }}
+          title: "Add verified result: ${{ steps.verdict.outputs.key }}"
+          commit-message: "Add verified result: ${{ steps.verdict.outputs.key }}"
+          body: |
+            Adds the result submitted in #${{ github.event.issue.number }}.
+            It was rebuilt from its seed and verified independently by `tools/check-result.js`, and no result for this problem was recorded before.
+
+            Closes #${{ github.event.issue.number }}
+          add-paths: |
+            results/**
+            data/registry.json
+
+      - name: Reply on the issue
+        uses: actions/github-script@v7
+        env:
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+        with:
+          script: |
+            const v = JSON.parse(require('fs').readFileSync('verdict.json', 'utf8'));
+            const issue_number = context.payload.issue.number;
+            let body;
+            if (v.status === 'new') body = `✅ Verified (relative error ${Number(v.err).toExponential(2)}) and new: no ${v.label} had been recorded before. A pull request adding it to the registry is open: ${process.env.PR_URL || '(see pull requests)'}`;
+            else if (v.status === 'duplicate') body = `This result checks out, but ${v.reason}. Only the first verified result for each problem is recorded, so this one will not be added. Thank you!`;
+            else body = `❌ This result could not be accepted: ${v.reason}.\n\nIf you think this is a mistake, edit the issue (the check runs again) or leave a comment.`;
+            await github.rest.issues.createComment({ ...context.repo, issue_number, body });
+            if (v.status !== 'new') await github.rest.issues.update({ ...context.repo, issue_number, state: 'closed', state_reason: 'not_planned' });

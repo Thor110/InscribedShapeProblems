@@ -59,11 +59,13 @@
 <div class="meters" id="meterGrid"></div>
 <div class="status" id="status">Ready</div>
 <div class="timing" id="timing"></div>
+<div class="registry" id="registry" style="display:none"></div>
 <div class="note" id="note">Click inside the curve to move the jig centre. A shape is only marked as locked after an independent check of every pairwise vertex distance and every vertex's distance to the curve.</div>
 
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script src="shapes2d.js"></script>
+<script src="registry.js"></script>
 <script>
 'use strict';
 // Verification tolerance: maximum relative error allowed in every pairwise vertex
@@ -380,10 +382,24 @@ function draw() {
   ctx.beginPath(); ctx.arc(src.x, src.y, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
 }
 
+// Registry: when a verified shape is showing, check it against the list of
+// verified results and offer to submit it if it is new.
+let FIT = { s: 1, ox: 0, oy: 0 };
+function showRegistry(P) {
+  const el = $('registry');
+  if (!P) { el.style.display = 'none'; return; }
+  const type = $('shapeType').value, t = insType();
+  Registry.panel(el, {
+    dim: 2, shape: t === 'trianglex' ? 'triangle' : t, aspect: t === 'rectangle' ? +$('param').value : undefined,
+    curve: { type, seed, level: Shapes2D.DEFAULT_LEVEL[type] },
+    vertices: P.map(p => [(p.x - FIT.ox) / FIT.s, (p.y - FIT.oy) / FIT.s]), finder: 'Skeletal Shape Finder',
+  });
+}
 function refresh() {
   if (!locked) computeView();
   draw();
   const v = updateMeters();
+  showRegistry(search ? null : locked ? locked.P : v && v.ok ? view.P : null);
   if (search) return;
   const name = SPEC.name;
   if (locked) setStatus(`Inscribed ${name} verified — max relative error ${fmt(locked.v.err)}`, 'found');
@@ -439,7 +455,9 @@ function newCurve(fresh) {
   stopScan();
   if (fresh) seed = (Math.random() * 2 ** 31) | 0;
   SPEC = buildSpec();
-  buildCurve(Shapes2D.fit(Shapes2D.generate($('shapeType').value, seed), W, H, 24));
+  const unit = Shapes2D.generate($('shapeType').value, seed);
+  FIT = Shapes2D.fitTransform(unit, W, H, 24);
+  buildCurve(Shapes2D.fit(unit, W, H, 24));
   $('rtSl').value = 0; resetJig(); updateURL();
 }
 function onPivotToggle() { stopScan(); locked = null; hitMode = 'far'; refresh(); updateURL(); }
@@ -607,6 +625,7 @@ function* searchGen(s) {
 }
 
 function startScan() {
+  $('registry').style.display = 'none';
   locked = null;
   search = { starts: interiorStarts(), si: 0, ang: 0, jumps: 0, tries: 0, best: null, phase: 1, k: 0, mode: 'far', t0: performance.now(), y: 0 };
   jig.ang0 = jig.ang;
@@ -668,6 +687,7 @@ cv.addEventListener('pointerdown', e => {
 });
 
 // ---------- start-up ----------
+document.head.insertAdjacentHTML('beforeend', `<style>${Registry.PANEL_CSS}</style>`);
 Shapes2D.populateSelect($('shapeType'));
 const params = new URLSearchParams(location.search);
 if ([...$('insType').options].some(o => o.value === params.get('shape'))) $('insType').value = params.get('shape');

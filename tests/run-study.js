@@ -2,24 +2,37 @@
 //   data/study-squares.json, data/study-rectangles.json   (raw results)
 //   images/square-shrinkage.svg, images/rectangle-sweep.svg (charts for the README)
 // and prints Markdown tables.
-// Usage: node tests/run-study.js [squares|rectangles|both|charts] [--quick] [--seed N]
+// Usage: node tests/run-study.js [squares|rectangles|tetra|both|all|charts] [--quick] [--seed N]
+//   both = squares + rectangles; all = squares + rectangles + tetra
 //   charts: rebuild the two SVGs from the saved JSON without re-running anything
 const fs = require('fs'), path = require('path');
 const Study = require('../pages/study.js'), Charts = require('../pages/study-charts.js');
 const ROOT = path.resolve(__dirname, '..'), args = process.argv.slice(2);
 const which = args.find(a => !a.startsWith('--')) || 'both', quick = args.includes('--quick');
 const seed = +(args[args.indexOf('--seed') + 1] || 1) || 1;
-const run = g => { let x, last = ''; while (!(x = g.next()).done) { const v = x.value; const tag = v.kind === 'square' ? `${v.family} level ${v.level}` : `${v.curve} ${v.aspect}:1`; if ((v.levelDone || v.cellDone) && tag !== last) { process.stderr.write(`done: ${tag}\n`); last = tag; } } return x.value; };
+const run = g => { let x, last = ''; while (!(x = g.next()).done) { const v = x.value; const tag = v.kind === 'rect' ? `${v.curve} ${v.aspect}:1` : `${v.family} level ${v.level}`; if ((v.levelDone || v.cellDone) && tag !== last) { process.stderr.write(`done: ${tag}\n`); last = tag; } } return x.value; };
 const f4 = v => (v > 0 ? v.toFixed(3) : '—');
+const tetraChart = families => Charts.tetraChart(families);
 if (which === 'charts') {
   const sq = path.join(ROOT, 'data/study-squares.json'), rc = path.join(ROOT, 'data/study-rectangles.json');
   if (fs.existsSync(sq)) fs.writeFileSync(path.join(ROOT, 'images/square-shrinkage.svg'), Charts.shrinkageChart(JSON.parse(fs.readFileSync(sq)).families));
   if (fs.existsSync(rc)) fs.writeFileSync(path.join(ROOT, 'images/rectangle-sweep.svg'), Charts.sweepChart(JSON.parse(fs.readFileSync(rc))));
+  const te = path.join(ROOT, 'data/study-tetrahedra.json');
+  if (fs.existsSync(te)) fs.writeFileSync(path.join(ROOT, 'images/tetrahedron-shrinkage.svg'), tetraChart(JSON.parse(fs.readFileSync(te)).families));
   console.log('Charts rebuilt from data/.');
   process.exit(0);
 }
 
-if (which === 'squares' || which === 'both') {
+if (which === 'tetra' || which === 'all') {
+  const res = run(Study.tetraStudy({ quick, seed }));
+  fs.writeFileSync(path.join(ROOT, 'data/study-tetrahedra.json'), JSON.stringify(res, null, 1));
+  fs.writeFileSync(path.join(ROOT, 'images/tetrahedron-shrinkage.svg'), tetraChart(res.families));
+  console.log('\n| Family | Level | Tetrahedra carried over | Smallest | Median | Largest | Smallest size ratio vs previous level |');
+  console.log('|---|---|---|---|---|---|---|');
+  for (const f of res.families) for (const l of f.levels)
+    console.log(`| ${f.label} | ${l.level} | ${l.count}/${l.tracked} | ${f4(l.smallest)} | ${f4(l.median)} | ${f4(l.largest)} | ${Number.isFinite(l.minRatio) ? l.minRatio.toFixed(3) : '—'} |`);
+}
+if (which === 'squares' || which === 'both' || which === 'all') {
   const res = run(Study.squareStudy({ quick, seed }));
   fs.writeFileSync(path.join(ROOT, 'data/study-squares.json'), JSON.stringify(res, null, 1));
   fs.writeFileSync(path.join(ROOT, 'images/square-shrinkage.svg'), Charts.shrinkageChart(res.families));
@@ -28,7 +41,7 @@ if (which === 'squares' || which === 'both') {
   for (const f of res.families) for (const l of f.levels)
     console.log(`| ${f.label} | ${l.level} | ${l.vertices.toLocaleString()} | ${l.count} | ${f4(l.largest)} | ${l.seeds ? `${l.continued}/${l.seeds}` : '—'} | ${Number.isFinite(l.minRatio) ? l.minRatio.toFixed(3) : '—'} |`);
 }
-if (which === 'rectangles' || which === 'both') {
+if (which === 'rectangles' || which === 'both' || which === 'all') {
   const res = run(Study.rectangleSweep({ quick, seed }));
   fs.writeFileSync(path.join(ROOT, 'data/study-rectangles.json'), JSON.stringify(res, null, 1));
   fs.writeFileSync(path.join(ROOT, 'images/rectangle-sweep.svg'), Charts.sweepChart(res));

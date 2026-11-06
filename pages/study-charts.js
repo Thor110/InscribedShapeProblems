@@ -28,7 +28,7 @@
   // Line chart: largest verified square (diagonal / curve width) per roughness level, one line per family.
   function shrinkageChart(families, opts = {}) {
     const W = 760, H = 380, m = { l: 64, r: 150, t: 64, b: 52 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
-    const maxL = Math.max(...families.flatMap(f => f.levels.map(l => l.level)));
+    const maxL = Math.max(1, ...families.flatMap(f => f.levels.map(l => l.level)));
     const top = Math.max(1, Math.ceil(Math.max(...families.flatMap(f => f.levels.map(l => l.largest))) * 4) / 4);
     const x = L => m.l + (L / maxL) * pw, y = v => m.t + (1 - v / top) * ph;
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(opts.title || 'Largest inscribed square by roughness level')}">${styleFor(opts.dark)}
@@ -39,7 +39,7 @@
     s += `<line class="axis" x1="${m.l}" x2="${m.l + pw}" y1="${y(0)}" y2="${y(0)}"/>`;
     for (let L = 0; L <= maxL; L += 2) s += `<text x="${x(L)}" y="${y(0) + 18}" text-anchor="middle">${L}</text>`;
     s += `<text x="${m.l + pw / 2}" y="${H - 12}" text-anchor="middle">Roughness level (refinements of the fractal)</text>`;
-    s += `<text transform="translate(16 ${m.t + ph / 2}) rotate(-90)" text-anchor="middle">Largest square (diagonal ÷ width)</text>`;
+    s += `<text transform="translate(16 ${m.t + ph / 2}) rotate(-90)" text-anchor="middle">${esc(opts.yLabel || 'Largest square (diagonal ÷ width)')}</text>`;
     // Direct labels at line ends, nudged apart so they never overlap.
     const ends = families.map((f, i) => { const pts = f.levels.filter(l => l.largest > 0); const last = pts[pts.length - 1]; return { i, f, yy: last ? y(last.largest) : y(0) }; }).sort((a, b) => a.yy - b.yy);
     for (let k = 1; k < ends.length; k++) if (ends[k].yy - ends[k - 1].yy < 16) ends[k].yy = ends[k - 1].yy + 16;
@@ -47,9 +47,9 @@
       const col = `var(--s${i + 1})`, pts = f.levels.filter(l => l.largest > 0);
       if (pts.length) s += `<polyline fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" points="${pts.map(l => `${x(l.level)},${y(l.largest)}`).join(' ')}"/>`;
       for (const l of f.levels) {
-        const tip = l.largest > 0 ? `${f.label}, level ${l.level} (${l.vertices.toLocaleString()} edges): largest square ${l.largest.toFixed(4)} of width; ${l.count} distinct squares verified` : `${f.label}, level ${l.level}: no square verified`;
+        const tip = opts.tip ? opts.tip(f, l) : l.largest > 0 ? `${f.label}, level ${l.level} (${l.vertices.toLocaleString()} edges): largest square ${l.largest.toFixed(4)} of width; ${l.count} distinct squares verified` : `${f.label}, level ${l.level}: no square verified`;
         s += l.largest > 0
-          ? `<circle cx="${x(l.level)}" cy="${y(l.largest)}" r="4" fill="${col}" stroke="var(--surface)" stroke-width="2" data-tip="${esc(tip)}" data-key="sq|${i}|${l.level}" style="cursor:pointer"><title>${esc(tip)}</title></circle>`
+          ? `<circle cx="${x(l.level)}" cy="${y(l.largest)}" r="4" fill="${col}" stroke="var(--surface)" stroke-width="2" data-tip="${esc(tip)}" data-key="${opts.keyPrefix || 'sq'}|${i}|${l.level}" style="cursor:pointer"><title>${esc(tip)}</title></circle>`
           : `<text x="${x(l.level)}" y="${y(0) - 6}" text-anchor="middle" data-tip="${esc(tip)}">✗<title>${esc(tip)}</title></text>`;
       }
     });
@@ -88,6 +88,17 @@
     return s + `</g></svg>`;
   }
 
-  const api = { shrinkageChart, sweepChart };
+  // Tetrahedron study: plots each level's smallest tracked tetrahedron.
+  function tetraChart(families, opts = {}) {
+    return shrinkageChart(families.map(f => ({ ...f, levels: f.levels.map(l => ({ ...l, largest: l.smallest })) })), Object.assign({
+      title: 'Smallest tracked regular tetrahedron as the surfaces get rougher',
+      subtitle: 'Circumradius ÷ mean surface radius; each level adds one octave of fractal detail',
+      yLabel: 'Smallest tetrahedron (circumradius ÷ mean radius)',
+      keyPrefix: 'te',
+      tip: (f, l) => `${f.label}, level ${l.level}: ${l.count} of ${l.tracked} tetrahedra carried over; smallest ${l.smallest.toFixed(4)}, largest ${l.largest.toFixed(4)}`,
+    }, opts));
+  }
+
+  const api = { shrinkageChart, sweepChart, tetraChart };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.StudyCharts = api;
 })(typeof window !== 'undefined' ? window : globalThis);

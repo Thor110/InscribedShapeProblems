@@ -68,11 +68,14 @@
 <div class="meters" id="meterGrid"></div>
 <div class="status" id="status">Ready</div>
 <div class="timing" id="timing"></div>
+<div class="registry" id="registry" style="display:none"></div>
 <div class="note">Drag the view to look around. The jig's rays run from a common centre along the cube diagonals, tetrahedral directions or octahedral axes; a shape is only marked locked after an independent check of every pairwise vertex distance and every vertex's distance to the surface.</div>
 
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script src="surfaces3d.js"></script>
+<script src="inscribed-nd.js"></script>
+<script src="registry.js"></script>
 <script>
 'use strict';
 const TOL = 1e-9;                       // max relative error for a verified shape
@@ -287,9 +290,17 @@ function draw3D() {
   for (const [i, j] of shape().edges) line(v.P[i], v.P[j], v.ok ? '#4a9' : '#ca6', [], 2.5);
 }
 
+// Registry: offer verified shapes that are not recorded yet.
+function showRegistry(v) {
+  const el = $('registry');
+  if (!v || !v.ok) { el.style.display = 'none'; return; }
+  const L = Surfaces3D.LEVELS[surfType];
+  Registry.panel(el, { dim: 3, shape: $('insType').value, curve: L ? { type: surfType, seed, level: L[2] } : { type: surfType, seed }, vertices: v.P.map(p => p.slice()), finder: 'Skeletal Space Finder' });
+}
 function refresh() {
   if (!locked) { cur = verify(jig.c, jig.R); }
   draw3D(); updateMeters(locked || cur);
+  showRegistry(search ? null : locked || cur);
   if (search) return;
   const name = $('insType').value, v = locked || cur;
   if (!v) setStatus('Jig has no valid hits here', '');
@@ -366,6 +377,7 @@ function* searchGen(s) {
   return false;
 }
 function startScan() {
+  $('registry').style.display = 'none';
   locked = null; search = { k: 0, best: null, t0: performance.now() }; search.gen = searchGen(search);
   $('scanBtn').textContent = 'Stop'; $('scanBtn').classList.add('active');
   scanId = requestAnimationFrame(scanStep);
@@ -413,6 +425,7 @@ c3d.addEventListener('pointermove', e => { if (!dragging) return; vY += (e.clien
   seed = q.has('seed') ? (+q.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;
   newSurface(false);
 })();
+document.head.insertAdjacentHTML('beforeend', `<style>${Registry.PANEL_CSS}</style>`);
 </script>
 </body>
 </html>
