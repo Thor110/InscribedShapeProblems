@@ -54,12 +54,15 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1) | ❌ except on symmetric surfaces |
 | Cube | Hypercube | 4, 5 | 16, 32 | −5, −16 | — | **False in general** (Theorem 1) | ✅ only on the sphere and ellipsoid; ❌ elsewhere (closest misses 0.6–9%) |
 | Cube | Icosahedron, dodecahedron | 3 | 12, 20 | −5, −13 | — | **False in general** (Theorem 1) | not tested |
-| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Elementary proof for smooth strictly convex bodies (Theorem 2) | ✅ every surface tested, at any rotation |
-| Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorem 2 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
+| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5) | ✅ every surface tested, at any rotation |
+| Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorems 2–3 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
 
 **Where the three open problems stand.**
 1. **Square:** open. Every test agrees with the conjecture, including the [shrinkage study](#square-shrinkage-study-and-rectangle-sweep): on ever-rougher fractals the largest square converges rather than shrinking. The jig argument is a proof for convex curves (Emch's); for non-convex curves the step "the bisecting centre moves continuously as the jig rotates" fails, and that gap is the open problem.
-2. **Tetrahedron:** solved for smooth surfaces (Gromov), so what remains open is non-smooth (merely continuous) surfaces. The [3D shrinkage study](#square-shrinkage-study-and-rectangle-sweep) finds the tetrahedra converging, not shrinking, as surfaces get rougher. Your centring jig gives an elementary proof in the smooth strictly convex case, in every dimension ([PROOFS.md](PROOFS.md), Theorem 2).
+2. **Tetrahedron:** solved for smooth surfaces (Gromov), so what remains open is non-smooth (merely continuous) surfaces. The [3D shrinkage study](#square-shrinkage-study-and-rectangle-sweep) finds the tetrahedra converging, not shrinking, as surfaces get rougher. The centring jig gives elementary proofs ([PROOFS.md](PROOFS.md)):
+   - **Theorem 2:** every smooth strictly convex body, in every orientation and every dimension.
+   - **Theorem 3:** every convex body, in every *admissible* orientation (one where, from every boundary point, some arm of the jig points strictly into the body). This includes every orientation for any convex body with a smooth boundary, flat pieces allowed.
+   - **Proposition 5:** for non-smooth bodies "every orientation" can genuinely fail. A triangle with an apex sharper than 60° has no inscribed equilateral triangle pointing at its apex, and the 60° bound is sharp (`node tests/check-orientations.js`).
 3. **Cube:** settled in the negative for general surfaces ([PROOFS.md](PROOFS.md), Theorem 1): a cube has 7 degrees of freedom but 8 vertex conditions, so generic surfaces have none. The same holds for every hypercube in dimension ≥ 3.
 
 <details><summary>Full n-dimensional results (seed 1; ✅ verified with its error, ❌ closest miss)</summary>
@@ -125,6 +128,24 @@ A verified rectangle was found in **all 81 cells**: every aspect ratio, on every
 
 Explore it on the [Square Shrinkage & Rectangle Sweep](https://thor110.github.io/InscribedSquareProblem/pages/inscribed-study.html) page: run the studies live, hover for values, and click any point to see the curve and its largest verified shape. Raw results are in `data/study-squares.json`, `data/study-rectangles.json` and `data/study-tetrahedra.json`.
 
+## Counting every square
+
+Why should a square exist at all? For smooth curves, the classical proof (Schnirelmann) is a counting argument. A generic smooth curve has an **odd** number of inscribed squares. As the curve is deformed, squares appear and disappear only in pairs, unless one shrinks to a point. So the count stays odd, and odd is never zero.
+
+**Method.** Every inscribed square is found exhaustively, not just searched for. Two opposite corners $A = \gamma(u)$ and $C = \gamma(v)$ determine the square; it is inscribed exactly when its other two corners lie on the curve, which is two equations in $(u, v)$. These are solved over a fine grid of $(u, v)$ with Newton's method, then re-solved on finer grids until the count stops changing (`pages/square-count.js`). A count is reported only once it has settled. The same is done for 2:1 rectangles.
+
+![Every inscribed square and 2:1 rectangle, counted](images/square-parity.svg)
+
+**Result.** Over 44 curves and roughness levels, the square count settled in 38 cases and was **odd in every one** (from 1 up to 171 squares, the latter on the level-8 Weierstrass blob). The 2:1 rectangle count settled in 34 cases and was **even in every one**. Two other things showed up:
+- **Signed counts cancel.** Counted with orientation signs, a square's two diagonals carry opposite signs, so the signed total is always 0. The parity is the real invariant.
+- **Rectangles come in even numbers.** So counting can never prove that rectangles of a given aspect ratio exist, which is why the rectangular peg problem needed Greene–Lobb's different approach (and why they are still found on every curve in the rectangle sweep).
+
+**Where it stops.** Counts fail to settle in two situations:
+- **Non-generic curves:** the Weierstrass family at level 0 is a circle, with infinitely many squares; the comb has long parallel straight edges.
+- **Rough curves:** small squares appear in the wiggles at every scale. The random coastline has 11 squares at level 7, and from level 8 on the count runs into the hundreds without settling.
+
+In the limiting fractal there are infinitely many squares, so "odd" no longer means anything. That is exactly why the counting proof does not reach the continuous case, and why a proof has to control the *sizes* of squares instead. [PROOFS.md](PROOFS.md) (Lemma 4) states precisely what is needed: if, along ever-finer approximations, there is always an inscribed square that cannot be arbitrarily small, the limit curve has one. The shrinkage study above observes exactly that, for every level it reaches.
+
 ## Submitting results
 
 The finders can contribute to a shared registry of verified results ([`data/registry.json`](data/registry.json), one file per result in [`results/`](results/), browsable on the [Verified Results](https://thor110.github.io/InscribedSquareProblem/pages/registry.html) page).
@@ -158,7 +179,8 @@ A summary of where each part of the project stands, combining the literature wit
 | Claim or argument | Numerical result | Standing |
 |---|---|---|
 | **Degrees-of-freedom count** (corrected table below) | Predicted the outcome of every run: shapes with enough freedom were always found; over-determined shapes were found only on curves or surfaces with a matching symmetry | Strongest general principle here. Standard transversality reasoning; predicts *where* to expect solutions, not a proof that they exist |
-| **Centring forces regularity** for the triangle and tetrahedron jigs (rays whose directions sum to zero, one more ray than the dimension) | Verified on every curve and surface, at every rotation, including pivot-only mode, in dimensions 2–5 | **Proved** for smooth strictly convex bodies in every dimension ([PROOFS.md](PROOFS.md), Theorem 2); the $C^1$ case in general is Gromov's theorem |
+| **Centring forces regularity** for the triangle and tetrahedron jigs (rays whose directions sum to zero, one more ray than the dimension) | Verified on every curve and surface, at every rotation, including pivot-only mode, in dimensions 2–5 | **Proved** for every convex body with a smooth boundary in every orientation, and for every convex body in admissible orientations ([PROOFS.md](PROOFS.md), Theorems 2–3); *every* orientation fails for some non-smooth bodies (Proposition 5); the $C^1$ case in general is Gromov's theorem |
+| **Squares come in odd numbers, rectangles in even** | Odd in all 38 settled square counts, even in all 34 settled 2:1 rectangle counts | Classical for generic smooth curves; it cannot be pushed to rough curves, where squares multiply without bound (see [Counting every square](#counting-every-square)) |
 | **Square: bisect, then rotate 90° (IVT)** | Verified on all 16 curves, including fractals; jumps observed on non-convex curves | Rigorous for convex curves (this is Emch's argument). For non-convex curves the continuity step fails; the general case is the open Toeplitz problem |
 | **Rectangles of a given aspect ratio** | Verified on all 16 curves at aspect 2 and on 6 curves at aspect 4 | The 90° swap does not apply (the chords never trade places), so the IVT step gives nothing. Proved for smooth curves (Greene–Lobb 2021); open for continuous curves |
 | **Triangles of any shape** | Verified on all 16 curves, including an obtuse 20°/30°/130° triangle | Known theorem (Nielsen 1992) |
@@ -436,6 +458,8 @@ node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every su
 node tests/run-nd.js 5           # n-dimensional table (dimensions 2–5)
 node tests/run-study.js all      # square shrinkage + rectangle sweep + tetrahedron study (writes data/ and the SVG charts)
 node tests/run-study.js tetra    # just the 3D tetrahedron study
+node tests/run-study.js parity   # count every square and 2:1 rectangle (parity study)
+node tests/check-orientations.js # which orientations of an inscribed equilateral triangle exist in sharp polygons
 node tests/run-study.js charts   # rebuild the charts from data/ only
 node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
 ```

@@ -99,6 +99,35 @@
     }, opts));
   }
 
-  const api = { shrinkageChart, sweepChart, tetraChart };
+  // Parity table: one row per curve, the number of inscribed squares and of 2:1
+  // rectangles. Odd = solid cell, even = outlined, unresolved = dashed grey "?"
+  // (the exhaustive count did not settle). Parity is never shown by colour alone.
+  function parityChart(rows, opts = {}) {
+    const cw = 90, ch = 22, m = { l: 260, r: 20, t: 84, b: 40 }, groups = [...new Set(rows.map(r => r.group))];
+    const H = m.t + rows.length * ch + groups.length * 22 + m.b, W = m.l + 2 * cw + m.r;
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(opts.title || 'Parity of inscribed squares and rectangles')}">${styleFor(opts.dark)}
+  <g class="viz"><rect width="${W}" height="${H}" fill="var(--surface)" rx="6"/>
+  <text class="title" x="16" y="26">${esc(opts.title || 'Every inscribed square and 2:1 rectangle, counted')}</text>
+  <text x="16" y="45">${esc(opts.subtitle || 'Solid = odd, outlined = even, ? = count did not settle')}</text>
+  <text x="${m.l + cw / 2}" y="${m.t - 10}" text-anchor="middle">Squares</text><text x="${m.l + 1.5 * cw}" y="${m.t - 10}" text-anchor="middle">2:1 rectangles</text>`;
+    let y = m.t;
+    for (const g of groups) {
+      s += `<text class="t1" x="16" y="${y + 14}" style="font-weight:600">${esc(g)}</text>`; y += 22;
+      for (const r of rows.filter(q => q.group === g)) {
+        s += `<text class="t1" x="${m.l - 10}" y="${y + ch / 2 + 4}" text-anchor="end">${esc(r.label.replace(g + ', ', ''))}</text>`;
+        [['squares', 'squaresParity', 'var(--s1)'], ['rect2', 'rect2Parity', 'var(--s2)']].forEach(([k, pk, col], j) => {
+          const par = r[pk], x = m.l + j * cw, tip = `${r.label} (${r.vertices.toLocaleString()} edges): ${par === 'unresolved' ? 'count did not settle' : `${r[k]} ${k === 'squares' ? 'squares' : '2:1 rectangles'} (${par})`}`;
+          const fill = par === 'odd' ? col : 'none', stroke = par === 'unresolved' ? 'var(--axis)' : col, dash = par === 'unresolved' ? ' stroke-dasharray="3 3"' : '';
+          const txt = par === 'unresolved' ? '?' : r[k];
+          s += `<g data-tip="${esc(tip)}"><rect x="${x + 4}" y="${y + 2}" width="${cw - 8}" height="${ch - 4}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.5"${dash}/><text x="${x + cw / 2}" y="${y + ch / 2 + 4}" text-anchor="middle" style="${par === 'odd' ? 'fill:var(--surface);font-weight:600' : ''}">${txt}</text><title>${esc(tip)}</title></g>`;
+        });
+        y += ch;
+      }
+    }
+    s += `<rect x="16" y="${H - 24}" width="14" height="12" rx="2" fill="var(--s1)"/><text x="36" y="${H - 14}">odd</text><rect x="72" y="${H - 24}" width="14" height="12" rx="2" fill="none" stroke="var(--s1)" stroke-width="1.5"/><text x="92" y="${H - 14}">even</text><rect x="134" y="${H - 24}" width="14" height="12" rx="2" fill="none" stroke="var(--axis)" stroke-dasharray="3 3" stroke-width="1.5"/><text x="154" y="${H - 14}">did not settle</text>`;
+    return s + `</g></svg>`;
+  }
+
+  const api = { shrinkageChart, sweepChart, tetraChart, parityChart };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.StudyCharts = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -60,6 +60,16 @@
 <div class="status" id="rcStatus"></div>
 <details><summary>Table view</summary><div id="rcTable"></div></details>
 
+<h2>Counting every square</h2>
+<div class="sub">For a generic smooth curve the number of inscribed squares is odd. Squares are created and destroyed in pairs as a curve deforms, so the count can only change parity if one shrinks to a point. Rectangles of other aspect ratios come in even numbers, so counting cannot prove they exist. Here every square and 2:1 rectangle is found exhaustively, and a count is reported only once a finer search agrees. On rough curves, small squares multiply at every scale and the count stops settling.</div>
+<div class="controls">
+  <label><input type="radio" name="pamode" value="quick" checked> Quick (seed 1, coarse levels)</label>
+  <label><input type="radio" name="pamode" value="full"> Full</label>
+  <button id="paBtn" onclick="toggleParity()">Run</button>
+</div>
+<div class="chart" id="paChart"></div>
+<div class="status" id="paStatus"></div>
+
 <h2>Tetrahedron shrinkage (3D)</h2>
 <div class="sub">Regular tetrahedra on a smooth surface come in a 3-parameter family, one for every orientation. Sixteen of them, at fixed starting orientations, are carried through every level of roughness: each new octave of detail is blended in gradually while each tetrahedron's position and orientation adjust. The chart shows the smallest one still being carried.</div>
 <div class="controls">
@@ -85,11 +95,12 @@
 <script src="study.js"></script>
 <script src="surfaces3d.js"></script>
 <script src="inscribed-nd.js"></script>
+<script src="square-count.js"></script>
 <script src="study-charts.js"></script>
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
-let sqData = null, rcData = null, sqRun = null, rcRun = null, teData = null, teRun = null;
+let sqData = null, rcData = null, sqRun = null, rcRun = null, teData = null, teRun = null, paData = null, paRun = null;
 
 // ---------- rendering ----------
 function renderSquares(families, note) {
@@ -132,6 +143,19 @@ function toggleSquares() {
     $('sqStatus').textContent = `${p.family}, level ${p.level} of ${p.maxLevel}${p.inner ? ` · ${p.inner.found} squares so far` : ''} · ${el} s`;
     if (p.levelDone || performance.now() - lastDraw > 1500) { renderSquares(sqData.families); lastDraw = performance.now(); }
   }, res => { sqRun = null; sqData.families = res.families; renderSquares(res.families, `Done in ${((performance.now() - t0) / 1000).toFixed(0)} s`); $('sqBtn').textContent = 'Run'; $('sqBtn').classList.remove('active'); }, () => sqRun === run);
+}
+function renderParity(rows, note) {
+  $('paChart').innerHTML = rows.length ? StudyCharts.parityChart(rows, { dark: true }) : '';
+  if (note) $('paStatus').textContent = note;
+}
+function toggleParity() {
+  if (paRun) { paRun = null; $('paBtn').textContent = 'Run'; $('paBtn').classList.remove('active'); $('paStatus').textContent = 'Stopped'; return; }
+  const quick = document.querySelector('input[name=pamode]:checked').value === 'quick', t0 = performance.now();
+  const run = paRun = {}; $('paBtn').textContent = 'Stop'; $('paBtn').classList.add('active');
+  stepper(Study.parityStudy({ quick }), p => {
+    $('paStatus').textContent = `${p.label} · ${((performance.now() - t0) / 1000).toFixed(0)} s`;
+    if (p.rowDone) renderParity(p.data);
+  }, res => { paRun = null; paData = res; renderParity(res.rows, `Done in ${((performance.now() - t0) / 1000).toFixed(0)} s`); $('paBtn').textContent = 'Run'; $('paBtn').classList.remove('active'); }, () => paRun === run);
 }
 function renderTetra(families, note) {
   $('teChart').innerHTML = families.length ? StudyCharts.tetraChart(families, { dark: true }) : '';
@@ -220,6 +244,7 @@ document.addEventListener('mousemove', e => {
 
 // ---------- saved results from the full run (when served over http) ----------
 fetch('../data/study-squares.json').then(r => r.json()).then(d => { if (!sqRun) { sqData = Object.assign(d, { seed: d.families[0]?.seed || 1 }); renderSquares(d.families, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('sqStatus').textContent = 'Press Run to start'; });
+fetch('../data/study-parity.json').then(r => r.json()).then(d => { if (!paRun) { paData = d; renderParity(d.rows, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('paStatus').textContent = 'Press Run to start'; });
 fetch('../data/study-tetrahedra.json').then(r => r.json()).then(d => { if (!teRun) { teData = d; renderTetra(d.families, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('teStatus').textContent = 'Press Run to start'; });
 fetch('../data/study-rectangles.json').then(r => r.json()).then(d => { if (!rcRun) { rcData = Object.assign({ seed: 1 }, d); renderRects(d, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('rcStatus').textContent = 'Press Run to start'; });
 </script>

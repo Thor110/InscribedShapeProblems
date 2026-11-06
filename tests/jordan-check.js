@@ -38,6 +38,11 @@ for (const [type, [lo, hi]] of Object.entries(S.LEVELS)) for (let level = lo; le
   const P = S.generate(type, 1, level), e = simple(P);
   if (e) { bad++; console.log(`FAIL ${type} level ${level}: ${e}`); }
 }
-console.log('Checked every roughness level of the fractal families.');
+const Study = require('../pages/study.js');
+for (let level = 0; level <= 5; level++) {
+  const P = Study.jittered(S.generate('koch', 1, level), 0.005, 100 + level), e = simple(P);
+  if (e) { bad++; console.log(`FAIL jittered koch level ${level}: ${e}`); }
+}
+console.log('Checked every roughness level of the fractal families (and the jittered Koch levels).');
 console.log(bad ? `${bad} failures` : 'All curves are simple closed polygons (5 seeds each).');
 process.exit(bad ? 1 : 0);

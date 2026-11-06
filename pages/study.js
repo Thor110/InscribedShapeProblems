@@ -165,6 +165,67 @@
     return { families: out };
   }
 
-  const api = { FAMILIES, SWEEP_CURVES, ASPECTS, QUICK_MAX, TETRA_FAMILIES, squareStudy, rectangleSweep, tetraStudy };
+  // ---------- counting squares: parity ----------
+  // Find EVERY inscribed square and every 2:1 rectangle (pages/square-count.js),
+  // twice: on a base grid and on a grid twice as fine. The count is only reported
+  // when both agree (and every square was found through both of its diagonals);
+  // otherwise it is marked unresolved. Part 1: smooth and polygonal curves.
+  // Part 2: fractal families level by level, until the count stops converging
+  // (on rough curves, small squares multiply at every scale).
+  const PARITY_CURVES = [
+    ...['ellipse', 'random', 'star', 'teardrop', 'polygon', 'triangle'].flatMap(t => [1, 2, 3].map(seed => ({ type: t, seed }))),
+    { type: 'heart', seed: 1 }, { type: 'crescent', seed: 1 }, { type: 'comb', seed: 1 }, { type: 'spiral', seed: 1 },
+  ];
+  const PARITY_FAMILIES = [
+    { family: 'coastline', label: 'Random coastline', levels: [2, 11] },
+    { family: 'weierstrass', label: 'Weierstrass blob', levels: [0, 8] },
+    { family: 'koch', label: 'Koch snowflake (jittered)', levels: [0, 5], jitter: 0.03 },
+  ];
+  function jittered(pts, amount, seed) {
+    const R = Shapes2D.rng(seed * 7717 + 11); let e = 0;
+    for (let i = 0; i < pts.length; i++) e += Math.hypot(pts[(i + 1) % pts.length].x - pts[i].x, pts[(i + 1) % pts.length].y - pts[i].y);
+    const a = (amount * e) / pts.length;
+    return pts.map(p => ({ x: p.x + (R() * 2 - 1) * a, y: p.y + (R() * 2 - 1) * a }));
+  }
+  // Count on grids of increasing resolution (512, 1024, …) until two successive
+  // grids agree and every square was found through both diagonals; give up at
+  // max(4096, 4·edges).
+  function* countBoth(SC, pts, aspect, tag, quick) {
+    const C = SC.prepare(pts), limit = quick ? 2048 : Math.max(4096, 4 * pts.length); let prev = null;
+    for (let M = 512; M <= limit; M *= 2) {
+      const g = SC.enumerateGen(pts, { aspect, prepared: C, M }); let x; while (!(x = g.next()).done) yield tag;
+      const r = x.value;
+      if (prev && prev.count === r.count && Number.isInteger(r.count)) return { count: r.count, parity: r.parity, ok: true, zeros: r.zeros, M };
+      prev = r;
+    }
+    return { count: prev.count, parity: 'unresolved', ok: false, zeros: prev.zeros };
+  }
+  function* parityStudy(opts = {}) {
+    const SC = global.SquareCount || require('./square-count.js'), seed = opts.seed || 1, rows = [];
+    const entry = function* (label, group, pts) {
+      const t0 = Date.now(), tag = { kind: 'parity', label, data: rows };
+      const sq = yield* countBoth(SC, pts, 1, tag, opts.quick), r2 = yield* countBoth(SC, pts, 2, tag, opts.quick), d = sq.zeros.map(z => z.diag);
+      const row = { label, group, vertices: pts.length, squares: sq.count, squaresParity: sq.parity, rect2: r2.count, rect2Parity: r2.parity, largest: d.length ? Math.max(...d) : 0, smallest: d.length ? Math.min(...d) : 0, ms: Date.now() - t0 };
+      rows.push(row); yield { kind: 'parity', label, data: rows, rowDone: true };
+      return row;
+    };
+    const QUICK = ['ellipse', 'random', 'star', 'triangle', 'teardrop'];
+    for (const c of opts.curves || PARITY_CURVES) {
+      if (opts.quick && (c.seed > 1 || !QUICK.includes(c.type))) continue;
+      yield* entry(`${c.type}, seed ${c.seed}`, 'smooth and polygonal curves', Shapes2D.generate(c.type, c.seed));
+    }
+    for (const F of opts.families || PARITY_FAMILIES) {
+      let misses = 0;
+      for (let L = F.levels[0]; L <= F.levels[1] && misses < 2; L++) {
+        const raw = Shapes2D.generate(F.family, seed, L), pts = F.jitter ? jittered(raw, F.jitter, seed * 100 + L) : raw;
+        if (opts.quick && pts.length > 256) break;
+        const row = yield* entry(`${F.label}, level ${L}`, F.label, pts);
+        if (row.squaresParity === 'unresolved') misses++;
+      }
+    }
+    return { rows };
+  }
+
+  const api = { jittered, FAMILIES, SWEEP_CURVES, ASPECTS, QUICK_MAX, TETRA_FAMILIES, PARITY_FAMILIES, PARITY_CURVES, squareStudy, rectangleSweep, tetraStudy, parityStudy };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.Study = api;
 })(typeof window !== 'undefined' ? window : globalThis);
