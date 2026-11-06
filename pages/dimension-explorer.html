@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dimension Explorer</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px;}
+  h1{font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#666;margin-bottom:6px;}
+  .sub{font-size:11px;color:#444;margin-bottom:14px;letter-spacing:0.1em;text-align:center;max-width:760px;line-height:1.6;}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-bottom:12px;font-size:11px;color:#777;}
+  button{background:transparent;border:1px solid #2a2a3a;color:#888;padding:6px 14px;font-family:inherit;font-size:11px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;}
+  button:hover{border-color:#555;color:#ccc;background:#111;}
+  button.active{border-color:#4a9;color:#4a9;}
+  select,input{background:#0d0d14;border:1px solid #2a2a3a;color:#aaa;padding:5px 8px;font-family:inherit;font-size:11px;}
+  .wrap{width:100%;max-width:1100px;overflow-x:auto;}
+  table{border-collapse:collapse;width:100%;font-size:11px;}
+  th,td{border:1px solid #1e1e2a;padding:6px 8px;text-align:center;vertical-align:middle;}
+  th{color:#666;font-weight:normal;letter-spacing:0.08em;text-transform:uppercase;font-size:9px;background:#0d0d14;}
+  td.shape{text-align:left;color:#bbb;white-space:nowrap;}
+  td.lit{text-align:left;color:#666;font-size:10px;min-width:220px;}
+  td.neg{color:#ca6;}
+  .cell{font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .found{color:#4a9;background:rgba(74,169,120,0.06);}
+  .none{color:#c66;background:rgba(200,90,90,0.05);}
+  .run{color:#ca6;}
+  .wait{color:#333;}
+  .status{margin-top:10px;font-size:11px;color:#777;letter-spacing:0.08em;text-transform:uppercase;text-align:center;min-height:16px;}
+  .note{margin-top:12px;font-size:10px;color:#555;max-width:760px;line-height:1.6;text-align:center;}
+  .note a,.nav a{color:#6a8;text-decoration:none;}
+  .nav{margin-top:20px;font-size:10px;}
+  .nav a{color:#444;letter-spacing:0.1em;text-transform:uppercase;}
+</style>
+</head>
+<body>
+<h1>Dimension Explorer</h1>
+<div class="sub">The skeletal jig in any dimension: rays from a pivot along the vertex directions of a regular polytope, solved until every ray has the same length. Each cell runs a fresh search and reports whether an inscribed copy was verified (all pairwise distances and surface distances to 1e-9) or the closest miss.</div>
+
+<div class="controls">
+  <label>Dimensions 2 to <select id="maxDim"><option>3</option><option>4</option><option selected>5</option><option>6</option></select></label>
+  <label>Seed <input id="seed" type="number" value="1" style="width:70px"></label>
+  <button id="runBtn" onclick="toggle()">Run</button>
+</div>
+
+<div class="wrap"><table id="tbl"></table></div>
+<div class="status" id="status">Press Run to fill the table</div>
+<div class="note">
+  <b>Expected dimension</b> = dimension of similarities of ℝⁿ, n(n+1)/2 + 1, minus the number of vertices. When it is negative (amber), a generic surface has no inscribed copy; this is proved in <a href="https://github.com/Thor110/InscribedSquareProblem/blob/main/PROOFS.md">PROOFS.md</a> (Theorem 1), so those cells are expected to fail except on symmetric surfaces such as the sphere and ellipsoid. Hypercube rows in 5D and above have 32+ vertices and take longest.
+</div>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
+
+<script src="inscribed-nd.js"></script>
+<script>
+'use strict';
+const N = InscribedND, $ = id => document.getElementById(id);
+const surfaces = Object.keys(N.SURFACES);
+let jobs = [], running = false, gen = null, cur = -1, t0 = 0, tJob = 0;
+
+function rows(maxDim) {
+  const out = [];
+  for (let n = 2; n <= maxDim; n++) for (const shape of ['simplex', 'cross', 'cube']) if (!(n === 2 && shape === 'cube')) out.push({ n, shape });
+  return out;
+}
+function build() {
+  const maxDim = +$('maxDim').value, R = rows(maxDim);
+  let h = `<tr><th>n</th><th>Shape</th><th>Vertices</th><th>Expected dim.</th>${surfaces.map(s => `<th>${N.SURFACES[s]}</th>`).join('')}<th>Literature</th></tr>`;
+  jobs = [];
+  for (const r of R) {
+    const e = N.expectedDim(r.shape, r.n);
+    h += `<tr><td>${r.n}</td><td class="shape">${N.shapeName(r.shape, r.n)}</td><td>${N.SHAPES[r.shape].vertices(r.n)}</td><td class="${e < 0 ? 'neg' : ''}">${e}</td>`;
+    for (const sf of surfaces) { const id = `c_${r.n}_${r.shape}_${sf}`; h += `<td class="cell wait" id="${id}">·</td>`; jobs.push({ ...r, sf, id, e }); }
+    h += `<td class="lit">${N.literature(r.shape, r.n)}</td></tr>`;
+  }
+  $('tbl').innerHTML = h;
+}
+function toggle() {
+  if (running) { running = false; $('runBtn').textContent = 'Run'; $('runBtn').classList.remove('active'); $('status').textContent = 'Stopped'; return; }
+  build(); running = true; cur = -1; gen = null; t0 = performance.now();
+  $('runBtn').textContent = 'Stop'; $('runBtn').classList.add('active');
+  requestAnimationFrame(step);
+}
+function step() {
+  if (!running) return;
+  const t = performance.now();
+  while (performance.now() - t < 30) {
+    if (!gen) {
+      cur++;
+      if (cur >= jobs.length) { running = false; $('runBtn').textContent = 'Run'; $('runBtn').classList.remove('active'); $('status').textContent = `Done in ${((performance.now() - t0) / 1000).toFixed(0)} s`; return; }
+      const j = jobs[cur], starts = j.e >= 0 ? 8 : j.n <= 3 ? 16 : 4;
+      gen = N.makeProblem(j.shape, j.n, j.sf, +$('seed').value).search({ starts, maxIt: j.e >= 0 ? 200 : 120 });
+      tJob = performance.now(); $(j.id).className = 'cell run'; $(j.id).textContent = '…';
+    }
+    const x = gen.next(), j = jobs[cur];
+    if (x.done) {
+      const r = x.value, el = $(j.id);
+      el.className = 'cell ' + (r.found ? 'found' : 'none');
+      el.textContent = r.found ? `✓ ${r.err.toExponential(0)}` : `✗ ${isFinite(r.err) ? r.err.toExponential(0) : 'n/a'}`;
+      el.title = `${r.found ? 'Verified' : 'Closest miss'}: max relative error ${r.err.toExponential(3)} · ${((performance.now() - tJob) / 1000).toFixed(1)} s`;
+      gen = null;
+    } else if (x.value) {
+      $(j.id).textContent = `… ${x.value.start}/${x.value.starts}`;
+    }
+  }
+  const j = jobs[cur];
+  if (j) $('status').textContent = `n = ${j.n} · ${N.shapeName(j.shape, j.n)} · ${N.SURFACES[j.sf]} · cell ${cur + 1}/${jobs.length} · elapsed ${((performance.now() - t0) / 1000).toFixed(0)} s` + (j.e < 0 ? ' · estimate ∞ (none expected)' : '');
+  requestAnimationFrame(step);
+}
+build();
+</script>
+</body>
+</html>

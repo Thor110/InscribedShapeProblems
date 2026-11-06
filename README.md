@@ -1,7 +1,7 @@
 # Inscribed Problems
 This project presents **conjectures** and a skeletal constraint-based search, a "rattling frame" construction, intended as evidence and motivation for the conjecture that a state of mechanical equilibrium exists for all continuous, non-self-intersecting 2D or 3D volumes (containing a regular triangle, square, regular tetrahedron, and cube).
 
-**Status.** The conjectures for general continuous Jordan curves / surfaces are **open problems** in the literature. The 2D inscribed-square case is the Toeplitz conjecture: open for general continuous curves, and proved for convex curves (Emch), smooth curves (Schnirelmann) and locally monotone curves, which include all polygons (Stromquist 1989). The 3D inscribed-cube case is proved for **centrally symmetric** convex bodies (Hausel–Makai–Szűcs 2000); see the cube section for numerical evidence on the non-symmetric case. I am not aware of a settled result for inscribed regular tetrahedra in general Jordan surfaces. The arguments below are **proposed proofs of conjectures**, not established results. See [References](#references).
+**Status.** The conjectures for general continuous Jordan curves / surfaces are **open problems** in the literature. The 2D inscribed-square case is the Toeplitz conjecture: open for general continuous curves, and proved for convex curves (Emch), smooth curves (Schnirelmann) and locally monotone curves, which include all polygons (Stromquist 1989). The 3D inscribed-tetrahedron case is proved for smooth ($C^1$) surfaces, in every orientation (Gromov 1969), and open for general continuous surfaces. The 3D inscribed-cube conjecture is **false** for generic surfaces, even smooth convex ones ([PROOFS.md](PROOFS.md), Theorem 1); it holds for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000). The arguments below are **proposed proofs of conjectures**, not established results, except where marked. See the [problem map](#problem-map), [PROOFS.md](PROOFS.md) and [References](#references).
 
 This repository also contains some other proposed arguments of mine.
 
@@ -34,6 +34,54 @@ The pairwise-distance check rules out both. Every curve and surface is generated
 
 ![Inscribed Square Viewfinder Demo](images/viewfinder_demo.gif)
 
+## Problem map
+
+The original four problems ask for an inscribed equilateral triangle, square, regular tetrahedron and cube. The triangle is solved. Each of the other three belongs to a family that continues into every dimension, because the skeletal jig works the same way in $\mathbb{R}^n$:
+- **Square:** its jig (two perpendicular chords, bisected and equal) generalises to the **cross-polytope** (octahedron in 3D, 16-cell in 4D), *not* to the hypercube.
+- **Cube:** generalises to the hypercube.
+- **Tetrahedron:** generalises to the regular simplex.
+
+*Expected dimension* is the number of degrees of freedom of a similar copy, $n(n+1)/2+1$, minus the number of vertices. *Found* is from this repository's verified searches: an inscribed copy whose pairwise distances and surface distances all agree to 1e-9. Test curves and surfaces include fractals, non-convex shapes and a strictly convex surface with no symmetry.
+
+| Family | Shape | Dim | Vertices | Expected dim. | Status in the literature | Proved here | Found by the finders |
+|---|---|---|---|---|---|---|---|
+| Triangle | Equilateral / any triangle | 2 | 3 | 1 | **Solved** for all Jordan curves (Meyerson 1980, Nielsen 1992) | — | ✅ every curve tested |
+| **Square** | Square | 2 | 4 | 0 | **Open** for continuous curves. Proved for convex (Emch), smooth (Schnirelmann), locally monotone (Stromquist), small-Lipschitz (Tao) | — | ✅ every curve tested (16 + 3 in the n-D engine) |
+| Square | Rectangle, any aspect ratio | 2 | 4 | 0 | **Open** for continuous curves. Proved for smooth (Greene–Lobb 2021); *some* aspect ratio always exists (Vaughan) | — | ✅ every curve tested |
+| Square | Regular pentagon, hexagon, … | 2 | 5, 6, … | < 0 | Known to fail in general (e.g. ellipses) | Theorem 1 (generic) | ✅ only on curves with matching symmetry |
+| Square | Regular octahedron | 3 | 6 | 1 | **Open.** Proved for smooth convex bodies (Makeev 2001) | — | ✅ every surface tested |
+| Square | Cross-polytope (16-cell, …) | 4, 5 | 8, 10 | 3, 6 | **Open.** Proved for smooth convex bodies when $n$ is an odd prime power (Karasev 2009) | — | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
+| **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1) | ❌ except on symmetric surfaces |
+| Cube | Hypercube | 4, 5 | 16, 32 | −5, −16 | — | **False in general** (Theorem 1) | ✅ only on the sphere and ellipsoid; ❌ elsewhere (closest misses 0.6–9%) |
+| Cube | Icosahedron, dodecahedron | 3 | 12, 20 | −5, −13 | — | **False in general** (Theorem 1) | not tested |
+| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Elementary proof for smooth strictly convex bodies (Theorem 2) | ✅ every surface tested, at any rotation |
+| Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorem 2 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
+
+**Where the three open problems stand.**
+1. **Square:** open. Every test agrees with the conjecture. The jig argument is a proof for convex curves (Emch's); for non-convex curves the step "the bisecting centre moves continuously as the jig rotates" fails, and that gap is the open problem.
+2. **Tetrahedron:** solved for smooth surfaces (Gromov), so what remains open is non-smooth (merely continuous) surfaces. Your centring jig gives an elementary proof in the smooth strictly convex case, in every dimension ([PROOFS.md](PROOFS.md), Theorem 2).
+3. **Cube:** settled in the negative for general surfaces ([PROOFS.md](PROOFS.md), Theorem 1): a cube has 7 degrees of freedom but 8 vertex conditions, so generic surfaces have none. The same holds for every hypercube in dimension ≥ 3.
+
+<details><summary>Full n-dimensional results (seed 1; ✅ verified with its error, ❌ closest miss)</summary>
+
+| n | Shape | Vertices | Expected dimension | Sphere | Ellipsoid | Lopsided egg | Random blob | Fractal blob | Literature |
+|---|---|---|---|---|---|---|---|---|---|
+| 2 | equilateral triangle | 3 | 1 | ✅ 6e-17 | ✅ 3e-16 | ✅ 1e-16 | ✅ 2e-16 | ✅ 1e-16 | Solved for all Jordan curves (Meyerson 1980; Nielsen 1992) |
+| 2 | square | 4 | 0 | ✅ 0e+0 | ✅ 2e-16 | ✅ 3e-16 | ✅ 4e-16 | ✅ 6e-16 | Open for continuous curves; proved for smooth (Schnirelmann), convex (Emch), locally monotone (Stromquist) |
+| 3 | regular tetrahedron | 4 | 3 | ✅ 4e-16 | ✅ 1e-16 | ✅ 5e-16 | ✅ 3e-16 | ✅ 3e-16 | Open for continuous; proved for C¹ spheres in every pose (Gromov 1969) |
+| 3 | regular octahedron | 6 | 1 | ✅ 0e+0 | ✅ 9e-16 | ✅ 8e-16 | ✅ 8e-16 | ✅ 5e-16 | Open; proved for smooth convex bodies (Makeev 2001) |
+| 3 | cube | 8 | -1 | ✅ 0e+0 | ✅ 4e-16 | ❌ 2e-2 | ❌ 9e-3 | ❌ 2e-4 | False for generic smooth surfaces (PROOFS.md); true for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) |
+| 4 | regular 5-cell | 5 | 6 | ✅ 1e-16 | ✅ 5e-16 | ✅ 6e-16 | ✅ 4e-16 | ✅ 4e-16 | Open for continuous; proved for C¹ spheres in every pose (Gromov 1969) |
+| 4 | regular 16-cell | 8 | 3 | ✅ 0e+0 | ✅ 7e-16 | ✅ 1e-15 | ✅ 1e-15 | ✅ 1e-15 | Open; proved for smooth convex bodies when n is an odd prime power (Karasev 2009) |
+| 4 | tesseract | 16 | -5 | ✅ 0e+0 | ✅ 1e-15 | ❌ 1e-2 | ❌ 5e-2 | ❌ 1e-2 | False for generic smooth hypersurfaces (PROOFS.md) |
+| 5 | 5-simplex | 6 | 10 | ✅ 1e-16 | ✅ 6e-16 | ✅ 4e-16 | ✅ 6e-16 | ✅ 6e-16 | Open for continuous; proved for C¹ spheres in every pose (Gromov 1969) |
+| 5 | 5-orthoplex | 10 | 6 | ✅ 0e+0 | ✅ 5e-16 | ✅ 1e-15 | ✅ 2e-15 | ✅ 2e-15 | Open; proved for smooth convex bodies when n is an odd prime power (Karasev 2009) |
+| 5 | 5-cube | 32 | -16 | ✅ 1e-16 | ✅ 1e-14 | ❌ 1e-2 | ❌ 6e-2 | ❌ 6e-2 | False for generic smooth hypersurfaces (PROOFS.md) |
+
+</details>
+
+The [Dimension Explorer](https://thor110.github.io/InscribedSquareProblem/pages/dimension-explorer.html) runs the n-dimensional searches in the browser and fills in this kind of table live; `node tests/run-nd.js 5` does the same from the command line.
+
 ## What holds weight
 
 A summary of where each part of the project stands, combining the literature with this repository's numerical results (228 automated runs; see [Running the checks](#running-the-checks)).
@@ -41,12 +89,12 @@ A summary of where each part of the project stands, combining the literature wit
 | Claim or argument | Numerical result | Standing |
 |---|---|---|
 | **Degrees-of-freedom count** (corrected table below) | Predicted the outcome of every run: shapes with enough freedom were always found; over-determined shapes were found only on curves or surfaces with a matching symmetry | Strongest general principle here. Standard transversality reasoning; predicts *where* to expect solutions, not a proof that they exist |
-| **Centring forces regularity** for the triangle and tetrahedron jigs (rays whose directions sum to zero, one more ray than the dimension) | Verified on every curve and surface, at every rotation, including pivot-only mode | Exact algebra. For convex bodies this gives a short fixed-point proof sketch (the centring field points inward at the boundary). The triangle results are classical (Meyerson, Nielsen) |
+| **Centring forces regularity** for the triangle and tetrahedron jigs (rays whose directions sum to zero, one more ray than the dimension) | Verified on every curve and surface, at every rotation, including pivot-only mode, in dimensions 2–5 | **Proved** for smooth strictly convex bodies in every dimension ([PROOFS.md](PROOFS.md), Theorem 2); the $C^1$ case in general is Gromov's theorem |
 | **Square: bisect, then rotate 90° (IVT)** | Verified on all 16 curves, including fractals; jumps observed on non-convex curves | Rigorous for convex curves (this is Emch's argument). For non-convex curves the continuity step fails; the general case is the open Toeplitz problem |
 | **Rectangles of a given aspect ratio** | Verified on all 16 curves at aspect 2 and on 6 curves at aspect 4 | The 90° swap does not apply (the chords never trade places), so the IVT step gives nothing. Proved for smooth curves (Greene–Lobb 2021); open for continuous curves |
 | **Triangles of any shape** | Verified on all 16 curves, including an obtuse 20°/30°/130° triangle | Known theorem (Nielsen 1992) |
 | **Regular octahedron** | Verified on all 11 surfaces | 1-parameter family expected; related results by Makeev |
-| **Cube** | Verified only on surfaces with central or mirror symmetry; elsewhere the closest cube misses by 5e-5 to 5e-2 | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs). Evidence suggests it fails in general |
+| **Cube** | Verified only on surfaces with central or mirror symmetry; elsewhere the closest cube misses by 5e-5 to 5e-2 | **Disproved** for generic surfaces ([PROOFS.md](PROOFS.md), Theorem 1); true for centrally symmetric convex bodies (Hausel–Makai–Szűcs) |
 | **Regular pentagon / hexagon** (controls) | Verified only on the circle and on curves with 5-fold (pentagon) or 3- or 6-fold (hexagon) symmetry | Known to fail in general: a non-circular ellipse has no inscribed regular pentagon, because five points determine a conic |
 | Expansion paradox | — | Does not hold as stated (see caveat in that section) |
 | Odd perfect number heuristic | — | Refuted as stated: odd abundant numbers such as 945 exist |
@@ -113,6 +161,8 @@ Define a 'Skeletal Jig' consisting of two perpendicular lines intersecting at a 
 [Run the Skeletal Shape Finder (rectangle, aspect 2)](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html?shape=rectangle&p=2)
 
 ## Inscribed Cube Problem
+> **Update: disproved in general.** [PROOFS.md](PROOFS.md) (Theorem 1) shows that generic smooth surfaces, including strictly convex ones, contain no inscribed cube, so the conjecture below is false as stated. It is true for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000). The original argument is kept for reference.
+
 **Conjecture and proposed argument.** The case of **centrally symmetric** convex bodies in $\mathbb{R}^3$ is established (Hausel–Makai–Szűcs 2000). The general case is not, and the numerical evidence below suggests it fails for surfaces without symmetry. This section presents the conjecture together with an informal extension of the 2D skeletal-jig construction to 3D, which should be read as heuristic.
 
 **The 3D Skeletal Jig:** Let $C$ be any closed 3D Jordan surface.
@@ -152,7 +202,9 @@ Define a 3D "Skeletal Jig" representing the four internal diagonals of a cube. T
 [Run the Skeletal Space Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-spacefinder.html)
 
 ## Inscribed Tetrahedron Problem
-**Conjecture and proposed argument.** I am not aware of a settled result for inscribed regular tetrahedra in general continuous Jordan surfaces; this section is therefore a conjecture together with an informal extension of the 2D skeletal-jig construction.
+> **Update.** Gromov (1969) proved that every $C^1$-smooth sphere in $\mathbb{R}^n$ contains an inscribed simplex similar to any given simplex, in every orientation; this includes the regular tetrahedron. [PROOFS.md](PROOFS.md) (Theorem 2) turns the centring argument below into an elementary proof for smooth strictly convex bodies. The case of general continuous surfaces remains open.
+
+**Conjecture and proposed argument.** This section is a conjecture together with an informal extension of the 2D skeletal-jig construction.
 
 **The Tetrahedral Jig:** Let $C$ be any closed 3D Jordan surface.
 
@@ -312,6 +364,8 @@ node tests/run-2d.js 3           # square and triangle search on every curve, 3 
 node tests/run-2d.js 1 rectangle,trianglex,pentagon,hexagon   # the other 2D targets
 node tests/run-3d.js 2           # cube, tetrahedron and octahedron search on every surface
 node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every surface
+node tests/run-nd.js 5           # n-dimensional table (dimensions 2–5)
+node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
 ```
 
 ## References
@@ -326,4 +380,6 @@ node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every su
 - M. D. Meyerson, "Equilateral triangles and continuous curves", *Fund. Math.* 110 (1980).
 - M. J. Nielsen, "Triangles inscribed in simple closed curves", *Geom. Dedicata* 43 (1992).
 - A. Gupta and S. Rubinstein-Salzedo, "Inscribed triangles of Jordan curves in $\mathbb{R}^n$" — [arXiv:2102.03953](https://arxiv.org/abs/2102.03953).
+- M. L. Gromov, "Simplexes inscribed on a hypersurface", *Mat. Zametki* 5 (1969); see also J. Cantarella, E. Denne, J. McCleary, *Forum Math. Sigma* (2022) — [arXiv:2106.12063](https://arxiv.org/abs/2106.12063).
+- V. V. Makeev, inscribed regular octahedra in smooth convex bodies, *Zap. Nauchn. Sem. POMI* 279 (2001); R. N. Karasev, "Inscribing a regular crosspolytope" — [arXiv:0905.2671](https://arxiv.org/abs/0905.2671).
 - T. Hausel, E. Makai and A. Szűcs, "Inscribing cubes and covering by rhombic dodecahedra via equivariant topology", *Mathematika* 47 (2000) — [arXiv:math/9906066](https://arxiv.org/abs/math/9906066).
