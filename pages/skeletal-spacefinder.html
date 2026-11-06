@@ -224,22 +224,8 @@ function updateMeters(v) {
 }
 
 // ---------- drawing ----------
-function project(p) {
-  const x1 = p[0] * Math.cos(vY) + p[2] * Math.sin(vY), z1 = -p[0] * Math.sin(vY) + p[2] * Math.cos(vY);
-  const y2 = p[1] * Math.cos(vP) - z1 * Math.sin(vP), z2 = p[1] * Math.sin(vP) + z1 * Math.cos(vP);
-  const f = 2.5 / (5.5 - z2), k = (H * 0.95) / Rmax;
-  return { x: W / 2 + x1 * f * k, y: H / 2 - y2 * f * k, z: z2 };
-}
-function buildMesh() {
-  mesh = [];
-  for (let i = 0; i <= MR; i++) {
-    const ph = (i / MR) * Math.PI, row = [];
-    for (let j = 0; j < MC; j++) { const th = (j / MC) * 2 * Math.PI, u = [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)], r = rad(u); row.push(u.map(v => v * r)); }
-    mesh.push(row);
-  }
-  Rmax = 0; for (const row of mesh) for (const p of row) Rmax = Math.max(Rmax, Math.hypot(...p));
-  Rmax *= 1.15;
-}
+function project(p) { return Space3D.project(p, vY, vP, W, H, Rmax); }
+function buildMesh() { ({ mesh, Rmax } = Space3D.makeMesh(rad, MR, MC)); }
 function line(a, b, color, dash, width) {
   const p = project(a), q = project(b);
   x3.setLineDash(dash || []); x3.strokeStyle = color; x3.lineWidth = width || 1;
@@ -248,17 +234,7 @@ function line(a, b, color, dash, width) {
 function draw3D() {
   x3.clearRect(0, 0, W, H);
   const alpha = $('alphaSl').value / 100; $('alphaV').textContent = $('alphaSl').value + '%';
-  const faces = [], PV = mesh.map(row => row.map(project));   // each vertex projected once
-  for (let i = 0; i < MR; i++) for (let j = 0; j < MC; j++) {
-    const ps = [PV[i][j], PV[i][(j + 1) % MC], PV[i + 1][(j + 1) % MC], PV[i + 1][j]];
-    faces.push({ ps, z: (ps[0].z + ps[2].z) / 2 });
-  }
-  faces.sort((a, b) => a.z - b.z);
-  for (const f of faces) {
-    x3.beginPath(); f.ps.forEach((p, k) => (k ? x3.lineTo(p.x, p.y) : x3.moveTo(p.x, p.y))); x3.closePath();
-    const sh = Math.floor(120 + f.z * 40); x3.fillStyle = `rgba(${sh - 30},${sh},${sh + 40},${alpha})`; x3.fill();
-    x3.strokeStyle = `rgba(255,255,255,${alpha * 0.3})`; x3.lineWidth = 0.5; x3.stroke();
-  }
+  Space3D.drawMesh(x3, mesh, MR, MC, project, alpha, { shade: 40, red: -30, outline: 0.3 });
   const v = locked || cur; if (!v) return;
   const c = locked ? locked.c : jig.c, R = locked ? locked.R : jig.R;
   for (const u of shape().dirs) { const d = matVec(R, u), L = Rmax * 1.2; line(c, [c[0] + d[0] * L, c[1] + d[1] * L, c[2] + d[2] * L], 'rgba(255,255,255,0.35)', [2, 2]); }

@@ -67,6 +67,7 @@
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script src="shapes2d.js"></script>
+<script src="inscribed-2d.js"></script>
 <script src="registry.js"></script>
 <script>
 'use strict';
@@ -76,7 +77,7 @@ const TOL = 1e-9;
 
 const cv = document.getElementById('canvas'), ctx = cv.getContext('2d');
 let W, H, curve = [], S = 1, seed = 1;
-let AX, AY, EX, EY, CH = [], CHUNK = 32;              // edge arrays + chunk bounding boxes
+let G = null;   // curve geometry (Inscribed2D.geometry: ray hits, all crossings, distance, inside)
 let jig = { x: 0, y: 0, ang: 0 }, view = null, locked = null, search = null, scanId = null;
 // Which boundary crossing each jig arm grips: 'far' = farthest (default),
 // 'near' = first, 'track' = the crossing closest to trackTargets[k]. The last two
@@ -138,82 +139,14 @@ function resize() {
 }
 
 // ---------- curve geometry ----------
-let curveAccel = null;   // chunked point-in-curve test from shapes2d.js (same even-odd rule, far faster)
-function buildCurve(pts) {
-  curve = pts; curveAccel = Shapes2D.accel(pts); const n = pts.length;
-  AX = new Float64Array(n); AY = new Float64Array(n); EX = new Float64Array(n); EY = new Float64Array(n);
-  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  for (let i = 0; i < n; i++) {
-    const a = pts[i], b = pts[(i + 1) % n];
-    AX[i] = a.x; AY[i] = a.y; EX[i] = b.x - a.x; EY[i] = b.y - a.y;
-    x0 = Math.min(x0, a.x); x1 = Math.max(x1, a.x); y0 = Math.min(y0, a.y); y1 = Math.max(y1, a.y);
-  }
-  S = Math.max(x1 - x0, y1 - y0);
-  CH = [];
-  for (let s = 0; s < n; s += CHUNK) {
-    const e = Math.min(n, s + CHUNK); let c = { s, e, x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
-    for (let i = s; i < e; i++) for (const [x, y] of [[AX[i], AY[i]], [AX[i] + EX[i], AY[i] + EY[i]]]) {
-      c.x0 = Math.min(c.x0, x); c.x1 = Math.max(c.x1, x); c.y0 = Math.min(c.y0, y); c.y1 = Math.max(c.y1, y);
-    }
-    const pad = 1e-9 * S; c.x0 -= pad; c.x1 += pad; c.y0 -= pad; c.y1 += pad; CH.push(c);
-  }
-}
-
+// Shared with the studies (pages/inscribed-2d.js); the same arithmetic the page used to
+// carry its own copy of, so searches and the demo GIFs are unchanged.
+function buildCurve(pts) { curve = pts; G = Inscribed2D.geometry(pts); S = G.S; }
 // Farthest (or, in 'near' mode, first) intersection of the ray o + t·d (t > 0) with the curve; -1 if none.
-function rayHit(ox, oy, dx, dy) {
-  const near = hitMode === 'near'; let best = near ? Infinity : -1; const tmin = 1e-9 * S;
-  for (const c of CH) {
-    let t0 = -Infinity, t1 = Infinity;
-    if (dx !== 0) { let a = (c.x0 - ox) / dx, b = (c.x1 - ox) / dx; if (a > b) [a, b] = [b, a]; t0 = a; t1 = b; }
-    else if (ox < c.x0 || ox > c.x1) continue;
-    if (dy !== 0) { let a = (c.y0 - oy) / dy, b = (c.y1 - oy) / dy; if (a > b) [a, b] = [b, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, b); }
-    else if (oy < c.y0 || oy > c.y1) continue;
-    if (t1 < t0 || t1 <= tmin || (near ? t0 >= best : t1 <= best)) continue;
-    for (let i = c.s; i < c.e; i++) {
-      const ex = EX[i], ey = EY[i], den = dx * ey - dy * ex;
-      if (den === 0) continue;
-      const px = AX[i] - ox, py = AY[i] - oy, t = (px * ey - py * ex) / den, u = (px * dy - py * dx) / den;
-      if (t > tmin && u >= 0 && u <= 1 && (near ? t < best : t > best)) best = t;
-    }
-  }
-  return best === Infinity ? -1 : best;
-}
-
-function distToCurve(px, py) {
-  let best = Infinity;
-  for (const c of CH) {
-    const bx = Math.max(c.x0 - px, 0, px - c.x1), by = Math.max(c.y0 - py, 0, py - c.y1);
-    if (bx * bx + by * by >= best * best) continue;
-    for (let i = c.s; i < c.e; i++) {
-      const ex = EX[i], ey = EY[i], L = ex * ex + ey * ey;
-      let u = L ? ((px - AX[i]) * ex + (py - AY[i]) * ey) / L : 0; u = Math.max(0, Math.min(1, u));
-      best = Math.min(best, Math.hypot(AX[i] + u * ex - px, AY[i] + u * ey - py));
-    }
-  }
-  return best;
-}
-
-function insideCurve(px, py) { return curveAccel.inside(px, py); }
-
-// All crossings of the ray with the curve (t > 0), sorted.
-function rayHitsAll(ox, oy, dx, dy) {
-  const out = [], tmin = 1e-9 * S;
-  for (const c of CH) {
-    let t0 = -Infinity, t1 = Infinity;
-    if (dx !== 0) { let a = (c.x0 - ox) / dx, b = (c.x1 - ox) / dx; if (a > b) [a, b] = [b, a]; t0 = a; t1 = b; }
-    else if (ox < c.x0 || ox > c.x1) continue;
-    if (dy !== 0) { let a = (c.y0 - oy) / dy, b = (c.y1 - oy) / dy; if (a > b) [a, b] = [b, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, b); }
-    else if (oy < c.y0 || oy > c.y1) continue;
-    if (t1 < t0 || t1 <= tmin) continue;
-    for (let i = c.s; i < c.e; i++) {
-      const ex = EX[i], ey = EY[i], den = dx * ey - dy * ex;
-      if (den === 0) continue;
-      const px = AX[i] - ox, py = AY[i] - oy, t = (px * ey - py * ex) / den, u = (px * dy - py * dx) / den;
-      if (t > tmin && u >= 0 && u <= 1) out.push(t);
-    }
-  }
-  return out.sort((a, b) => a - b);
-}
+const rayHit = (ox, oy, dx, dy) => G.hit(ox, oy, dx, dy, hitMode === 'near' ? 'near' : 'far');
+const rayHitsAll = (ox, oy, dx, dy) => G.all(ox, oy, dx, dy);   // all crossings (t > 0), sorted
+const distToCurve = (px, py) => G.dist(px, py);
+const insideCurve = (px, py) => G.inside(px, py);
 
 // ---------- the skeletal jig ----------
 // One ray per jig direction from (x,y), rotated by ang; returns the ray lengths or null.
@@ -253,45 +186,9 @@ function squareRes(p) {
 
 // ---------- Newton solver (finite-difference Jacobian, backtracking) ----------
 const norm = f => Math.sqrt(f.reduce((s, v) => s + v * v, 0));
-function solveLinear(A, b) {
-  const n = b.length, M = A.map((row, i) => row.concat([b[i]]));
-  for (let c = 0; c < n; c++) {
-    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
-    if (Math.abs(M[p][c]) < 1e-300) return null;
-    [M[c], M[p]] = [M[p], M[c]];
-    for (let r = c + 1; r < n; r++) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
-  }
-  const x = new Array(n).fill(0);
-  for (let r = n - 1; r >= 0; r--) { let s = M[r][n]; for (let k = r + 1; k < n; k++) s -= M[r][k] * x[k]; x[r] = s / M[r][r]; }
-  return x;
-}
-function newton(F, x0, h, maxIt) {
-  let x = x0.slice(), f = F(x); if (!f) return null; let nf = norm(f);
-  for (let it = 0; it < maxIt && nf > 1e-16; it++) {
-    const J = f.map(() => []);
-    for (let j = 0; j < x.length; j++) {
-      const xp = x.slice(), xm = x.slice(); xp[j] += h[j]; xm[j] -= h[j];
-      const fp = F(xp), fm = F(xm); if (!fp || !fm) return { x, f, nf };
-      for (let i = 0; i < f.length; i++) J[i][j] = (fp[i] - fm[i]) / (2 * h[j]);
-    }
-    let d;
-    if (f.length === x.length) d = solveLinear(J, f.map(v => -v));
-    else { // more equations than unknowns: Gauss–Newton step on the normal equations
-      const n = x.length, A = [], g = [];
-      for (let a = 0; a < n; a++) { A.push([]); g.push(-J.reduce((s, row, i) => s + row[a] * f[i], 0)); for (let b = 0; b < n; b++) A[a].push(J.reduce((s, row) => s + row[a] * row[b], 0)); }
-      const tr = A.reduce((s, r, i) => s + r[i], 0) / n; for (let a = 0; a < n; a++) A[a][a] += 1e-12 * tr;
-      d = solveLinear(A, g);
-    }
-    if (!d) break;
-    let ok = false;
-    for (let a = 1; a > 1e-4; a /= 2) {
-      const xn = x.map((v, i) => v + a * d[i]), fn = F(xn);
-      if (fn && norm(fn) < nf) { x = xn; f = fn; nf = norm(fn); ok = true; break; }
-    }
-    if (!ok) break;
-  }
-  return { x, f, nf };
-}
+// Newton's method with a finite-difference Jacobian and backtracking, and a Gauss–Newton
+// step when there are more equations than unknowns (pages/shapes2d.js).
+const newton = Shapes2D.newton;
 const H2 = () => [1e-7 * S, 1e-7 * S], H3 = () => [1e-7 * S, 1e-7 * S, 1e-8];
 
 // The "rattle": damped iteration moving the centre toward the chord midpoints

@@ -291,7 +291,16 @@
         const fp = F(xp), fm = F(xm); if (!fp || !fm) return { x, f, nf };
         for (let i = 0; i < f.length; i++) J[i][j] = (fp[i] - fm[i]) / (2 * h[j]);
       }
-      const n = f.length, M = J.map((row, i) => row.concat([-f[i]]));
+      // Square systems: Gaussian elimination with partial pivoting. More equations than
+      // unknowns: a Gauss–Newton step on the (slightly regularised) normal equations.
+      let Am = J, bv = f.map(v => -v);
+      if (f.length !== x.length) {
+        const n = x.length, A = [], g = [];
+        for (let a = 0; a < n; a++) { A.push([]); g.push(-J.reduce((s, row, i) => s + row[a] * f[i], 0)); for (let b = 0; b < n; b++) A[a].push(J.reduce((s, row) => s + row[a] * row[b], 0)); }
+        const tr = A.reduce((s, r, i) => s + r[i], 0) / n; for (let a = 0; a < n; a++) A[a][a] += 1e-12 * tr;
+        Am = A; bv = g;
+      }
+      const n = bv.length, M = Am.map((row, i) => row.concat([bv[i]]));
       let singular = false;
       for (let c = 0; c < n && !singular; c++) {
         let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;

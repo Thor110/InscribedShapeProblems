@@ -1,10 +1,10 @@
 {
- "viewfinder_demo": "f459ca7f4d8834e0",
- "square_demonstration": "1763164c71259212",
- "rectangle_demonstration": "3bce8bd4fb4e6577",
- "triangle_demonstration": "2a986b70fc937b7c",
- "cube_demonstration": "cbe09f763cc14ed5",
- "cube_viewfinder_demo": "40ec507c9f800203",
- "certificate_demo": "4bf1e77df0c90524",
- "tetrahedron_demonstration": "32b7cc073f37eac6"
+ "viewfinder_demo": "25561b544e0db25a",
+ "square_demonstration": "03fa111f1375538d",
+ "rectangle_demonstration": "01c2f11c73d2561f",
+ "triangle_demonstration": "fa849604cdd17af6",
+ "cube_demonstration": "221a6ce917e22b10",
+ "cube_viewfinder_demo": "90abd9885d25317e",
+ "certificate_demo": "337fa10e0edbaa46",
+ "tetrahedron_demonstration": "59aa33875c4351db"
 }

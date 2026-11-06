@@ -33,6 +33,41 @@
     return x;
   }
 
-  const api = { matMul, matVec, rotVec, euler, toEuler, randRot, solveSym };
+  // Surface mesh: (MR + 1) rings by MC points of the radial surface p = rad(u)·u.
+  // Rmax (with a 15% margin) sets the drawing scale.
+  function makeMesh(rad, MR, MC) {
+    const mesh = [];
+    for (let i = 0; i <= MR; i++) {
+      const ph = (i / MR) * Math.PI, row = [];
+      for (let j = 0; j < MC; j++) { const th = (j / MC) * 2 * Math.PI, u = [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)], r = rad(u); row.push(u.map(v => v * r)); }
+      mesh.push(row);
+    }
+    let Rmax = 0; for (const row of mesh) for (const p of row) Rmax = Math.max(Rmax, Math.hypot(...p));
+    return { mesh, Rmax: Rmax * 1.15 };
+  }
+  // Perspective view: turn by yaw about the vertical axis, tilt by pitch, project.
+  function project(p, yaw, pitch, W, H, Rmax) {
+    const x1 = p[0] * Math.cos(yaw) + p[2] * Math.sin(yaw), z1 = -p[0] * Math.sin(yaw) + p[2] * Math.cos(yaw);
+    const y2 = p[1] * Math.cos(pitch) - z1 * Math.sin(pitch), z2 = p[1] * Math.sin(pitch) + z1 * Math.cos(pitch);
+    const f = 2.5 / (5.5 - z2), k = (H * 0.95) / Rmax;
+    return { x: W / 2 + x1 * f * k, y: H / 2 - y2 * f * k, z: z2 };
+  }
+  // Draw the mesh faces back to front, each vertex projected once. style sets the shading:
+  // shade per unit depth, the red offset, and the outline opacity (relative to alpha).
+  function drawMesh(ctx, mesh, MR, MC, proj, alpha, style) {
+    const faces = [], PV = mesh.map(row => row.map(proj));
+    for (let i = 0; i < MR; i++) for (let j = 0; j < MC; j++) {
+      const ps = [PV[i][j], PV[i][(j + 1) % MC], PV[i + 1][(j + 1) % MC], PV[i + 1][j]];
+      faces.push({ ps, z: (ps[0].z + ps[2].z) / 2 });
+    }
+    faces.sort((a, b) => a.z - b.z);
+    for (const f of faces) {
+      ctx.beginPath(); f.ps.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath();
+      const sh = Math.floor(120 + f.z * style.shade); ctx.fillStyle = `rgba(${sh + style.red},${sh},${sh + 40},${alpha})`; ctx.fill();
+      ctx.strokeStyle = `rgba(255,255,255,${alpha * style.outline})`; ctx.lineWidth = 0.5; ctx.stroke();
+    }
+  }
+
+  const api = { matMul, matVec, rotVec, euler, toEuler, randRot, solveSym, makeMesh, project, drawMesh };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.Space3D = api;
 })(typeof window !== 'undefined' ? window : globalThis);

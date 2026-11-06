@@ -651,6 +651,7 @@ node tools/record-gifs.js cube               # only demos whose name contains "c
 node tools/record-gifs.js --changed          # only demos whose inputs changed
 node tools/record-gifs.js --stale            # list those demos (needs no npm install)
 node tools/record-gifs.js --mark             # accept the current GIFs as up to date
+python3 tools/compare-gifs.py                # after a refactoring: are the re-recorded GIFs pixel-identical to the committed ones?
 ```
 
 The recorder drives each page with a fixed seed and advances the search one step per frame, so the output is identical from run to run. The demos are listed at the top of `tools/record-gifs.js`.

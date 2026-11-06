@@ -91,8 +91,15 @@ A full review of the site (all 11 pages and their scripts) was done on 2026-11-0
    - the shape finder computes its starting points once per curve;
    - the study's "median" is documented as taking the upper middle value, matching the saved data.
 
-### Still planned
+### Done in the second follow-up round
 
-1. **Shared code, second part.** The Skeletal Shape Finder still has its own copies of the curve geometry (ray hits, distance, Newton's method) that `shapes2d.js` and `inscribed-2d.js` also contain. The two 3D pages still each have their own mesh, drawing and search-loop code. Unifying these needs care, because the GIFs must stay reproducible; a pixel comparison of each re-recorded GIF would confirm it. *Medium.*
-2. **Batched 3D outlines.** Drawing all mesh outlines as one path would be faster, but it changes how overlapping lines blend, so the GIFs would change slightly. *Small; cosmetic.*
-3. **README media.** The demo GIFs total about 15 MB. Video would be far smaller, but GitHub does not autoplay video in a README, so for now the GIFs stay. *Optional.*
+- **Shared code, second part.**
+  - The Skeletal Shape Finder now uses the shared curve geometry (`Inscribed2D.geometry`: ray hits, all crossings, distance, inside) and the shared Newton solver (`Shapes2D.newton`, which gained the page's least-squares step for pentagons and hexagons), removing about 120 duplicated lines.
+  - The two 3D finders share their mesh building, projection and surface drawing in `pages/space3d.js`.
+  - Each change was checked the strict way: all eight demo GIFs re-record pixel-identical (`python3 tools/compare-gifs.py`), and the 2D and 3D test results are identical, including the pentagon and hexagon searches.
+- **Batched 3D outlines: decided against.** Drawing the whole 3D view takes 3.3–4.6 ms per frame, comfortably within a 16 ms frame. Batching the outlines would save perhaps 1–1.5 ms, but it would draw every outline after every face, so the back of the surface would show through the front. That is a visible change for little gain.
+
+### Still open
+
+1. **The remaining duplication in the 3D pages** is the search loop and its UI glue (start, stop, timing display). It differs in small ways between the two pages and is cheap to keep, so it stays unless one of them needs to change. *Low value.*
+2. **README media.** The demo GIFs total about 15 MB. Video would be far smaller, but GitHub does not autoplay video in a README, so for now the GIFs stay. *Optional.*
