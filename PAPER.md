@@ -114,7 +114,7 @@ Let $E$ be the ellipse with semi-axes $1$ and $b = 0.6$, with polar radius $r_E(
 
    The signed distance to the ellipse is enclosed exactly: the closest-point equation's root is bracketed and the bracket verified in intervals. No trigonometric functions are used.
 
-The computation takes under a second (`node tools/certify-square.js`), and runs live on the companion page. An independent re-implementation in Python, using the interval arithmetic of the mpmath library and sharing only the box definition, confirms it (`tools/verify_certificates.py`). Only IEEE 754 arithmetic ($+, -, \times, \div, \sqrt{\ }$, each correctly rounded) and about 300 lines of code are trusted.
+The computation takes under a second (`node tools/certify-square.js`), and runs live on the companion page. An independent re-implementation in Python, using the interval arithmetic of the mpmath library and sharing only the box definition, confirms it (`tools/verify_certificates.py`), as does a third in C with the Arb library (`tools/verify-certificates.c`). Only IEEE 754 arithmetic ($+, -, \times, \div, \sqrt{\ }$, each correctly rounded) and about 300 lines of code are trusted.
 
 > **Corollary 6.1.** Let $W(\theta) = (1 - 2^{-1/2})\sum_{k \ge 0} 2^{-k/2}\cos(2^k(\theta - 0.3))$. The curve $\rho = r_E + 0.15\,W$ has an inscribed square, and so does $r_E + 0.15 f$ for every continuous $|f| \le 1$.
 

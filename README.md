@@ -178,11 +178,17 @@ Turning the tetrahedron by a small angle acts like one more small perturbation, 
 node tools/certify-tetra.js      # seconds for the theorem, about a minute with the orientation table
 ```
 
-**Checked twice, independently.** `tools/verify_certificates.py` redoes both certificates from scratch in Python, with the interval arithmetic of the mpmath library instead of this repository's own code. It confirms both theorems in full; for the tetrahedron it makes exactly the same 997,168 cell decisions as the JavaScript.
+**Checked three times, independently.** Two further programs redo both certificates from scratch, each sharing only the box definitions:
+- `tools/verify_certificates.py`, in Python with the interval arithmetic of the mpmath library;
+- `tools/verify-certificates.c`, in C with the ball arithmetic of Arb (part of FLINT).
+
+Both confirm both theorems in full, and for the tetrahedron all three implementations make exactly the same 997,168 cell decisions. The C checker takes about 4 seconds.
 
 ```bash
 pip install mpmath
 python3 tools/verify_certificates.py   # about 8 minutes on 4 cores
+sudo apt install libflint-dev          # FLINT 3, which includes Arb
+gcc -O2 -fopenmp -o verify tools/verify-certificates.c -lflint -lm && ./verify   # about 4 seconds
 ```
 
 ## Preprint
@@ -532,6 +538,26 @@ This reframes the question. A miss of 0 needs $D(N) = 2N$, which means every pri
 
 This is a measurement, not a proof. The known bound $N > 10^{1500}$ for an odd perfect number is far beyond any search. What it shows is the shape of the problem: even numbers land on the mark whenever the spine meets a Mersenne prime, while odd numbers come ever closer in relative terms but, in the range searched, miss by whole steps. Raw data are in `data/nearest-misses.json`, and the viewer's fourth panel shows the chart and the decade-by-decade results.
 
+**Machine-checked in Lean.** [`lean/PerfectNumbers.lean`](lean/PerfectNumbers.lean) proves the main results of this section in Lean 4 with the Mathlib library, so every step is checked by computer:
+
+| In the file | Result |
+|---|---|
+| `geom_mod_two`, `geom_one`, `geom_neg_one`, `geom_euler` | The rules for one prime power: $\sigma(p^a) = 1 + p + \dots + p^a$ mod 2, mod $r$ when $p \equiv \pm 1$, and Euler's mod-4 step |
+| `sigma_pow_dvd` | Each prime-power factor $\sigma(p^a)$ divides $\sigma(N)$ |
+| `euler_form` | Result 2, Euler's form: an odd perfect number has exactly one prime $p$ to an odd power $a$, with $p \equiv a \equiv 1 \pmod 4$ |
+| `steps_of_six` | Result 3, steps of 6 (with "not a square" stated as "some prime to an odd power", which is the same thing) |
+| `spine_miss`, `perfect_mul_prime` | Results 4 and 6: the spine rule, and perfect times a prime |
+| `nine_or_twelve` | Result 8: an odd perfect number is divisible by 9, or its special prime is $1 \bmod 12$ |
+| `forced_step`, `forced_step_le` | Result 9: $\gcd(\sigma(N), 2N)$ divides the miss, so a nonzero miss is at least that big |
+
+Lean reports that each theorem uses only its three standard axioms and nothing is left unproved. Results 1, 5 and 7 are not formalised yet; they are short and would follow the same pattern.
+
+```bash
+cd lean
+lake exe cache get    # downloads prebuilt Mathlib (skip if offline; lake build then compiles it, about 30 minutes)
+lake build            # checks every proof; prints the axioms each theorem depends on
+```
+
 **What is known.** Computer-assisted work has pushed the constraints very far:
 - $N > 10^{1500}$, with at least 101 prime factors counted with multiplicity (Ochem–Rao 2012);
 - at least 10 distinct prime factors (Nielsen 2015);
@@ -661,6 +687,8 @@ node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2
 node tools/certify-square.js     # the computer-assisted proof of Theorem 6 (exit code 0 = valid)
 node tools/certify-tetra.js      # the computer-assisted proof of Theorem 7 (add --theorem to skip the orientation table)
 python3 tools/verify_certificates.py   # independent check of both certificates in Python/mpmath (pip install mpmath)
+gcc -O2 -fopenmp -o verify tools/verify-certificates.c -lflint -lm && ./verify   # the same in C with Arb (apt install libflint-dev)
+(cd lean && lake build)            # machine-checked Lean proofs of the odd perfect number results (needs elan)
 node tools/nearest-misses.js     # every number up to 10^11: nearest misses to perfection, ~20 min (add e.g. 1e9 for a quick run)
 ```
 
