@@ -1,7 +1,7 @@
 # Inscribed Problems
 This project presents **conjectures** and a skeletal constraint-based search, a "rattling frame" construction, intended as evidence and motivation for the conjecture that a state of mechanical equilibrium exists for all continuous, non-self-intersecting 2D or 3D volumes (containing a regular triangle, square, regular tetrahedron, and cube).
 
-**Status.** The conjectures for general continuous Jordan curves / surfaces are **open problems** in the literature. The 2D inscribed-square case is the Toeplitz conjecture (open for general continuous curves; solved for smooth and locally monotone curves). The 3D inscribed-cube case is solved for convex bodies (Makeev 2009, Hausel–Makai–Szűcs 2000) and, as far as I know, open for general continuous Jordan surfaces. I am not aware of a settled result for inscribed regular tetrahedra in general Jordan surfaces. The arguments below are **proposed proofs of conjectures**, not established results.
+**Status.** The conjectures for general continuous Jordan curves / surfaces are **open problems** in the literature. The 2D inscribed-square case is the Toeplitz conjecture: open for general continuous curves, and proved for convex curves (Emch), smooth curves (Schnirelmann) and locally monotone curves, which include all polygons (Stromquist 1989). The 3D inscribed-cube case is proved for **centrally symmetric** convex bodies (Hausel–Makai–Szűcs 2000); see the cube section for numerical evidence on the non-symmetric case. I am not aware of a settled result for inscribed regular tetrahedra in general Jordan surfaces. The arguments below are **proposed proofs of conjectures**, not established results. See [References](#references).
 
 This repository also contains some other proposed arguments of mine.
 
@@ -11,20 +11,47 @@ You can view the **Inscribed Square & Cube Viewfinder** in action here:
 
 Note that the viewfinders are merely demonstration while the skeletal finders more accurately showcase the method.
 
+### What the finders do
+
+- **Skeletal Shape Finder (2D).** A jig of rays from a common centre $I$, at 90° for the square and 120° for the triangle, grips the curve. The centre is "rattled" toward the chord midpoints, then Newton's method solves the equilibrium to machine precision. For the square the jig sweeps its rotation looking for the sign change in the diagonal difference (the IVT step). If that sweep fails, it tries a nearest-hit jig, then random restarts, then a *tracking* jig whose arms follow a chosen crossing. The tracking jig is needed on curves that are not star-shaped, where a square's vertex can be a middle crossing of a ray.
+- **Skeletal Space Finder (3D).** The same idea with rays along the cube diagonals, the tetrahedral directions or the octahedral axes. A Levenberg–Marquardt solver adjusts the centre (3 DoF) and rotation (3 DoF) to make every ray length equal. On fractal surfaces it solves a smoothed surface first and adds detail one octave at a time.
+- **Curves:** smooth blobs, star, ellipse, polygons, a true crescent, a comb, a spiral (not star-shaped from any point), and the fractals: Koch snowflake (12,288 edges), hexagonal anti-snowflake, Minkowski island (16,384 edges), Weierstrass blob and a random fractal coastline. `tests/jordan-check.js` confirms each is a simple closed curve.
+- **Surfaces:** sphere, ellipsoid, a lopsided egg (strictly convex, no symmetry), random blob, bumpy sphere, 3D star, heart-like, ring-like, cube-like, and two fractal surfaces. All are seam-free.
+
+### Verification and precision
+
+A shape is marked **locked / verified** only after an independent check. That check compares **every pairwise vertex distance** with the ideal shape, and **every vertex's distance to the curve or surface**, against a relative tolerance of $10^{-9}$. Typical verified results are accurate to about $10^{-16}$, the limit of double-precision arithmetic.
+
+Earlier versions could report a lock on the wrong shape:
+
+- The 2D finder forced "locked" after a sign change even when the sign change came from a jump in the chord function (non-convex curves).
+- The 3D finder checked only the 4 long diagonals and 12 edges of the cube. Two nested regular tetrahedra of *different* sizes pass that test without being a cube. Its tolerance was also about 0.5%.
+
+The pairwise-distance check rules out both. Every curve and surface is generated from a seed, and the URL records it (`?curve=koch&seed=42`), so any result can be reproduced.
+
 ![Inscribed Square Viewfinder Demo](images/viewfinder_demo.gif)
 
 ## Inscribed Triangle Problem
 
-This problem is already solved by the authors of this paper : https://www.researchgate.net/publication/349125923_Inscribed_triangles_of_Jordan_curves_in_mathbbRn
+This problem is already solved. Every Jordan curve inscribes equilateral triangles (Meyerson 1980), and in fact triangles similar to any given triangle (Nielsen 1992). Gupta and Rubinstein-Salzedo extend Nielsen's result to Jordan curves in $\mathbb{R}^n$ for a restricted set of triangles ([arXiv:2102.03953](https://arxiv.org/abs/2102.03953)).
 
 I have presented a demonstration using my method anyway which can be seen here.
+
+In the jig the three rays are 120° apart. If $I$ is the centroid of the three hit points, the three ray lengths must be equal, so the triangle is equilateral **at every rotation**. Inscribed equilateral triangles therefore come in a 1-parameter family. This matches the degrees-of-freedom count below and the literature above.
 
 ![Inscribed Triangle Shapefinder Demo](images/triangle_demonstration.gif)
 
 [Run the Skeletal Shape Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html?shape=triangle)
 
 ## Inscribed Square Problem
-**Conjecture and proposed argument.** The general continuous-Jordan-curve case (the Toeplitz conjecture) is open; this section presents the conjecture, an informal argument, and a simulation illustrating it. Convex and smooth-curve cases have been established in the literature (Stromquist 1989 for locally monotone curves; Greene–Lobb 2021 for smooth curves).
+**Conjecture and proposed argument.** The general continuous-Jordan-curve case (the Toeplitz conjecture) is open; this section presents the conjecture, an informal argument, and a simulation illustrating it. Known cases:
+
+- convex curves: Emch 1913/1916;
+- smooth curves: Schnirelmann 1929/1944;
+- locally monotone curves, including every polygon: Stromquist 1989;
+- curves made of two Lipschitz graphs with constant below 1: Tao 2017.
+
+Greene and Lobb (2021) proved the stronger statement that smooth Jordan curves inscribe rectangles of **every** aspect ratio. Matschke's 2014 survey covers the history.
 
 **The Skeletal Frame:** Let $C$ be any Jordan curve.
 
@@ -32,13 +59,13 @@ Define a 'Skeletal Jig' consisting of two perpendicular lines intersecting at a 
 
 **The Points of Intersection:** As $I$ moves within $C$ and the jig rotates ($\theta$), the lines intersect $C$ at four points ($E, F, G, H$), forming two perpendicular chords.
 
-**The Continuity of Chords:** Because $C$ is a continuous Jordan curve, the lengths of these chords and their distances from $I$ vary continuously with respect to $I(x, y)$ and $\theta$.
+**The Continuity of Chords:** Because $C$ is a continuous Jordan curve, the lengths of these chords and their distances from $I$ vary continuously with respect to $I(x, y)$ and $\theta$. *(This holds for convex curves. For non-convex curves a ray can cross $C$ several times, and the gripped crossing can jump as $I$ or $\theta$ moves. The Skeletal Shape Finder counts these jumps as "discontinuities".)*
 
 **The First Equilibrium (Length):** At any fixed point $I$, rotating the jig $90^\circ$ swaps the two chords. If Chord 1 was longer than Chord 2, it is now shorter. By the Intermediate Value Theorem (IVT), there must exist an angle $\theta$ where the two perpendicular chords are equal in length.
 
 **The Second Equilibrium (Bisection):** As $I$ is moved through the interior of $C$, the offset of these equal-length chords (the distance from $I$ to the boundary) also varies continuously. There exists a position for $I$ where the midpoint of the jig aligns with the midpoints of both chords.
 
-> **Open step.** The two equilibria above are coupled — equal-length chords form a 1-parameter family as $I$ moves, and the bisection condition picks one member. Closing the argument requires a topological fixed-point / equivariant argument (e.g. Borsuk–Ulam on the space of oriented rectangles inscribed in $C$ with a $\mathbb{Z}/2$ antipodal action, mapping to $\mathbb{R}^2$ via the side-length differences). I do not carry this out in full generality here.
+> **Open step.** For each angle $\theta$, the bisection condition (2 equations) fixes the centre $I(\theta)$, and the chords then form a rhombus. Turning $\theta$ by 90° swaps the diagonals, so the IVT gives a square **provided $I(\theta)$ exists and varies continuously**. For convex curves it does, and the argument then closely follows Emch's proof for convex curves. For non-convex curves $I(\theta)$ can split into branches or jump, and that continuity is exactly the step that is not established. In the limit of very rough curves, squares can also shrink to a point. Closing the argument in general needs a topological (degree / equivariant) argument that I do not carry out here.
 
 **The Result:** When the chords are perpendicular, equal in length, and bisected at $I$, the vertices $E, F, G, H$ define an inscribed square.
 
@@ -49,7 +76,7 @@ Define a 'Skeletal Jig' consisting of two perpendicular lines intersecting at a 
 [Run the Skeletal Shape Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html)
 
 ## Inscribed Cube Problem
-**Conjecture and proposed argument.** The case of convex bodies in $\mathbb{R}^3$ is established (Makeev 2009; Hausel–Makai–Szűcs 2000). The general continuous-Jordan-surface case is, as far as I am aware, open, and this section presents the conjecture together with an informal extension of the 2D skeletal-jig construction to 3D. Standard test-map / Borsuk–Ulam arguments face known obstructions in dimension 3 for some related polytopes (crosspolytopes), and I have not checked whether these obstructions also defeat the cube case; the argument below should therefore be read as heuristic.
+**Conjecture and proposed argument.** The case of **centrally symmetric** convex bodies in $\mathbb{R}^3$ is established (Hausel–Makai–Szűcs 2000). The general case is not, and the numerical evidence below suggests it fails for surfaces without symmetry. This section presents the conjecture together with an informal extension of the 2D skeletal-jig construction to 3D, which should be read as heuristic.
 
 **The 3D Skeletal Jig:** Let $C$ be any closed 3D Jordan surface.
 
@@ -66,6 +93,22 @@ Define a 3D "Skeletal Jig" representing the four internal diagonals of a cube. T
 **The Result:** When the four chords are equal in length, and bisected at $I$, the eight points of intersection define the vertices of an inscribed cube.
 
 **Conjecture.** Every closed 3D Jordan surface contains an inscribed cube.
+
+> **Numerical evidence against the general case.** A cube has 7 degrees of freedom (centre 3, rotation 3, size 1). Placing all 8 vertices on a surface is 8 conditions. In jig terms, 6 DoF must satisfy 7 equalities among 8 ray lengths. With more conditions than freedoms, a *generic* surface is not expected to contain any inscribed cube. Symmetry removes conditions, which is why centrally symmetric (or mirror-symmetric) surfaces do contain cubes.
+>
+> Skeletal Space Finder, cube mode, 2 seeds per surface; the error is the best candidate's relative error:
+>
+> | Surface | Symmetry | Result |
+> |---|---|---|
+> | Sphere, ellipsoid, ring-like, cube-like | central | cube verified, error ≈ 1e-16 |
+> | Heart-like | mirror plane | cube verified, error ≈ 1e-15 |
+> | Bumpy sphere | none | none; best 2.6e-4 and 8.2e-4 |
+> | Random blob | none | none; best 1.9e-2 and 5.4e-2 |
+> | 3D star | none | none; best 4.0e-2 and 1.8e-2 |
+> | Lopsided egg (strictly convex) | none | none; best 2.35e-2 |
+> | Fractal blob / fractal ridged | none | none; best 5.2e-4, 1.0e-3 / 2.6e-4, 7.6e-4 |
+>
+> On the same surfaces, regular tetrahedra and octahedra verify to about 1e-16 every time. The lopsided egg was cross-checked with an independent optimiser: 400 random starts over all cubes in space found no vertex closer than 2.8% (relative to the cube's size) to the surface. As the egg's asymmetry parameter $\varepsilon$ shrinks, the best cube's error shrinks in proportion (about $0.16\,\varepsilon$). Failing to find a cube numerically is not a proof that none exists, but these results are consistent with the dimension count.
 
 ![Inscribed Cube Spacefinder Demo](images/cube_demonstration.gif)
 
@@ -90,6 +133,12 @@ Define a 'Skeletal Jig' consisting of four rays extending from a common midpoint
 
 **Conjecture.** Every closed 3D Jordan surface contains an inscribed regular tetrahedron.
 
+**Note.** If $I$ is the centroid of the four hit points, the four ray lengths must be equal, so the jig is a regular tetrahedron at every rotation. The rotation does not need searching. Regular tetrahedra come in a 3-parameter family (see the count below), and the Skeletal Space Finder verifies one on every test surface, including the fractals.
+
+## Inscribed Octahedron (added for comparison)
+
+The Skeletal Space Finder also has an octahedron mode: six rays along $\pm x, \pm y, \pm z$. A regular octahedron has 7 DoF and 6 vertex conditions, so a 1-parameter family is expected. The finder verifies one on every test surface. Makeev has related results on regular octahedra inscribed in smooth convex bodies ([Zap. Nauchn. Sem. POMI](https://m.mathnet.ru/eng/znsl1460)).
+
 ![Inscribed Tetrahedron Spacefinder Demo](images/tetrahedron_demonstration.gif)
 
 [Run the Skeletal Space Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-spacefinder.html?shape=tetrahedron)
@@ -100,27 +149,19 @@ A hand-wavy informal count of why one might expect the conjectures above to be t
 
 To motivate an equilibrium state, the available Degrees of Freedom (DoF) should meet or exceed the number of equality constraints required to make the shape regular.
 
-**2D Space** (3 DoF: $X, Y, \theta$)
+A regular shape in the plane has 4 DoF (centre 2, rotation 1, size 1); in space it has 7 (centre 3, rotation 3, size 1). Each vertex that must lie on the curve or surface is one condition. Equivalently, the jig has 3 DoF in 2D and 6 in 3D (the size is set by the ray lengths), and it needs all its ray lengths equal.
 
-**Inscribed Square:** Uses 2 DoF to center the midpoint $I(x,y)$ (Bisection) and 1 DoF to rotate $\theta$ until the chords are equal.
+| Shape | DoF | Conditions | Expected solutions |
+|---|---|---|---|
+| Square (2D) | 4 | 4 vertices | isolated squares (dimension 0) |
+| Equilateral triangle (2D) | 4 | 3 vertices | 1-parameter family |
+| Cube (3D) | 7 | 8 vertices | **none for a generic surface** (dimension −1) |
+| Regular tetrahedron (3D) | 7 | 4 vertices | 3-parameter family |
+| Regular octahedron (3D) | 7 | 6 vertices | 1-parameter family |
 
-- **Total:** 3 Constraints.
+(An earlier version of this section counted the cube's "6 face-centres", which are the vertices of an octahedron, not a cube, and left out the size parameter.)
 
-**Inscribed Triangle:** Uses 2 DoF for the midpoint and 1 DoF for rotation to equalize the 3 sides.
-
-- **Total:** 3 Constraints.
-
-**3D Space** (6 DoF: $X, Y, Z$ & Roll, Pitch, Yaw)
-
-**Inscribed Cube:** Uses 3 DoF to center the midpoint $I(x,y,z)$ (Bisection) and 3 DoF of rotation to equalize the 3 perpendicular axes (6 face-centers).
-
-- **Total:** 6 Constraints.
-
-**Inscribed Tetrahedron:** Uses 3 DoF for the midpoint and 3 DoF for rotation to equalize the 4 rays.
-
-- **Total:** 6 Constraints (with only 4 points of contact, this is a "Loose" mechanical certainty).
-
-**Heuristic Conclusion:** Since the available DoF ($3$ in 2D, $6$ in 3D) meets or exceeds the required points of contact, these shapes are a plausible mechanical feature of any continuous volume. This is a motivation, not a proof.
+**Heuristic Conclusion:** For the square, triangle, tetrahedron and octahedron, the DoF meet or exceed the conditions, so these shapes are a plausible feature of any continuous closed curve or surface. For the cube they do not, which matches the numerical evidence above. This is a motivation, not a proof.
 
 ## Expansion Paradox (Heuristic)
 
@@ -133,6 +174,8 @@ At a scale near zero, the shape is entirely contained. At a scale larger than th
 Because the boundary is continuous and non-self-intersecting, the transition from 'Interior' to 'Exterior' requires an intermediate state of mechanical equilibrium where all vertices (or rays) intersect the boundary simultaneously.
 
 Because the Jordan boundary forbids self-intersection, this intersection cannot occur at a scale of zero, guaranteeing a non-degenerate inscribed shape.
+
+> **Caveat.** With the centre and rotation held fixed, the vertices reach the boundary at *different* scales, not simultaneously. Making them arrive together means adjusting the centre and rotation, which is the original problem. Ruling out the zero-scale limit is also the known hard part of the Toeplitz problem.
 
 ## Perfect Odd Numbers... (Heuristic / Sketch)
 
@@ -201,7 +244,32 @@ In a perfect even number, the $N/2$ anchor does half the work. In an odd number,
 ## Another explanation
 For any odd number N, the sum of its proper divisors is structurally bounded below N because without N/2 in the divisor set, the largest available divisor is at most N/p where p is the smallest odd prime factor of N, which is at minimum 3. The remaining divisors are all smaller fractions of N derived from combinations of its prime factors, and their collective sum cannot bridge the gap to N.
 
+> **Correction.** The claim that the divisors of an odd number "cannot bridge the gap" is false in general: odd **abundant** numbers exist. The smallest is $945$, whose proper divisors sum to $975 > 945$, and there are infinitely many. The Number Stability viewer's $N = 945$ button shows this. So the sum can overshoot $N$, and the open question is whether it can ever land **exactly** on $N$. Separately, even perfect numbers $2^{p-1}(2^p-1)$ have only the binary chain $N/2, N/4, \dots, N/2^{p-1}$; for example $28/8$ is not an integer.
+
 ## Visualisation of Structural Instability for Odd Numbers (Heuristic)
 This is another visualisation I have added to the interactive demonstrations. The visual is illustrative of the heuristic in the previous sections; it is not a proof.
 
 [Run the Number Stability Viewer](https://thor110.github.io/InscribedSquareProblem/pages/number-stability.html)
+
+## Running the checks
+
+The pages are plain HTML and need no build step. The scripts in `tests/` use Node.js and Playwright:
+
+```bash
+node tests/jordan-check.js       # every 2D curve is a simple closed polygon
+node tests/run-2d.js 3           # square and triangle search on every curve, 3 seeds
+node tests/run-3d.js 2           # cube, tetrahedron and octahedron search on every surface
+```
+
+## References
+
+- A. Emch, "Some properties of closed convex curves in a plane", *Amer. J. Math.* 35 (1913); "On some properties of the medians of closed continuous curves formed by analytic arcs", *Amer. J. Math.* 38 (1916).
+- L. G. Schnirelmann, "On certain geometrical properties of closed curves" (1929; expanded version in *Uspekhi Mat. Nauk* 10, 1944).
+- W. Stromquist, "Inscribed squares and square-like quadrilaterals in closed curves", *Mathematika* 36 (1989).
+- T. Tao, "An integration approach to the Toeplitz square peg problem", *Forum Math. Sigma* 5 (2017) — [arXiv:1611.07441](https://arxiv.org/abs/1611.07441).
+- J. E. Greene and A. Lobb, "The rectangular peg problem", *Annals of Math.* 194 (2021).
+- B. Matschke, "A survey on the square peg problem", *Notices AMS* 61(4) (2014).
+- M. D. Meyerson, "Equilateral triangles and continuous curves", *Fund. Math.* 110 (1980).
+- M. J. Nielsen, "Triangles inscribed in simple closed curves", *Geom. Dedicata* 43 (1992).
+- A. Gupta and S. Rubinstein-Salzedo, "Inscribed triangles of Jordan curves in $\mathbb{R}^n$" — [arXiv:2102.03953](https://arxiv.org/abs/2102.03953).
+- T. Hausel, E. Makai and A. Szűcs, "Inscribing cubes and covering by rhombic dodecahedra via equivariant topology", *Mathematika* 47 (2000) — [arXiv:math/9906066](https://arxiv.org/abs/math/9906066).

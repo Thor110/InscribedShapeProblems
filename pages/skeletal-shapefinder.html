@@ -8,317 +8,532 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;}
   h1{font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#666;margin-bottom:6px;}
-  .sub{font-size:11px;color:#444;margin-bottom:16px;letter-spacing:0.1em;}
-  #canvas{display:block;background:#0d0d14;border:1px solid #1e1e2a;cursor:crosshair;touch-action:none;}
+  .sub{font-size:11px;color:#444;margin-bottom:16px;letter-spacing:0.1em;text-align:center;}
+  #canvas{display:block;background:#0d0d14;border:1px solid #1e1e2a;cursor:crosshair;touch-action:none;max-width:100%;}
   .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:center;max-width:700px;}
   button{background:transparent;border:1px solid #2a2a3a;color:#888;padding:6px 14px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;}
   button:hover{border-color:#555;color:#ccc;background:#111;}
   button.active{border-color:#4a9;color:#4a9;background:rgba(74,169,120,0.05);}
   select{background:#0d0d14;border:1px solid #2a2a3a;color:#888;padding:6px 10px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;text-transform:uppercase;}
   .slrow{display:flex;align-items:center;gap:10px;font-size:11px;color:#555;}
-  input[type=range]{width:120px;accent-color:#4a9;}
-  .meters{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px;max-width:700px;width:100%;}
+  input[type=range]{width:160px;accent-color:#4a9;}
+  .meters{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px;max-width:700px;width:100%;}
   .meter{background:#0d0d14;border:1px solid #1a1a24;padding:6px 9px;}
   .mlabel{font-size:9px;color:#3a3a4a;letter-spacing:0.1em;text-transform:uppercase;}
-  .mval{font-size:13px;font-weight:bold;color:#555;margin-top:1px;transition:color 0.2s;}
+  .mval{font-size:12px;font-weight:bold;color:#555;margin-top:1px;transition:color 0.2s;font-variant-numeric:tabular-nums;}
   .mval.match{color:#4a9;}
-  .status{margin-top:8px;font-size:11px;color:#3a3a4a;letter-spacing:0.12em;text-transform:uppercase;min-height:16px;}
+  .mval.warn{color:#ca6;}
+  .status{margin-top:8px;font-size:11px;color:#3a3a4a;letter-spacing:0.08em;text-transform:uppercase;min-height:16px;text-align:center;max-width:700px;}
   .status.found{color:#4a9;}
+  .status.active{color:#ca6;}
+  .note{margin-top:6px;font-size:10px;color:#3a3a4a;max-width:700px;text-align:center;line-height:1.5;}
   .nav{margin-top:20px;font-size:10px;}
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
   .nav a:hover{color:#888;}
+  @media (max-width:520px){.meters{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
 <body>
 <h1>Skeletal Shape Finder</h1>
-<div class="sub">Edward James Gordon — Inscribed Square & Triangle Problem</div>
+<div class="sub">Edward James Gordon — Inscribed Square &amp; Triangle Problem</div>
 <canvas id="canvas"></canvas>
 <div class="controls">
-  <select id="insType" onchange="resetJig()">
+  <select id="insType" onchange="newCurve(false)">
     <option value="square">Inscribed Square</option>
     <option value="triangle">Inscribed Triangle</option>
   </select>
-  <select id="shapeType" onchange="newCurve()">
-    <option value="random">Random blob</option>
-    <option value="star">Star</option>
-    <option value="ellipse">Ellipse</option>
-    <option value="triangle">Triangle-like</option>
-    <option value="crescent">Crescent</option>
-    <option value="polygon">Polygon</option>
-    <option value="teardrop">Teardrop</option>
-    <option value="heart">Heart-like</option>
-  </select>
-  <button onclick="newCurve()">New curve</button>
+  <select id="shapeType" onchange="newCurve(false)"></select>
+  <button onclick="newCurve(true)">New curve</button>
   <button onclick="toggleScan()" id="scanBtn">Auto-find Equilibrium</button>
-  <div class="slrow">Rotate<input type="range" id="rtSl" min="0" max="360" value="0" step="1" oninput="onRt(this.value)"><span id="rtV">0°</span></div>
+  <div class="slrow">Rotate<input type="range" id="rtSl" min="0" max="360" value="0" step="0.1" oninput="onRt(this.value)"><span id="rtV">0.0°</span></div>
 </div>
 <div class="meters" id="meterGrid"></div>
 <div class="status" id="status">Ready</div>
+<div class="note" id="note">Click inside the curve to move the jig centre. A shape is only marked as locked after an independent check of every pairwise vertex distance and every vertex's distance to the curve.</div>
 
-<div class="nav"><a href="index.html">← Back to suite</a></div>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
 
+<script src="shapes2d.js"></script>
 <script>
-const cv=document.getElementById('canvas'),ctx=cv.getContext('2d');
-let W,H,curve=[],cen={x:0,y:0},jigX=0,jigY=0,jigAng=0;
-let scanning=false,scanId=null;
-let points=[], equilibriumFound=false, prevDelta=null, prevAng=0;
+'use strict';
+// Verification tolerance: maximum relative error allowed in every pairwise vertex
+// distance and in every vertex's distance to the curve.
+const TOL = 1e-9;
 
-function resize(){const mw=Math.min(window.innerWidth-40,700);W=cv.width=mw;H=cv.height=Math.round(mw*0.68);}
+const cv = document.getElementById('canvas'), ctx = cv.getContext('2d');
+let W, H, curve = [], S = 1, seed = 1;
+let AX, AY, EX, EY, CH = [], CHUNK = 32;              // edge arrays + chunk bounding boxes
+let jig = { x: 0, y: 0, ang: 0 }, view = null, locked = null, search = null, scanId = null;
+// Which boundary crossing each jig arm grips: 'far' = farthest (default),
+// 'near' = first, 'track' = the crossing closest to trackTargets[k]. The last two
+// are needed on curves that are not star-shaped, where a square's vertex can be a
+// middle crossing of the ray.
+let hitMode = 'far', trackTargets = null;
 
-function buildCurve(pts){
-  curve=pts;
-  let sx=0,sy=0;for(const p of curve){sx+=p.x;sy+=p.y;}
-  cen={x:sx/curve.length,y:sy/curve.length};
+const $ = id => document.getElementById(id);
+const insType = () => $('insType').value;
+const nRays = () => (insType() === 'square' ? 4 : 3);
+
+function resize() {
+  const mw = Math.min(window.innerWidth - 40, 700), dpr = window.devicePixelRatio || 1;
+  W = mw; H = Math.round(mw * 0.68);
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-function genCurve(){
-  const type=document.getElementById('shapeType').value;
-  const cx=W/2,cy=H/2,base=Math.min(W,H)*0.34,N=800,pts=[];
-  switch(type){
-    case'random':{
-      const b=Array.from({length:5},()=>0.45+Math.random()*0.85);
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2,r=base+b.reduce((s,v,j)=>s+base*0.13*v*Math.cos((j+2)*t+j*2.1),0);
-        pts.push({x:cx+r*Math.cos(t),y:cy+r*Math.sin(t)});
-      }
-      break;
+// ---------- curve geometry ----------
+function buildCurve(pts) {
+  curve = pts; const n = pts.length;
+  AX = new Float64Array(n); AY = new Float64Array(n); EX = new Float64Array(n); EY = new Float64Array(n);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    AX[i] = a.x; AY[i] = a.y; EX[i] = b.x - a.x; EY[i] = b.y - a.y;
+    x0 = Math.min(x0, a.x); x1 = Math.max(x1, a.x); y0 = Math.min(y0, a.y); y1 = Math.max(y1, a.y);
+  }
+  S = Math.max(x1 - x0, y1 - y0);
+  CH = [];
+  for (let s = 0; s < n; s += CHUNK) {
+    const e = Math.min(n, s + CHUNK); let c = { s, e, x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+    for (let i = s; i < e; i++) for (const [x, y] of [[AX[i], AY[i]], [AX[i] + EX[i], AY[i] + EY[i]]]) {
+      c.x0 = Math.min(c.x0, x); c.x1 = Math.max(c.x1, x); c.y0 = Math.min(c.y0, y); c.y1 = Math.max(c.y1, y);
     }
-    case'star':{
-      const n=4+Math.floor(Math.random()*3),inner=0.42+Math.random()*0.2,rot=Math.random()*Math.PI;
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2+rot, blend=(Math.sin(n*t)+1)/2;
-        const r=base*(inner+(1-inner)*blend);
-        pts.push({x:cx+r*Math.cos(t),y:cy+r*Math.sin(t)});
-      }
-      break;
-    }
-    case'ellipse':{
-      const rx=base*(0.55+Math.random()*0.5),ry=base*(0.4+Math.random()*0.5);
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2;
-        pts.push({x:cx+rx*Math.cos(t),y:cy+ry*Math.sin(t)});
-      }
-      break;
-    }
-    case'triangle':{
-      const rot=Math.random()*Math.PI*2;
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2, seg=Math.floor(t/(Math.PI*2/3)), frac=(t%(Math.PI*2/3))/(Math.PI*2/3);
-        const a0=seg*Math.PI*2/3+rot,a1=a0+Math.PI*2/3;
-        pts.push({x:cx+base*0.88*(Math.cos(a0)*(1-frac)+Math.cos(a1)*frac),y:cy+base*0.88*(Math.sin(a0)*(1-frac)+Math.sin(a1)*frac)});
-      }
-      break;
-    }
-    case'crescent':{
-      const R=base*0.9,r2=base*0.62,offX=base*0.26;
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2, ox=cx+R*Math.cos(t),oy=cy+R*Math.sin(t);
-        const push=Math.max(0,(ox-(cx-offX+r2))/r2)*0.45;
-        pts.push({x:ox-push*(ox-(cx+offX)),y:oy-push*(oy-cy)*0.3});
-      }
-      break;
-    }
-    case'polygon':{
-      const n=5+Math.floor(Math.random()*4),rot=Math.random()*Math.PI*2;
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2+rot, seg=Math.floor(t/(Math.PI*2/n))%n, frac=(t%(Math.PI*2/n))/(Math.PI*2/n);
-        const a0=seg*Math.PI*2/n+rot,a1=a0+Math.PI*2/n;
-        pts.push({x:cx+base*0.85*(Math.cos(a0)*(1-frac)+Math.cos(a1)*frac),y:cy+base*0.85*(Math.sin(a0)*(1-frac)+Math.sin(a1)*frac)});
-      }
-      break;
-    }
-    case'teardrop':{
-      const ry=base*(0.72+Math.random()*0.22),rx=base*(0.48+Math.random()*0.22);
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2, px=cx+rx*Math.sin(t)*(1+0.32*Math.sin(t)), py=cy+ry*(Math.cos(t)-0.18*Math.cos(2*t))*0.88;
-        pts.push({x:px,y:py});
-      }
-      break;
-    }
-    case'heart':{
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2, px=cx+base*0.68*Math.sin(t)**3, py=cy-base*0.58*(0.8125*Math.cos(t)-0.3125*Math.cos(2*t)-0.125*Math.cos(3*t)-0.0625*Math.cos(4*t));
-        pts.push({x:px,y:py});
-      }
-      break;
+    const pad = 1e-9 * S; c.x0 -= pad; c.x1 += pad; c.y0 -= pad; c.y1 += pad; CH.push(c);
+  }
+}
+
+// Farthest (or, in 'near' mode, first) intersection of the ray o + t·d (t > 0) with the curve; -1 if none.
+function rayHit(ox, oy, dx, dy) {
+  const near = hitMode === 'near'; let best = near ? Infinity : -1; const tmin = 1e-9 * S;
+  for (const c of CH) {
+    let t0 = -Infinity, t1 = Infinity;
+    if (dx !== 0) { let a = (c.x0 - ox) / dx, b = (c.x1 - ox) / dx; if (a > b) [a, b] = [b, a]; t0 = a; t1 = b; }
+    else if (ox < c.x0 || ox > c.x1) continue;
+    if (dy !== 0) { let a = (c.y0 - oy) / dy, b = (c.y1 - oy) / dy; if (a > b) [a, b] = [b, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, b); }
+    else if (oy < c.y0 || oy > c.y1) continue;
+    if (t1 < t0 || t1 <= tmin || (near ? t0 >= best : t1 <= best)) continue;
+    for (let i = c.s; i < c.e; i++) {
+      const ex = EX[i], ey = EY[i], den = dx * ey - dy * ex;
+      if (den === 0) continue;
+      const px = AX[i] - ox, py = AY[i] - oy, t = (px * ey - py * ex) / den, u = (px * dy - py * dx) / den;
+      if (t > tmin && u >= 0 && u <= 1 && (near ? t < best : t > best)) best = t;
     }
   }
-  buildCurve(pts);
+  return best === Infinity ? -1 : best;
 }
 
-function rayOuter(ox,oy,ang){
-  const dx=Math.cos(ang),dy=Math.sin(ang);
-  let best=null;
-  for(let i=0;i<curve.length;i++){
-    const j=(i+1)%curve.length,ax=curve[i].x,ay=curve[i].y,bx=curve[j].x,by=curve[j].y;
-    const ex=bx-ax,ey=by-ay,den=dx*ey-dy*ex;
-    if(Math.abs(den)<1e-9)continue;
-    const t=((ax-ox)*ey-(ay-oy)*ex)/den,u=((ax-ox)*dy-(ay-oy)*dx)/den;
-    if(t>0.1&&u>=0&&u<=1){if(!best||t>best.t)best={x:ox+t*dx,y:oy+t*dy,t};}
+function distToCurve(px, py) {
+  let best = Infinity;
+  for (const c of CH) {
+    const bx = Math.max(c.x0 - px, 0, px - c.x1), by = Math.max(c.y0 - py, 0, py - c.y1);
+    if (bx * bx + by * by >= best * best) continue;
+    for (let i = c.s; i < c.e; i++) {
+      const ex = EX[i], ey = EY[i], L = ex * ex + ey * ey;
+      let u = L ? ((px - AX[i]) * ex + (py - AY[i]) * ey) / L : 0; u = Math.max(0, Math.min(1, u));
+      best = Math.min(best, Math.hypot(AX[i] + u * ex - px, AY[i] + u * ey - py));
+    }
   }
   return best;
 }
 
-function dist(p1, p2){return Math.hypot(p1.x-p2.x, p1.y-p2.y);}
-
-function updateMeters(type, pts, cX, cY, forceGreen){
-  const grid=document.getElementById('meterGrid'); grid.innerHTML='';
-  let matchFound = false, currentDelta = 0;
-  
-  if(type === 'square'){
-    const dAC=dist(pts[0],pts[2]), dBD=dist(pts[1],pts[3]);
-    currentDelta = dAC - dBD;
-    const dAB=dist(pts[0],pts[1]), dBC=dist(pts[1],pts[2]);
-    matchFound = Math.abs(currentDelta) < 0.12 && Math.abs(dAB-dBC) < 0.12;
-
-    const data=[['Side AB',dAB],['Side BC',dBC],['Side CD',dist(pts[2],pts[3])],['Side DA',dist(pts[3],pts[0])],['Diag A-C',dAC],['Diag B-D',dBD]];
-    data.forEach(d=>{
-      const m=document.createElement('div');m.className='meter';
-      const isGreen = forceGreen || (matchFound && Math.abs(currentDelta) < 0.4);
-      m.innerHTML=`<div class="mlabel">${d[0]}</div><div class="mval ${isGreen?'match':''}">${d[1].toFixed(2)}</div>`;
-      grid.appendChild(m);
-    });
-  } else {
-    const r0 = dist({x:cX,y:cY}, pts[0]), r1 = dist({x:cX,y:cY}, pts[1]);
-    currentDelta = r0 - r1;
-    const dAB=dist(pts[0],pts[1]), dBC=dist(pts[1],pts[2]), dCA=dist(pts[2],pts[0]);
-    const avg=(dAB+dBC+dCA)/3, err=Math.max(Math.abs(dAB-avg),Math.abs(dBC-avg),Math.abs(dCA-avg));
-    matchFound = err < 0.1;
-    const data=[['Side AB',dAB],['Side BC',dBC],['Side CA',dCA]];
-    data.forEach(d=>{
-      const m=document.createElement('div');m.className='meter';
-      const isGreen = forceGreen || matchFound;
-      m.innerHTML=`<div class="mlabel">${d[0]}</div><div class="mval ${isGreen?'match':''}">${d[1].toFixed(2)}</div>`;
-      grid.appendChild(m);
-    });
+function insideCurve(px, py) {
+  let ins = false; const n = curve.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = curve[i].x, yi = curve[i].y, xj = curve[j].x, yj = curve[j].y;
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) ins = !ins;
   }
-  return {matchFound, currentDelta};
+  return ins;
 }
 
-function calculateState(ang, ox, oy, iters=24){
-  const type=document.getElementById('insType').value, numRays=type==='square'?4:3, step=Math.PI*2/numRays;
-  let tx=ox, ty=oy, pts=[];
-  for(let iter=0; iter<iters; iter++){ 
-    pts=[];
-    for(let i=0; i<numRays; i++){
-      const hit=rayOuter(tx,ty,ang+i*step);
-      if(!hit) return null;
-      pts.push(hit);
+// All crossings of the ray with the curve (t > 0), sorted.
+function rayHitsAll(ox, oy, dx, dy) {
+  const out = [], tmin = 1e-9 * S;
+  for (const c of CH) {
+    let t0 = -Infinity, t1 = Infinity;
+    if (dx !== 0) { let a = (c.x0 - ox) / dx, b = (c.x1 - ox) / dx; if (a > b) [a, b] = [b, a]; t0 = a; t1 = b; }
+    else if (ox < c.x0 || ox > c.x1) continue;
+    if (dy !== 0) { let a = (c.y0 - oy) / dy, b = (c.y1 - oy) / dy; if (a > b) [a, b] = [b, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, b); }
+    else if (oy < c.y0 || oy > c.y1) continue;
+    if (t1 < t0 || t1 <= tmin) continue;
+    for (let i = c.s; i < c.e; i++) {
+      const ex = EX[i], ey = EY[i], den = dx * ey - dy * ex;
+      if (den === 0) continue;
+      const px = AX[i] - ox, py = AY[i] - oy, t = (px * ey - py * ex) / den, u = (px * dy - py * dx) / den;
+      if (t > tmin && u >= 0 && u <= 1) out.push(t);
     }
-    let targetX=0, targetY=0;
-    if(type==='square'){
-      const m1={x:(pts[0].x+pts[2].x)/2, y:(pts[0].y+pts[2].y)/2}, m2={x:(pts[1].x+pts[3].x)/2, y:(pts[1].y+pts[3].y)/2};
-      targetX=(m1.x+m2.x)/2; targetY=(m1.y+m2.y)/2;
-    } else { pts.forEach(p=>{targetX+=p.x;targetY+=p.y;}); targetX/=3; targetY/=3; }
-    tx+=(targetX-tx)*0.6; ty+=(targetY-ty)*0.6;
   }
-  return {pts, tx, ty};
+  return out.sort((a, b) => a - b);
 }
 
-function updateJig(forceGreen = false){
-  const res = calculateState(jigAng, jigX, jigY, forceGreen ? 32 : 24);
-  if(!res) return;
-  points = res.pts; jigX = res.tx; jigY = res.ty;
-  const {matchFound, currentDelta} = updateMeters(document.getElementById('insType').value, points, jigX, jigY, forceGreen);
-  equilibriumFound = forceGreen || matchFound;
-  const st=document.getElementById('status');
-  if(equilibriumFound){st.textContent='Perfect Symmetry Locked';st.className='status found';}
-  else{st.textContent='Rattling toward equilibrium...';st.className='status';}
-  return currentDelta;
+// ---------- the skeletal jig ----------
+// n rays from (x,y) at angles ang + 2πk/n; returns the ray lengths or null.
+function rays(x, y, ang, n) {
+  const r = [];
+  for (let k = 0; k < n; k++) {
+    const a = ang + (2 * Math.PI * k) / n;
+    let t;
+    if (hitMode === 'track') {
+      const all = rayHitsAll(x, y, Math.cos(a), Math.sin(a)); if (!all.length) return null;
+      t = all.reduce((b, v) => (Math.abs(v - trackTargets[k]) < Math.abs(b - trackTargets[k]) ? v : b));
+    } else t = rayHit(x, y, Math.cos(a), Math.sin(a));
+    if (t < 0) return null;
+    r.push(t);
+  }
+  return r;
+}
+function hits(x, y, ang, r) {
+  return r.map((t, k) => { const a = ang + (2 * Math.PI * k) / r.length; return { x: x + t * Math.cos(a), y: y + t * Math.sin(a) }; });
+}
+// Centering (bisection) equations at a fixed angle. Square: both chords bisected
+// (gives a rhombus). Triangle: all three rays equal (already forces equilateral).
+function centerRes(x, y, ang) {
+  const n = nRays(), r = rays(x, y, ang, n); if (!r) return null;
+  return n === 4 ? [(r[0] - r[2]) / S, (r[1] - r[3]) / S] : [(r[0] - r[1]) / S, (r[1] - r[2]) / S];
+}
+// Full square equations in (x, y, angle): bisected chords + equal diagonals.
+function squareRes(p) {
+  const r = rays(p[0], p[1], p[2], 4); if (!r) return null;
+  return [(r[0] - r[2]) / S, (r[1] - r[3]) / S, (r[0] + r[2] - r[1] - r[3]) / S];
 }
 
-function draw(forceGreen = false){
-  ctx.clearRect(0,0,W,H);
-  ctx.beginPath();ctx.moveTo(curve[0].x,curve[0].y);
-  for(const p of curve)ctx.lineTo(p.x,p.y);
-  ctx.closePath();ctx.fillStyle='rgba(20,30,50,0.6)';ctx.fill();
-  ctx.strokeStyle='#2a4a7a';ctx.lineWidth=2;ctx.stroke();
+// ---------- Newton solver (finite-difference Jacobian, backtracking) ----------
+const norm = f => Math.sqrt(f.reduce((s, v) => s + v * v, 0));
+function solveLinear(A, b) {
+  const n = b.length, M = A.map((row, i) => row.concat([b[i]]));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-300) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    for (let r = c + 1; r < n; r++) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+  }
+  const x = new Array(n).fill(0);
+  for (let r = n - 1; r >= 0; r--) { let s = M[r][n]; for (let k = r + 1; k < n; k++) s -= M[r][k] * x[k]; x[r] = s / M[r][r]; }
+  return x;
+}
+function newton(F, x0, h, maxIt) {
+  let x = x0.slice(), f = F(x); if (!f) return null; let nf = norm(f);
+  for (let it = 0; it < maxIt && nf > 1e-16; it++) {
+    const J = f.map(() => []);
+    for (let j = 0; j < x.length; j++) {
+      const xp = x.slice(), xm = x.slice(); xp[j] += h[j]; xm[j] -= h[j];
+      const fp = F(xp), fm = F(xm); if (!fp || !fm) return { x, f, nf };
+      for (let i = 0; i < f.length; i++) J[i][j] = (fp[i] - fm[i]) / (2 * h[j]);
+    }
+    const d = solveLinear(J, f.map(v => -v)); if (!d) break;
+    let ok = false;
+    for (let a = 1; a > 1e-4; a /= 2) {
+      const xn = x.map((v, i) => v + a * d[i]), fn = F(xn);
+      if (fn && norm(fn) < nf) { x = xn; f = fn; nf = norm(fn); ok = true; break; }
+    }
+    if (!ok) break;
+  }
+  return { x, f, nf };
+}
+const H2 = () => [1e-7 * S, 1e-7 * S], H3 = () => [1e-7 * S, 1e-7 * S, 1e-8];
 
-  const currentDelta = updateJig(forceGreen);
+// The "rattle": damped iteration moving the centre toward the chord midpoints
+// (square) or the centroid of the hits (triangle). Gets close; Newton finishes.
+function rattle(x, y, ang, iters) {
+  const n = nRays();
+  for (let i = 0; i < iters; i++) {
+    const r = rays(x, y, ang, n); if (!r) return null;
+    const P = hits(x, y, ang, r); let tx = 0, ty = 0;
+    for (const p of P) { tx += p.x / n; ty += p.y / n; }
+    const nx = x + 0.6 * (tx - x), ny = y + 0.6 * (ty - y);
+    if (Math.hypot(nx - x, ny - y) < 1e-6 * S) { x = nx; y = ny; break; }
+    x = nx; y = ny;
+  }
+  return { x, y };
+}
+function solveCenter(x, y, ang, rattleIters = 0) {
+  if (rattleIters) { const q = rattle(x, y, ang, rattleIters); if (q) { x = q.x; y = q.y; } }
+  const r = newton(p => centerRes(p[0], p[1], ang), [x, y], H2(), 50);
+  return r && r.nf < 1e-11 ? { x: r.x[0], y: r.x[1] } : null;
+}
 
-  ctx.setLineDash([2,2]); ctx.strokeStyle='rgba(255,255,255,0.08)';
-  const type=document.getElementById('insType').value, numRays=type==='square'?4:3, step=Math.PI*2/numRays;
-  for(let i=0;i<(numRays===4?2:3);i++){
-    const ang=jigAng+i*step, dx=Math.cos(ang)*W, dy=Math.sin(ang)*W;
-    ctx.beginPath();ctx.moveTo(jigX-dx,jigY-dy);ctx.lineTo(jigX+dx,jigY+dy);ctx.stroke();
+// ---------- independent verification ----------
+// Compares all pairwise vertex distances against a regular n-gon with the same
+// mean side length, and checks each vertex lies on the curve.
+function verify(P) {
+  const n = P.length, d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  let s = 0; for (let i = 0; i < n; i++) s += d(P[i], P[(i + 1) % n]); s /= n;
+  let shapeErr = 0;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const k = j - i, tmpl = (s * Math.sin((Math.PI * k) / n)) / Math.sin(Math.PI / n);
+    shapeErr = Math.max(shapeErr, Math.abs(d(P[i], P[j]) - tmpl) / s);
+  }
+  let curveErr = 0; for (const p of P) curveErr = Math.max(curveErr, distToCurve(p.x, p.y) / s);
+  const err = Math.max(shapeErr, curveErr), big = s > 1e-3 * S;
+  return { shapeErr, curveErr, err, size: s, ok: err < TOL && big };
+}
+
+// ---------- state + drawing ----------
+function computeView() {
+  const n = nRays(), r = rays(jig.x, jig.y, jig.ang, n);
+  view = r ? { r, P: hits(jig.x, jig.y, jig.ang, r) } : null;
+}
+
+function fmt(e) { return e === 0 ? '0' : e.toExponential(2); }
+
+function updateMeters() {
+  const grid = $('meterGrid'); grid.innerHTML = '';
+  const add = (label, val, cls) => { const m = document.createElement('div'); m.className = 'meter'; m.innerHTML = `<div class="mlabel">${label}</div><div class="mval ${cls || ''}">${val}</div>`; grid.appendChild(m); };
+  const P = locked ? locked.P : view && view.P; if (!P) return null;
+  const v = verify(P), cls = v.ok ? 'match' : '';
+  const L = 'ABCD', d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  for (let i = 0; i < P.length; i++) add(`Side ${L[i]}${L[(i + 1) % P.length]}`, d(P[i], P[(i + 1) % P.length]).toFixed(6), cls);
+  if (P.length === 4) { add('Diag A-C', d(P[0], P[2]).toFixed(6), cls); add('Diag B-D', d(P[1], P[3]).toFixed(6), cls); }
+  add('Shape error (rel.)', fmt(v.shapeErr), v.shapeErr < TOL ? 'match' : 'warn');
+  add('Off-curve error (rel.)', fmt(v.curveErr), v.curveErr < TOL ? 'match' : 'warn');
+  return v;
+}
+
+function setStatus(text, cls) { const st = $('status'); st.textContent = text; st.className = 'status ' + (cls || ''); }
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.beginPath(); ctx.moveTo(curve[0].x, curve[0].y);
+  for (const p of curve) ctx.lineTo(p.x, p.y);
+  ctx.closePath(); ctx.fillStyle = 'rgba(20,30,50,0.6)'; ctx.fill('evenodd');
+  ctx.strokeStyle = '#2a4a7a'; ctx.lineWidth = 1.2; ctx.stroke();
+
+  const src = locked || (view && { P: view.P, x: jig.x, y: jig.y, ang: jig.ang });
+  if (!src) { ctx.beginPath(); ctx.arc(jig.x, jig.y, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#e55'; ctx.fill(); return; }
+  const n = src.P.length;
+  ctx.setLineDash([2, 2]); ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
+  for (let k = 0; k < n; k++) {
+    const a = src.ang + (2 * Math.PI * k) / n;
+    ctx.beginPath(); ctx.moveTo(src.x, src.y); ctx.lineTo(src.x + Math.cos(a) * W * 2, src.y + Math.sin(a) * W * 2); ctx.stroke();
   }
   ctx.setLineDash([]);
-  ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
-  for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
-  ctx.closePath();ctx.strokeStyle='#4a9';ctx.lineWidth=2.5;ctx.stroke();
-  ctx.fillStyle='rgba(74,153,120,0.1)';ctx.fill();
-  points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle='#ca6';ctx.fill();});
-  ctx.beginPath();ctx.arc(jigX,jigY,3.5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-  return currentDelta;
+  ctx.beginPath(); ctx.moveTo(src.P[0].x, src.P[0].y);
+  for (let i = 1; i < n; i++) ctx.lineTo(src.P[i].x, src.P[i].y);
+  ctx.closePath(); ctx.strokeStyle = locked ? '#4a9' : '#ca6'; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.fillStyle = locked ? 'rgba(74,153,120,0.12)' : 'rgba(200,160,80,0.06)'; ctx.fill();
+  src.P.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2); ctx.fillStyle = locked ? '#4a9' : '#ca6'; ctx.fill(); });
+  ctx.beginPath(); ctx.arc(src.x, src.y, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
 }
 
-function onRt(v){jigAng=+v*Math.PI/180;document.getElementById('rtV').textContent=v+'°';equilibriumFound=false;draw();}
-
-function stopScan(){
-  scanning=false; cancelAnimationFrame(scanId); 
-  const btn = document.getElementById('scanBtn');
-  btn.textContent='Auto-find Equilibrium';
-  btn.classList.remove('active');
+function refresh() {
+  if (!locked) computeView();
+  draw();
+  const v = updateMeters();
+  if (search) return;
+  const name = insType() === 'square' ? 'square' : 'equilateral triangle';
+  if (locked) setStatus(`Inscribed ${name} verified — max relative error ${fmt(locked.v.err)}`, 'found');
+  else if (!view) setStatus('Jig centre has no valid hits here — click inside the curve', '');
+  else if (v && v.ok) setStatus(`Inscribed ${name} verified — max relative error ${fmt(v.err)}`, 'found');
+  else if (insType() === 'square' && view.centered) setStatus(`Rhombus (both chords bisected) — diagonals differ by ${fmt(Math.abs(view.r[0] + view.r[2] - view.r[1] - view.r[3]) / S)} of curve size`, '');
+  else setStatus(view.centered === false ? 'Centering did not converge from here — try another point' : 'Rattling toward equilibrium…', '');
 }
 
-function resetJig(){
-  stopScan(); // RECTIFIED: Stop scan on shape change
-  jigX=cen.x;jigY=cen.y;jigAng=0;
-  document.getElementById('rtSl').value=0; document.getElementById('rtV').textContent='0°';
-  prevDelta=null; equilibriumFound=false;
-  document.getElementById('meterGrid').innerHTML = '';
-  const st = document.getElementById('status');
-  st.textContent = 'Ready'; st.className = 'status';
-  draw(); 
+// Re-centre the jig at the current angle (the "rattle").
+function recenter() {
+  hitMode = 'far';
+  const c = solveCenter(jig.x, jig.y, jig.ang, 40);
+  if (c) { jig.x = c.x; jig.y = c.y; }
+  computeView(); if (view) view.centered = !!c;
 }
 
-function newCurve(){
-  stopScan(); // RECTIFIED: Stop scan on curve change
-  genCurve(); resetJig();
+function onRt(v) {
+  stopScan(); locked = null; jig.ang = (+v * Math.PI) / 180; $('rtV').textContent = (+v).toFixed(1) + '°';
+  recenter(); refresh();
 }
 
-function toggleScan(){if(scanning)stopScan(); else{scanning=true;prevDelta=null;document.getElementById('scanBtn').textContent='Stop Scan';document.getElementById('scanBtn').classList.add('active');scanLoop();}}
+function syncSlider() {
+  const deg = ((((jig.ang * 180) / Math.PI) % 360) + 360) % 360;
+  $('rtSl').value = deg.toFixed(1); $('rtV').textContent = deg.toFixed(1) + '°';
+}
 
-function scanLoop(){
-  if(!scanning)return;
-  const currentDelta = draw();
-  if(prevDelta !== null && prevDelta * currentDelta < 0){
-    let low = prevAng, high = jigAng;
-    for(let i=0; i<24; i++){ 
-      let mid = (low+high)/2;
-      const midRes = calculateState(mid, jigX, jigY, 32);
-      const {matchFound, currentDelta: midDelta} = updateMeters(document.getElementById('insType').value, midRes.pts, midRes.tx, midRes.ty, false);
-      if(prevDelta * midDelta < 0) high = mid; else low = mid;
-    }
-    jigAng = (low+high)/2;
-    draw(true); 
-    stopScan(); // RECTIFIED: Stop scan on finish
-    return;
+// Starting points for the search: the deepest interior point first, then a spread of others.
+function interiorStarts() {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of curve) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
+  const pts = [], G = 22;
+  for (let i = 0; i < G; i++) for (let j = 0; j < G; j++) {
+    const x = x0 + ((i + 0.5) / G) * (x1 - x0), y = y0 + ((j + 0.5) / G) * (y1 - y0);
+    if (insideCurve(x, y)) pts.push({ x, y, d: distToCurve(x, y) });
   }
-  prevDelta = currentDelta; prevAng = jigAng;
-  jigAng += 0.012;
-  document.getElementById('rtSl').value=Math.round((jigAng*180/Math.PI)%360);
-  document.getElementById('rtV').textContent=document.getElementById('rtSl').value+'°';
-  scanId=requestAnimationFrame(scanLoop);
+  pts.sort((a, b) => b.d - a.d);
+  const R = Shapes2D.rng(seed * 7 + 1), out = pts.slice(0, 1);
+  const rest = pts.slice(1).filter(p => p.d > 0.02 * S);
+  while (out.length < 12 && rest.length) out.push(rest.splice(Math.floor(R() * rest.length), 1)[0]);
+  return out;
 }
 
-function mainLoop(){if(!scanning)draw();requestAnimationFrame(mainLoop);}
+function resetJig() {
+  stopScan(); locked = null;
+  const st = interiorStarts()[0] || { x: W / 2, y: H / 2 };
+  jig = { x: st.x, y: st.y, ang: ((+$('rtSl').value || 0) * Math.PI) / 180 };
+  recenter(); refresh();
+}
 
-resize();
-newCurve();
-mainLoop();
+function newCurve(fresh) {
+  stopScan();
+  if (fresh) seed = (Math.random() * 2 ** 31) | 0;
+  buildCurve(Shapes2D.fit(Shapes2D.generate($('shapeType').value, seed), W, H, 24));
+  $('rtSl').value = 0; resetJig();
+  const url = new URL(location.href);
+  url.searchParams.set('shape', insType()); url.searchParams.set('curve', $('shapeType').value); url.searchParams.set('seed', seed);
+  history.replaceState(null, '', url);
+}
 
-  window.addEventListener('load', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const shape = urlParams.get('shape'); // Looks for ?shape=triangle
-    const select = document.getElementById('insType'); // Matches your <select id="insType">
-    
-    if (shape && select) {
-      select.value = shape;
-      // Trigger resetJig() which is defined in your onchange attribute
-      select.dispatchEvent(new Event('change')); 
+// ---------- automatic search ----------
+// Phase 1 (square): for each start point, sweep the angle over 90° with the jig
+// kept centred. Rotating by 90° swaps the chords, so the diagonal difference
+// changes sign; each sign change seeds a full Newton solve. On non-convex curves
+// the centred jig can jump between branches; such sign changes fail verification
+// and the sweep continues. (Triangle: centering alone forces an equilateral
+// triangle at any angle, so phase 1 just centres the jig at a few angles.)
+// Phase 1 runs with the farthest-hit jig, then again with the nearest-hit jig.
+// Phase 2: Newton from many random positions and angles, both jig modes.
+// Only results that pass verify() are ever accepted.
+const STEP = (0.25 * Math.PI) / 180, RANDOM_TRIES = 600, TRACK_TRIES = 1500;
+function* searchGen(s) {
+  const tri = insType() === 'triangle';
+  for (const mode of ['far', 'near']) {
+    hitMode = s.mode = mode;
+    for (s.si = 0; s.si < s.starts.length; s.si++) {
+      const st = s.starts[s.si];
+      if (tri) {
+        for (let k = 0; k < 8; k++) {
+          s.ang = jig.ang0 + (k * 2 * Math.PI) / 3 / 8;
+          const c = solveCenter(st.x, st.y, s.ang, 60); s.tries++;
+          if (c && accept(c.x, c.y, s.ang)) return true;
+          yield;
+        }
+        continue;
+      }
+      let x = st.x, y = st.y, prev = null;
+      for (s.ang = 0; s.ang <= Math.PI / 2 + STEP; s.ang += STEP) {
+        const c = solveCenter(x, y, s.ang, prev ? 0 : 60);
+        if (c) {
+          x = c.x; y = c.y; Object.assign(jig, { x, y, ang: s.ang });
+          const r = rays(x, y, s.ang, 4);
+          if (r) {
+            const delta = (r[0] + r[2] - r[1] - r[3]) / S;
+            if (prev && prev.delta * delta <= 0) {
+              const f = prev.delta / (prev.delta - delta || 1);
+              const g = [prev.x + f * (x - prev.x), prev.y + f * (y - prev.y), prev.ang + f * (s.ang - prev.ang)];
+              const sol = newton(squareRes, g, H3(), 80); s.tries++;
+              if (sol && accept(sol.x[0], sol.x[1], sol.x[2])) return true;
+              s.jumps++;
+            }
+            prev = { x, y, ang: s.ang, delta };
+          }
+        } else { prev = null; x = st.x; y = st.y; }
+        yield;
+      }
     }
-  });
+  }
+  // Phase 2: random multi-start over the whole bounding box.
+  s.phase = 2;
+  const R = Shapes2D.rng(seed * 13 + 5);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of curve) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
+  for (s.k = 0; s.k < RANDOM_TRIES; s.k++) {
+    hitMode = s.mode = s.k % 2 ? 'near' : 'far';
+    const x = x0 + R() * (x1 - x0), y = y0 + R() * (y1 - y0), ang = R() * (tri ? 2 * Math.PI / 3 : Math.PI / 2);
+    const q = rattle(x, y, ang, 40); if (!q) { yield; continue; }
+    s.tries++;
+    if (tri) { const c = solveCenter(q.x, q.y, ang); if (c && accept(c.x, c.y, ang)) return true; }
+    else { const sol = newton(squareRes, [q.x, q.y, ang], H3(), 80); if (sol && accept(sol.x[0], sol.x[1], sol.x[2])) return true; }
+    Object.assign(jig, { x: q.x, y: q.y, ang });
+    yield;
+  }
+  // Phase 3: tracking jig. Each arm starts on a randomly chosen crossing and then
+  // follows the crossing nearest its current length while Newton runs.
+  s.phase = 3; hitMode = s.mode = 'track';
+  for (s.k = 0; s.k < TRACK_TRIES; s.k++) {
+    const x = x0 + R() * (x1 - x0), y = y0 + R() * (y1 - y0), n = nRays();
+    let ang = R() * (tri ? 2 * Math.PI / 3 : Math.PI / 2);
+    trackTargets = [];
+    for (let k = 0; k < n; k++) {
+      const a = ang + (2 * Math.PI * k) / n, all = rayHitsAll(x, y, Math.cos(a), Math.sin(a));
+      if (!all.length) break;
+      trackTargets.push(all[Math.floor(R() * all.length)]);
+    }
+    if (trackTargets.length < n) { yield; continue; }
+    // Pick a centre that splits the chosen crossings evenly, then run Newton,
+    // refreshing the targets between short Newton bursts.
+    let p = tri ? [x, y] : [x, y, ang];
+    for (let outer = 0; outer < 25; outer++) {
+      const F = tri ? (q => centerRes(q[0], q[1], ang)) : squareRes;
+      const sol = newton(F, p, tri ? H2() : H3(), 3); if (!sol) break;
+      p = sol.x; const r = rays(p[0], p[1], tri ? ang : p[2], n); if (!r) break;
+      trackTargets = r;
+      if (sol.nf < 1e-15) break;
+    }
+    s.tries++;
+    if (tri ? accept(p[0], p[1], ang) : accept(p[0], p[1], p[2])) return true;
+    Object.assign(jig, { x: p[0], y: p[1], ang: tri ? ang : p[2] });
+    yield;
+  }
+  return false;
+}
+
+function startScan() {
+  locked = null;
+  search = { starts: interiorStarts(), si: 0, ang: 0, jumps: 0, tries: 0, best: null, phase: 1, k: 0, mode: 'far' };
+  jig.ang0 = jig.ang;
+  search.gen = searchGen(search);
+  $('scanBtn').textContent = 'Stop Scan'; $('scanBtn').classList.add('active');
+  scanId = requestAnimationFrame(scanStep);
+}
+function stopScan() {
+  search = null; cancelAnimationFrame(scanId);
+  $('scanBtn').textContent = 'Auto-find Equilibrium'; $('scanBtn').classList.remove('active');
+}
+function toggleScan() { search ? (stopScan(), hitMode = 'far', refresh()) : startScan(); }
+
+function accept(x, y, ang) {
+  const r = rays(x, y, ang, nRays()); if (!r) return false;
+  const P = hits(x, y, ang, r), v = verify(P);
+  if (!search.best || v.err < search.best.v.err) search.best = { x, y, ang, P, v, mode: hitMode };
+  if (!v.ok) return false;
+  locked = { x, y, ang, P, v, mode: hitMode }; jig = { x, y, ang }; syncSlider();
+  return true;
+}
+
+function finishScan(found) {
+  const s = search; stopScan();
+  if (!found && s.best) { hitMode = s.best.mode; jig = { x: s.best.x, y: s.best.y, ang: s.best.ang }; syncSlider(); computeView(); }
+  refresh();
+  if (found && locked.mode !== 'far') $('status').textContent += locked.mode === 'near' ? ' (nearest-hit jig)' : ' (tracking jig)';
+  if (found && locked.mode === 'track') trackTargets = locked.P.map(p => Math.hypot(p.x - locked.x, p.y - locked.y));
+  if (!found) setStatus(`No verified shape found (${s.tries} candidates, ${s.jumps} rejected at discontinuities). Best error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
+  hitMode = 'far';
+}
+
+function scanStep() {
+  if (!search) return;
+  const t0 = performance.now(), s = search;
+  while (performance.now() - t0 < 14) {
+    const r = s.gen.next();
+    if (r.done) { finishScan(r.value); return; }
+  }
+  computeView(); syncSlider(); draw(); updateMeters();
+  setStatus(s.phase === 1
+    ? `Sweep (${s.mode}-hit jig) ${((s.ang * 180) / Math.PI).toFixed(1)}° — start ${s.si + 1}/${s.starts.length}, ${s.tries} candidates, ${s.jumps} discontinuities`
+    : s.phase === 2 ? `Random restarts ${s.k}/${RANDOM_TRIES} (${s.mode}-hit jig), ${s.tries} candidates`
+    : `Tracking-jig restarts ${s.k}/${TRACK_TRIES}, ${s.tries} candidates`, 'active');
+  scanId = requestAnimationFrame(scanStep);
+}
+
+cv.addEventListener('pointerdown', e => {
+  const r = cv.getBoundingClientRect();
+  stopScan(); locked = null; jig.x = ((e.clientX - r.left) * W) / r.width; jig.y = ((e.clientY - r.top) * H) / r.height;
+  recenter(); refresh();
+});
+
+// ---------- start-up ----------
+Shapes2D.populateSelect($('shapeType'));
+const params = new URLSearchParams(location.search);
+if (params.get('shape') === 'triangle' || params.get('shape') === 'square') $('insType').value = params.get('shape');
+if (params.get('curve') && Shapes2D.list.some(([v]) => v === params.get('curve'))) $('shapeType').value = params.get('curve');
+seed = params.has('seed') ? (+params.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;
+resize();
+newCurve(false);
 </script>
 </body>
 </html>

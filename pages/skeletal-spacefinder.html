@@ -9,25 +9,28 @@
   body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;}
   h1{font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#666;margin-bottom:4px;}
   .sub{font-size:9px;color:#444;margin-bottom:10px;letter-spacing:0.1em;text-align:center;}
-  #c3d{display:block;background:#0d0d14;border:1px solid #1e1e2a; border-radius:4px; cursor: grab;}
+  #c3d{display:block;background:#0d0d14;border:1px solid #1e1e2a;border-radius:4px;cursor:grab;touch-action:none;max-width:100%;}
   .controls{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;}
   .btn-group{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
   button{background:transparent;border:1px solid #2a2a3a;color:#888;padding:5px 10px;font-family:'Courier New',monospace;font-size:9px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;transition:all 0.15s;}
   button:hover{border-color:#555;color:#ccc;background:#111;}
   button.active{border-color:#4a9;color:#4a9;background:rgba(74,169,120,0.05);}
   select{background:#0d0d14;border:1px solid #2a2a3a;color:#888;padding:4px 6px;font-family:'Courier New',monospace;font-size:9px;cursor:pointer;text-transform:uppercase;}
-  .sl-grid{display:grid;grid-template-columns:repeat(2, 1fr); gap:8px; max-width:500px;}
+  .sl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:500px;}
   .slrow{display:flex;align-items:center;gap:8px;font-size:9px;color:#555;}
-  .slrow span{display:inline-block; width:28px; text-align:right;}
+  .slrow span{display:inline-block;width:40px;text-align:right;}
   input[type=range]{width:90px;accent-color:#4a9;}
   .meters{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:8px;max-width:640px;width:100%;}
-  .meter{background:#0d0d14;border:1px solid #1a1a24;padding:3px 5px; text-align:center;}
-  .mlabel{font-size:7px;color:#3a3a4a;letter-spacing:0.05em;text-transform:uppercase; margin-bottom:1px;}
-  .mval{font-size:10px;font-weight:bold;color:#444; transition: color 0.1s;}
+  .meter{background:#0d0d14;border:1px solid #1a1a24;padding:3px 5px;text-align:center;}
+  .meter.wide{grid-column:span 2;}
+  .mlabel{font-size:7px;color:#3a3a4a;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:1px;}
+  .mval{font-size:10px;font-weight:bold;color:#555;transition:color 0.1s;font-variant-numeric:tabular-nums;}
   .mval.match{color:#4a9;}
-  .status{margin-top:6px; font-size:9px; color:#3a3a4a; letter-spacing:0.05em; text-transform:uppercase; height:10px; text-align: center;}
+  .mval.warn{color:#ca6;}
+  .status{margin-top:6px;font-size:9px;color:#3a3a4a;letter-spacing:0.05em;text-transform:uppercase;min-height:10px;text-align:center;max-width:640px;}
   .status.found{color:#4a9;}
   .status.active{color:#ca6;}
+  .note{margin-top:6px;font-size:9px;color:#3a3a4a;max-width:640px;text-align:center;line-height:1.5;}
   .nav{margin-top:20px;font-size:10px;}
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
   .nav a:hover{color:#888;}
@@ -35,318 +38,396 @@
 </head>
 <body>
 <h1>Skeletal Space Finder</h1>
-<div class="sub">Edward James Gordon — Inscribed Cube & Tetrahedron Problem</div>
+<div class="sub">Edward James Gordon — Inscribed Cube, Tetrahedron &amp; Octahedron Problem</div>
 
-<canvas id="c3d" width="440" height="340"></canvas>
+<canvas id="c3d"></canvas>
 
 <div class="controls">
   <div class="btn-group">
     <select id="insType" onchange="resetJig()">
       <option value="cube">Inscribed Cube</option>
       <option value="tetrahedron">Inscribed Tetrahedron</option>
+      <option value="octahedron">Inscribed Octahedron</option>
     </select>
-    <select id="surfType" onchange="newCurve()">
-      <option value="blob">Random blob</option>
-      <option value="star3d">3D Star</option>
-      <option value="ellipsoid">Ellipsoid</option>
-      <option value="cube">Cube-like</option>
-      <option value="bumpy">Bumpy sphere</option>
-      <option value="heart">Heart-like</option>
-      <option value="ring">Ring-like</option>
-    </select>
-    <button onclick="newCurve()">New surface</button>
+    <select id="surfType" onchange="newSurface(false)"></select>
+    <button onclick="newSurface(true)">New surface</button>
     <button onclick="toggleScan()" id="scanBtn">Auto-find Equilibrium</button>
   </div>
-  
   <div class="sl-grid">
-    <div class="slrow">Pitch<input type="range" id="pSl" min="0" max="360" value="0" oninput="onUIChange()"><span id="pV">0°</span></div>
-    <div class="slrow">Roll <input type="range" id="rSl" min="0" max="360" value="0" oninput="onUIChange()"><span id="rV">0°</span></div>
-    <div class="slrow">Yaw  <input type="range" id="ySl" min="0" max="360" value="0" oninput="onUIChange()"><span id="yV">0°</span></div>
-    <div class="slrow">Ghost<input type="range" id="alphaSl" min="0" max="100" value="25" oninput="onUIChange()"><span id="alphaV">25%</span></div>
+    <div class="slrow">Pitch<input type="range" id="pSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="pV">0°</span></div>
+    <div class="slrow">Roll <input type="range" id="rSl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="rV">0°</span></div>
+    <div class="slrow">Yaw  <input type="range" id="ySl" min="0" max="360" step="0.1" value="0" oninput="onUIChange()"><span id="yV">0°</span></div>
+    <div class="slrow">Ghost<input type="range" id="alphaSl" min="0" max="100" value="25" oninput="draw3D()"><span id="alphaV">25%</span></div>
   </div>
 </div>
 
 <div class="meters" id="meterGrid"></div>
 <div class="status" id="status">Ready</div>
+<div class="note">Drag the view to look around. The jig's rays run from a common centre along the cube diagonals, tetrahedral directions or octahedral axes; a shape is only marked locked after an independent check of every pairwise vertex distance and every vertex's distance to the surface.</div>
 
-<div class="nav"><a href="index.html">← Back to suite</a></div>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script>
-const c3d=document.getElementById('c3d'),x3=c3d.getContext('2d');
-let surface=[], scanning=false, scanId=null, N=40, scanCounter=0;
-let jigX=0, jigY=0, jigZ=0, jP=0, jR=0, jY=0;
-let gridR = [], points = [], equilibriumFound = false, bestErr = 999;
-let vP = 0.4, vY = 0.6, isDragging = false, lastMX = 0, lastMY = 0;
+'use strict';
+const TOL = 1e-9;                       // max relative error for a verified shape
+const c3d = document.getElementById('c3d'), x3 = c3d.getContext('2d');
+const $ = id => document.getElementById(id);
+let W = 440, H = 340;
 
-const cubeEdges = [[0,3],[0,5],[0,7], [1,2],[1,4],[1,6], [2,5],[2,7], [3,4],[3,6], [4,7], [5,6]];
-const tetraEdges = [[0,1],[1,2],[2,0],[0,3],[1,3],[2,3]];
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function randUnit(R) { for (;;) { const v = [R() * 2 - 1, R() * 2 - 1, R() * 2 - 1], L = Math.hypot(...v); if (L > 0.1 && L <= 1) return v.map(x => x / L); } }
 
-function genSurface(){
-  const type=document.getElementById('surfType').value;
-  gridR = []; surface = [];
-  const seeds = Array.from({length:10},()=>Math.random());
-  for(let i = 0; i <= N; i++){
-    gridR[i] = [];
-    const phi = (i / N) * Math.PI; 
-    for(let j = 0; j < 2*N; j++){ 
-      const theta = (j / (2 * N)) * Math.PI * 2;
-      let r = 1, x, y, z;
-      switch(type) {
-        case 'ellipsoid': x=(0.7+seeds[0]*0.4)*Math.sin(phi)*Math.cos(theta); y=(0.9+seeds[1]*0.5)*Math.cos(phi); z=(0.7+seeds[2]*0.4)*Math.sin(phi)*Math.sin(theta); r=Math.hypot(x,y,z); break;
-        case 'blob': r=1; for(let k=0; k<5; k++) r+=(0.08+seeds[k]*0.1)*Math.sin(Math.round(2+seeds[k+5]*2.5)*phi+seeds[k])*Math.cos(Math.round(2+seeds[k+5]*2.5)*theta+seeds[k]); break;
-        case 'bumpy': r=1+0.15*Math.sin((3+Math.floor(seeds[0]*5))*phi)*Math.cos((3+Math.floor(seeds[1]*5))*theta); break;
-        case 'star3d': r=0.8+0.4*Math.pow(Math.abs(Math.sin((4+Math.floor(seeds[0]*3))*phi)*Math.cos((4+Math.floor(seeds[0]*3))*theta)),0.6); break;
-        case 'heart': r=1.0+(0.3+seeds[0]*0.2)*(1-Math.sin(phi))*Math.cos(theta); break;
-        case 'ring': r=1+(0.2+seeds[0]*0.3)*Math.sin(phi)*Math.cos(2*theta); break;
-        case 'cube': const cp=Math.cos(phi-Math.PI/2),sp=Math.sin(phi-Math.PI/2),ct=Math.cos(theta),st=Math.sin(theta); const pwr=0.2+seeds[0]*0.35; x=Math.sign(cp*ct)*Math.pow(Math.abs(cp*ct),pwr); y=Math.sign(sp)*Math.pow(Math.abs(sp),pwr); z=Math.sign(cp*st)*Math.pow(Math.abs(cp*st),pwr); r=Math.hypot(x,y,z); break;
+// ---------- surfaces ----------
+// Each surface is star-shaped about the origin and given by rad(u): the distance
+// to the surface along unit direction u. Being a function of u (not of polar
+// angles) makes every surface seam-free. 'egg' is an implicit convex surface with
+// no symmetry at all; its rad() is found by bisection.
+const SURFACES = [
+  ['ellipsoid', 'Ellipsoid'], ['egg', 'Lopsided egg (convex, no symmetry)'], ['blob', 'Random blob'],
+  ['bumpy', 'Bumpy sphere'], ['star3d', '3D Star'], ['heart', 'Heart-like'], ['ring', 'Ring-like'],
+  ['cube', 'Cube-like'], ['fractal', 'Fractal blob (Weierstrass)'], ['ridged', 'Fractal ridged'], ['sphere', 'Sphere'],
+];
+// For the fractal surfaces, 'octaves' limits how many layers of detail are used.
+// The search solves on a smoothed surface first and then adds detail one octave
+// at a time (continuation); verification and drawing always use full detail.
+let octaves = Infinity;
+const FRACTAL = new Set(['fractal', 'ridged']);
+function makeSurface(type, seed) {
+  const R = rng(seed), dirs = n => Array.from({ length: n }, () => randUnit(R)), dot = (u, d) => u[0] * d[0] + u[1] * d[1] + u[2] * d[2];
+  switch (type) {
+    case 'sphere': return () => 1;
+    case 'ellipsoid': { const a = 0.7 + R() * 0.4, b = 0.9 + R() * 0.5, c = 0.7 + R() * 0.4; return u => 1 / Math.sqrt((u[0] / a) ** 2 + (u[1] / b) ** 2 + (u[2] / c) ** 2); }
+    case 'egg': {
+      const a = 1, b = 1.25, c = 0.85, e = 0.15;   // verified strictly convex (see README)
+      const F = (x, y, z) => x * x / a / a + y * y / b / b + z * z / c / c + e * (0.5 * x ** 3 + x * y * z + 0.7 * y * y * z + 0.3 * z ** 3) - 1;
+      return u => { let lo = 0, hi = 3; for (let i = 0; i < 64; i++) { const m = (lo + hi) / 2; if (F(m * u[0], m * u[1], m * u[2]) < 0) lo = m; else hi = m; } return (lo + hi) / 2; };
+    }
+    case 'blob': { const D = dirs(6), A = D.map(() => 0.04 + R() * 0.06), f = D.map(() => 2 + R() * 2), p = D.map(() => R() * 6.283); return u => 1 + D.reduce((s, d, k) => s + A[k] * Math.sin(f[k] * dot(u, d) + p[k]), 0); }
+    case 'bumpy': { const f = [4, 4, 4].map(v => v + R() * 4), p = [R(), R(), R()].map(v => v * 6.283); return u => 1 + 0.12 * Math.sin(f[0] * u[0] + p[0]) * Math.sin(f[1] * u[1] + p[1]) * Math.sin(f[2] * u[2] + p[2]); }
+    case 'star3d': { const D = dirs(6 + Math.floor(R() * 4)); return u => 0.75 + 0.55 * D.reduce((s, d) => s + Math.max(0, dot(u, d)) ** 14, 0); }
+    case 'heart': { const A = 0.2 + R() * 0.1; return u => 1 + A * (1 - u[1]) * u[0] + 0.1 * u[1] * u[1]; }
+    case 'ring': { const A = 0.2 + R() * 0.25; return u => 1 + A * (u[0] * u[0] - u[2] * u[2]); }
+    case 'cube': { const q = 4 + R() * 5; return u => Math.pow(Math.abs(u[0]) ** q + Math.abs(u[1]) ** q + Math.abs(u[2]) ** q, -1 / q); }
+    case 'fractal': { const D = dirs(10), p = D.map(() => R() * 6.283); return u => { let s = 1; for (let k = 0; k < D.length && k < octaves; k++) s += 0.1 * 2 ** (-k / 2) * Math.sin(3 * 2 ** k * dot(u, D[k]) + p[k]); return s; }; }
+    case 'ridged': { const D = dirs(9), p = D.map(() => R() * 6.283); return u => { let s = 0.92; for (let k = 0; k < D.length && k < octaves; k++) s += 0.07 * 2 ** (-0.45 * k) * (1 - 2 * Math.abs(Math.sin(2 * 2 ** k * dot(u, D[k]) + p[k]))); return s; }; }
+  }
+}
+
+let rad, Rmax = 1.5, SAMPLES = 160, surfType = 'ellipsoid', seed = 1, mesh = [];
+const MR = 40, MC = 80;
+function outside(x, y, z) { const L = Math.hypot(x, y, z); return L > 0 && L > rad([x / L, y / L, z / L]); }
+
+// Farthest crossing of the ray o + t·u with the surface (t > 0), or -1.
+function hit(o, u) {
+  const tmax = Rmax + Math.hypot(...o) + 0.05; let prev = tmax;
+  for (let i = SAMPLES - 1; i >= 0; i--) {
+    const t = (tmax * i) / SAMPLES;
+    if (!outside(o[0] + t * u[0], o[1] + t * u[1], o[2] + t * u[2])) {
+      let lo = t, hi = prev;
+      for (let k = 0; k < 64 && hi - lo > 0; k++) { const m = (lo + hi) / 2; if (outside(o[0] + m * u[0], o[1] + m * u[1], o[2] + m * u[2])) hi = m; else lo = m; }
+      return lo > 1e-12 ? (lo + hi) / 2 : -1;
+    }
+    prev = t;
+  }
+  return -1;
+}
+
+// ---------- jig geometry ----------
+const s3 = 1 / Math.sqrt(3);
+const SHAPES = {
+  cube: { dirs: [0, 1, 2, 3, 4, 5, 6, 7].map(i => [i & 1 ? s3 : -s3, i & 2 ? s3 : -s3, i & 4 ? s3 : -s3]) },
+  tetrahedron: { dirs: [[s3, s3, s3], [s3, -s3, -s3], [-s3, s3, -s3], [-s3, -s3, s3]] },
+  octahedron: { dirs: [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]] },
+};
+for (const sh of Object.values(SHAPES)) {
+  // Edges = closest pairs; diagonals (drawn as full lines) = antipodal pairs.
+  const U = sh.dirs, d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  let m = Infinity; for (let i = 0; i < U.length; i++) for (let j = i + 1; j < U.length; j++) m = Math.min(m, d(U[i], U[j]));
+  sh.edges = []; for (let i = 0; i < U.length; i++) for (let j = i + 1; j < U.length; j++) if (d(U[i], U[j]) < m + 1e-9) sh.edges.push([i, j]);
+  sh.edgeLen = m;
+}
+const shape = () => SHAPES[$('insType').value];
+
+const matMul = (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
+const matVec = (A, v) => A.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+function rotVec(w) { // Rodrigues: rotation matrix for rotation vector w
+  const th = Math.hypot(...w); if (th < 1e-300) return [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  const [x, y, z] = w.map(v => v / th), c = Math.cos(th), s = Math.sin(th), C = 1 - c;
+  return [[c + x * x * C, x * y * C - z * s, x * z * C + y * s], [y * x * C + z * s, c + y * y * C, y * z * C - x * s], [z * x * C - y * s, z * y * C + x * s, c + z * z * C]];
+}
+function euler(p, r, y) { // rotate about x (pitch), then y (roll), then z (yaw)
+  const Rx = [[1, 0, 0], [0, Math.cos(p), -Math.sin(p)], [0, Math.sin(p), Math.cos(p)]];
+  const Ry = [[Math.cos(r), 0, Math.sin(r)], [0, 1, 0], [-Math.sin(r), 0, Math.cos(r)]];
+  const Rz = [[Math.cos(y), -Math.sin(y), 0], [Math.sin(y), Math.cos(y), 0], [0, 0, 1]];
+  return matMul(Rz, matMul(Ry, Rx));
+}
+function toEuler(R) { return [Math.atan2(R[2][1], R[2][2]), Math.asin(Math.max(-1, Math.min(1, -R[2][0]))), Math.atan2(R[1][0], R[0][0])]; }
+function randRot(Rn) { // uniform random rotation via a random unit quaternion
+  const [u1, u2, u3] = [Rn(), Rn(), Rn()], a = Math.sqrt(1 - u1), b = Math.sqrt(u1);
+  const [w, x, y, z] = [a * Math.sin(2 * Math.PI * u2), a * Math.cos(2 * Math.PI * u2), b * Math.sin(2 * Math.PI * u3), b * Math.cos(2 * Math.PI * u3)];
+  return [[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)], [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)], [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]];
+}
+
+function jigRays(c, R) {
+  const r = [];
+  for (const u of shape().dirs) { const t = hit(c, matVec(R, u)); if (t < 0) return null; r.push(t); }
+  return r;
+}
+// Residual: relative spread of the ray lengths. All equal <=> regular shape,
+// because the ray directions are exactly the shape's vertex directions.
+function residual(c, R) {
+  const r = jigRays(c, R); if (!r) return null;
+  const m = r.reduce((a, b) => a + b, 0) / r.length;
+  return r.map(v => (v - m) / m);
+}
+function points(c, R, r) { return shape().dirs.map((u, k) => { const v = matVec(R, u); return [c[0] + r[k] * v[0], c[1] + r[k] * v[1], c[2] + r[k] * v[2]]; }); }
+
+// ---------- Levenberg–Marquardt over centre (3) and optionally rotation (3) ----------
+function solveSym(A, b) {
+  const n = b.length, M = A.map((r, i) => r.concat([b[i]]));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-300) return null; [M[c], M[p]] = [M[p], M[c]];
+    for (let r = c + 1; r < n; r++) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+  }
+  const x = new Array(n).fill(0);
+  for (let r = n - 1; r >= 0; r--) { let s = M[r][n]; for (let k = r + 1; k < n; k++) s -= M[r][k] * x[k]; x[r] = s / M[r][r]; }
+  return x;
+}
+function apply(st, d) { return { c: [st.c[0] + d[0], st.c[1] + d[1], st.c[2] + d[2]], R: d.length > 3 ? matMul(rotVec([d[3], d[4], d[5]]), st.R) : st.R }; }
+const cost = f => f.reduce((s, v) => s + v * v, 0);
+function lmInit(c, R, rotate) { const f = residual(c, R); return f && { c, R, f, cost: cost(f), lam: 1e-3, rotate, done: false, it: 0, stall: 0 }; }
+function lmIterate(st, iters) {
+  const np = st.rotate ? 6 : 3, h = 1e-7;
+  for (let it = 0; it < iters && !st.done; it++) {
+    if (Math.max(...st.f.map(Math.abs)) < 1e-15) { st.done = true; break; }
+    const J = st.f.map(() => new Array(np));
+    for (let j = 0; j < np; j++) {
+      const dp = new Array(np).fill(0), dm = new Array(np).fill(0); dp[j] = h; dm[j] = -h;
+      const a = apply(st, dp), b = apply(st, dm), fp = residual(a.c, a.R), fm = residual(b.c, b.R);
+      if (!fp || !fm) { st.done = true; return st; }
+      for (let i = 0; i < st.f.length; i++) J[i][j] = (fp[i] - fm[i]) / (2 * h);
+    }
+    const A = [], g = [];
+    for (let a = 0; a < np; a++) { A.push([]); g.push(J.reduce((s, row, i) => s + row[a] * st.f[i], 0)); for (let b = 0; b < np; b++) A[a].push(J.reduce((s, row) => s + row[a] * row[b], 0)); }
+    const tr = A.reduce((s, r, i) => s + r[i], 0) / np + 1e-300;
+    let improved = false;
+    while (st.lam < 1e14) {
+      const M = A.map((r, i) => r.map((v, j) => (i === j ? v + st.lam * (v + 1e-9 * tr) : v)));
+      const d = solveSym(M, g.map(v => -v));
+      if (d) {
+        const n = apply(st, d), f = residual(n.c, n.R);
+        if (f && cost(f) < st.cost) {
+          // Stop when progress stalls (no exact solution nearby, e.g. a cube on a rough surface).
+          st.stall = st.cost - cost(f) < 1e-6 * st.cost ? st.stall + 1 : 0;
+          Object.assign(st, n, { f, cost: cost(f) }); st.lam = Math.max(st.lam / 4, 1e-15); improved = true; break;
+        }
       }
-      gridR[i][j] = r; 
-      surface.push({x: r*Math.sin(phi)*Math.cos(theta), y: r*Math.cos(phi), z: r*Math.sin(phi)*Math.sin(theta)});
+      st.lam *= 6;
+    }
+    if (!improved || ++st.it >= 300 || (st.stall >= 8 && st.cost > 1e-24)) st.done = true;
+  }
+  return st;
+}
+// The original "rattle": move the centre toward the mean of the hits at a fixed rotation.
+function rattle(c, R, iters) {
+  for (let i = 0; i < iters; i++) {
+    const r = jigRays(c, R); if (!r) return c;
+    const P = points(c, R, r), m = [0, 1, 2].map(k => P.reduce((s, p) => s + p[k], 0) / P.length);
+    c = c.map((v, k) => v + 0.7 * (m[k] - v));
+  }
+  return c;
+}
+
+// ---------- independent verification ----------
+function verify(c, R) {
+  const r = jigRays(c, R); if (!r) return null;
+  const P = points(c, R, r), U = shape().dirs, n = P.length, d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const t = d(U[i], U[j]); num += d(P[i], P[j]) * t; den += t * t; }
+  const rho = num / den, edge = rho * shape().edgeLen;     // best-fit scale of the template
+  let shapeErr = 0, surfErr = 0;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) shapeErr = Math.max(shapeErr, Math.abs(d(P[i], P[j]) - rho * d(U[i], U[j])) / edge);
+  for (const p of P) { const L = Math.hypot(...p); surfErr = Math.max(surfErr, Math.abs(L - rad(p.map(v => v / L))) / edge); }
+  const m = r.reduce((a, b) => a + b, 0) / n, spread = Math.max(...r.map(v => Math.abs(v - m))) / m;
+  const err = Math.max(shapeErr, surfErr);
+  return { r, P, shapeErr, surfErr, spread, err, ok: err < TOL && rho > 0.05 };
+}
+
+// ---------- state ----------
+let jig = { c: [0, 0, 0], R: euler(0, 0, 0) }, locked = null, cur = null, search = null, scanId = null;
+let vP = 0.4, vY = 0.6, dragging = false, lastX = 0, lastY = 0;
+
+function fmt(e) { return e === 0 ? '0' : e.toExponential(2); }
+function setStatus(t, cls) { $('status').textContent = t; $('status').className = 'status ' + (cls || ''); }
+
+function syncSliders() {
+  const [p, r, y] = toEuler(jig.R).map(a => ((((a * 180) / Math.PI) % 360) + 360) % 360);
+  $('pSl').value = p.toFixed(1); $('rSl').value = r.toFixed(1); $('ySl').value = y.toFixed(1);
+  $('pV').textContent = p.toFixed(1) + '°'; $('rV').textContent = r.toFixed(1) + '°'; $('yV').textContent = y.toFixed(1) + '°';
+}
+
+function updateMeters(v) {
+  const g = $('meterGrid'); g.innerHTML = ''; if (!v) return;
+  const add = (l, val, cls, wide) => { const m = document.createElement('div'); m.className = 'meter' + (wide ? ' wide' : ''); m.innerHTML = `<div class="mlabel">${l}</div><div class="mval ${cls || ''}">${val}</div>`; g.appendChild(m); };
+  const tag = $('insType').value === 'cube' ? 'D' : 'R', ok = v.ok ? 'match' : '';
+  v.r.forEach((x, i) => add(`${tag}${i + 1}`, x.toFixed(9), ok));
+  add('Shape error (all pairwise distances)', fmt(v.shapeErr), v.shapeErr < TOL ? 'match' : 'warn', true);
+  add('Off-surface error', fmt(v.surfErr), v.surfErr < TOL ? 'match' : 'warn', true);
+}
+
+// ---------- drawing ----------
+function project(p) {
+  const x1 = p[0] * Math.cos(vY) + p[2] * Math.sin(vY), z1 = -p[0] * Math.sin(vY) + p[2] * Math.cos(vY);
+  const y2 = p[1] * Math.cos(vP) - z1 * Math.sin(vP), z2 = p[1] * Math.sin(vP) + z1 * Math.cos(vP);
+  const f = 2.5 / (5.5 - z2), k = (H * 0.95) / Rmax;
+  return { x: W / 2 + x1 * f * k, y: H / 2 - y2 * f * k, z: z2 };
+}
+function buildMesh() {
+  mesh = [];
+  for (let i = 0; i <= MR; i++) {
+    const ph = (i / MR) * Math.PI, row = [];
+    for (let j = 0; j < MC; j++) { const th = (j / MC) * 2 * Math.PI, u = [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)], r = rad(u); row.push(u.map(v => v * r)); }
+    mesh.push(row);
+  }
+  Rmax = 0; for (const row of mesh) for (const p of row) Rmax = Math.max(Rmax, Math.hypot(...p));
+  Rmax *= 1.15;
+}
+function line(a, b, color, dash, width) {
+  const p = project(a), q = project(b);
+  x3.setLineDash(dash || []); x3.strokeStyle = color; x3.lineWidth = width || 1;
+  x3.beginPath(); x3.moveTo(p.x, p.y); x3.lineTo(q.x, q.y); x3.stroke(); x3.setLineDash([]);
+}
+function draw3D() {
+  x3.clearRect(0, 0, W, H);
+  const alpha = $('alphaSl').value / 100; $('alphaV').textContent = $('alphaSl').value + '%';
+  const faces = [];
+  for (let i = 0; i < MR; i++) for (let j = 0; j < MC; j++) {
+    const ps = [mesh[i][j], mesh[i][(j + 1) % MC], mesh[i + 1][(j + 1) % MC], mesh[i + 1][j]].map(project);
+    faces.push({ ps, z: (ps[0].z + ps[2].z) / 2 });
+  }
+  faces.sort((a, b) => a.z - b.z);
+  for (const f of faces) {
+    x3.beginPath(); f.ps.forEach((p, k) => (k ? x3.lineTo(p.x, p.y) : x3.moveTo(p.x, p.y))); x3.closePath();
+    const sh = Math.floor(120 + f.z * 40); x3.fillStyle = `rgba(${sh - 30},${sh},${sh + 40},${alpha})`; x3.fill();
+    x3.strokeStyle = `rgba(255,255,255,${alpha * 0.3})`; x3.lineWidth = 0.5; x3.stroke();
+  }
+  const v = locked || cur; if (!v) return;
+  const c = locked ? locked.c : jig.c, R = locked ? locked.R : jig.R;
+  for (const u of shape().dirs) { const d = matVec(R, u), L = Rmax * 1.2; line(c, [c[0] + d[0] * L, c[1] + d[1] * L, c[2] + d[2] * L], 'rgba(255,255,255,0.35)', [2, 2]); }
+  for (const [i, j] of shape().edges) line(v.P[i], v.P[j], v.ok ? '#4a9' : '#ca6', [], 2.5);
+}
+
+function refresh() {
+  if (!locked) { cur = verify(jig.c, jig.R); }
+  draw3D(); updateMeters(locked || cur);
+  if (search) return;
+  const name = $('insType').value, v = locked || cur;
+  if (!v) setStatus('Jig has no valid hits here', '');
+  else if (v.ok) setStatus(`Inscribed ${name} verified — max relative error ${fmt(v.err)}`, 'found');
+  else setStatus(`Centred jig — ray-length spread ${fmt(v.spread)} (not yet a regular ${name})`, '');
+}
+
+// Slider change: rotation fixed by the sliders, re-centre the jig (3-parameter solve).
+function recenter() {
+  const c = rattle([0, 0, 0], jig.R, 30);
+  const st = lmInit(c, jig.R, false); if (st) { lmIterate(st, 60); jig.c = st.c; }
+}
+function onUIChange() {
+  stopScan(); locked = null;
+  ['p', 'r', 'y'].forEach(k => ($(k + 'V').textContent = (+$(k + 'Sl').value).toFixed(1) + '°'));
+  jig.R = euler(...['p', 'r', 'y'].map(k => (+$(k + 'Sl').value * Math.PI) / 180));
+  recenter(); refresh();
+}
+function resetJig() { stopScan(); locked = null; onUIChange(); updateURL(); }
+
+function newSurface(fresh) {
+  stopScan(); locked = null;
+  if (fresh) seed = (Math.random() * 2 ** 31) | 0;
+  surfType = $('surfType').value; rad = makeSurface(surfType, seed);
+  SAMPLES = FRACTAL.has(surfType) ? 360 : 160;
+  buildMesh(); onUIChange(); updateURL();
+}
+function updateURL() {
+  const url = new URL(location.href);
+  url.searchParams.set('shape', $('insType').value); url.searchParams.set('surface', surfType); url.searchParams.set('seed', seed);
+  history.replaceState(null, '', url);
+}
+
+// ---------- automatic search ----------
+// Multi-start: random orientation, rattle the centre, then a full 6-DoF
+// Levenberg–Marquardt solve of "all ray lengths equal". Only results that pass
+// verify() are accepted. If none does, the best candidate's error is reported.
+const ATTEMPTS = { cube: 120, tetrahedron: 30, octahedron: 30 };
+// Fractal surfaces are slow to solve on, so the cube search uses fewer starts there.
+const attempts = () => Math.min(ATTEMPTS[$('insType').value], FRACTAL.has(surfType) ? 40 : Infinity);
+function* searchGen(s) {
+  const Rn = rng(seed * 31 + 7), N = attempts();
+  for (s.k = 0; s.k < N; s.k++) {
+    const R0 = s.k === 0 ? jig.R : randRot(Rn), off = s.k === 0 ? [0, 0, 0] : randUnit(Rn).map(v => v * 0.2 * Rn());
+    const levels = FRACTAL.has(surfType) ? [1, 3, 5, 7, Infinity] : [Infinity];
+    let c = off, R = R0, st = null;
+    for (const lev of levels) {
+      octaves = lev;
+      if (!st) c = rattle(c, R, 30);
+      st = lmInit(c, R, true); if (!st) break;
+      while (!st.done) { lmIterate(st, 2); jig = { c: st.c, R: st.R }; octaves = Infinity; yield; octaves = lev; }
+      c = st.c; R = st.R;
+    }
+    octaves = Infinity;
+    if (!st) { yield; continue; }
+    const v = verify(st.c, st.R); if (!v) continue;
+    if (!s.best || v.err < s.best.v.err) s.best = { c: st.c, R: st.R, v };
+    if (v.ok) return true;
+  }
+  return false;
+}
+function startScan() {
+  locked = null; search = { k: 0, best: null }; search.gen = searchGen(search);
+  $('scanBtn').textContent = 'Stop'; $('scanBtn').classList.add('active');
+  scanId = requestAnimationFrame(scanStep);
+}
+function stopScan() { octaves = Infinity; search = null; cancelAnimationFrame(scanId); $('scanBtn').textContent = 'Auto-find Equilibrium'; $('scanBtn').classList.remove('active'); }
+function toggleScan() { search ? (stopScan(), refresh()) : startScan(); }
+function scanStep() {
+  if (!search) return;
+  const s = search, t0 = performance.now();
+  while (performance.now() - t0 < 16) {
+    const r = s.gen.next();
+    if (r.done) {
+      stopScan();
+      if (s.best) { jig = { c: s.best.c, R: s.best.R }; syncSlidersQuiet(); }
+      if (r.value) locked = Object.assign({ c: s.best.c, R: s.best.R }, s.best.v);
+      refresh();
+      if (!r.value) setStatus(`No ${$('insType').value} verified to ${TOL} after ${s.k} starts — best candidate error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
+      return;
     }
   }
+  cur = verify(jig.c, jig.R); draw3D(); updateMeters(cur);
+  setStatus(`Rattling skeleton — start ${s.k + 1}/${attempts()}, best error ${s.best ? fmt(s.best.v.err) : '—'}`, 'active');
+  scanId = requestAnimationFrame(scanStep);
 }
+function syncSlidersQuiet() { syncSliders(); }
 
-function getRadiusAt(p){
-  const rV = Math.hypot(p.x, p.y, p.z);
-  const phi = Math.acos(Math.max(-1, Math.min(1, p.y / (rV || 1))));
-  const theta = (Math.atan2(p.z, p.x) + Math.PI * 2) % (Math.PI * 2);
-  const i = (phi / Math.PI) * N, j = (theta / (Math.PI * 2)) * (2 * N);
-  const i0 = Math.floor(i), i1 = Math.min(N, i0 + 1), j0 = Math.floor(j) % (2*N), j1 = (j0 + 1) % (2 * N);
-  const fI = i - i0, fJ = j - Math.floor(j);
-  return (gridR[i0][j0]*(1-fJ)+gridR[i0][j1]*fJ)*(1-fI)+(gridR[i1][j0]*(1-fJ)+gridR[i1][j1]*fJ)*fI;
-}
+// ---------- view interaction ----------
+c3d.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; c3d.setPointerCapture(e.pointerId); });
+c3d.addEventListener('pointerup', () => (dragging = false));
+c3d.addEventListener('pointermove', e => { if (!dragging) return; vY += (e.clientX - lastX) * 0.01; vP += (e.clientY - lastY) * 0.01; lastX = e.clientX; lastY = e.clientY; draw3D(); });
 
-function rayOuter3D(ox, oy, oz, dx, dy, dz){
-  let lo = 0, hi = 2.5;
-  for(let i=0; i<24; i++){
-    let m = (lo+hi)/2, p = {x: ox+m*dx, y: oy+m*dy, z: oz+m*dz};
-    if(Math.hypot(p.x, p.y, p.z) < getRadiusAt(p)) lo = m; else hi = m;
-  }
-  return {x: ox+lo*dx, y: oy+lo*dy, z: oz+lo*dz, t: lo};
-}
-
-function dist(p1, p2){return Math.hypot(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z);}
-
-function updateMeters(type, pts, c, forceGreen){
-  const grid=document.getElementById('meterGrid'); grid.innerHTML='';
-  let diags = type==='cube' ? [dist(pts[0],pts[1]), dist(pts[2],pts[3]), dist(pts[4],pts[5]), dist(pts[6],pts[7])] : pts.map(p => dist(p, c));
-  let edges = (type==='cube' ? cubeEdges : tetraEdges).map(e => dist(pts[e[0]], pts[e[1]]));
-  const dAvg = diags.reduce((a,b)=>a+b,0)/diags.length, dErr = Math.max(...diags.map(d=>Math.abs(d-dAvg)));
-  const eAvg = edges.reduce((a,b)=>a+b,0)/edges.length, eErr = Math.max(...edges.map(e=>Math.abs(e-eAvg)));
-  
-  equilibriumFound = dErr < 0.007 && eErr < 0.007;
-
-  diags.forEach((d,i)=>{
-    const m=document.createElement('div'); m.className='meter';
-    m.innerHTML=`<div class="mlabel">${type==='cube'?'D':'R'}${i+1}</div><div class="mval ${equilibriumFound?'match':''}">${d.toFixed(3)}</div>`;
-    grid.appendChild(m);
-  });
-  const rm=document.createElement('div'); rm.className='meter'; rm.style.gridColumn = "span 4";
-  rm.innerHTML=`<div class="mlabel">Rigidity Ratio (Target: ${type==='cube'?'1.732':'1.633'})</div><div class="mval ${equilibriumFound?'match':''}">${(dAvg/eAvg).toFixed(3)} (±${eErr.toFixed(3)})</div>`;
-  grid.appendChild(rm);
-  return dErr + eErr;
-}
-
-function rotateVec(v, p, r, y){
-  let vx=v[0], vy=v[1], vz=v[2];
-  let y1=vy*Math.cos(p)-vz*Math.sin(p), z1=vy*Math.sin(p)+vz*Math.cos(p);
-  let x2=vx*Math.cos(r)+z1*Math.sin(r), z2=-vx*Math.sin(r)+z1*Math.cos(r);
-  let x3=x2*Math.cos(y)-y1*Math.sin(y), y3=x2*Math.sin(y)+y1*Math.cos(y);
-  return {x:x3, y:y3, z:z2};
-}
-
-function calculateState(p, r, y, ox, oy, oz, iters=60){
-  const type=document.getElementById('insType').value;
-  const baseVecs = type==='cube' ? [[1,1,1],[-1,-1,-1],[-1,-1,1],[1,1,-1],[1,-1,-1],[-1,1,1],[-1,1,-1],[1,-1,1]] : [[0,1,0],[0.94,-0.33,0],[-0.47,-0.33,0.81],[-0.47,-0.33,-0.81]];
-  let tx=ox, ty=oy, tz=oz;
-  for(let i=0; i<iters; i++){
-    points = baseVecs.map(v => {
-      let rv = rotateVec(v, p, r, y); const mag = Math.hypot(rv.x, rv.y, rv.z);
-      return rayOuter3D(tx, ty, tz, rv.x/mag, rv.y/mag, rv.z/mag);
-    });
-    let txG=0, tyG=0, tzG=0;
-    if(type==='cube'){ for(let j=0; j<4; j++){ txG+=(points[j*2].x+points[j*2+1].x)/2; tyG+=(points[j*2].y+points[j*2+1].y)/2; tzG+=(points[j*2].z+points[j*2+1].z)/2; } txG/=4; tyG/=4; tzG/=4; }
-    else { points.forEach(p=>{txG+=p.x; tyG+=p.y; tzG+=p.z;}); txG/=4; tyG/=4; tzG/=4; }
-    tx+=(txG-tx)*0.7; ty+=(tyG-ty)*0.7; tz+=(tzG-tz)*0.7;
-  }
-  return {tx, ty, tz, pts: points};
-}
-
-function getProjected(p,W,H){
-  let x1=p.x*Math.cos(vY)+p.z*Math.sin(vY), z1=-p.x*Math.sin(vY)+p.z*Math.cos(vY);
-  let y2=p.y*Math.cos(vP)-z1*Math.sin(vP), z2=p.y*Math.sin(vP)+z1*Math.cos(vP);
-  return {x:x1, y:y2, z:z2};
-}
-
-function drawClippedLine(p1, p2, W, H, color, dash = []) {
-  let pr1 = getProjected(p1, W, H), pr2 = getProjected(p2, W, H);
-  const nearZ = 5.25; 
-  if (pr1.z > nearZ && pr2.z > nearZ) return; 
-  if (pr1.z > nearZ || pr2.z > nearZ) {
-    const t = (nearZ - pr1.z) / (pr2.z - pr1.z);
-    if (pr1.z > nearZ) { pr1.x += t*(pr2.x-pr1.x); pr1.y += t*(pr2.y-pr1.y); pr1.z = nearZ; }
-    else { pr2.x += (1-t)*(pr1.x-pr2.x); pr2.y += (1-t)*(pr1.y-pr2.y); pr2.z = nearZ; }
-  }
-  const f1 = 2.5 / (5.5 - pr1.z), f2 = 2.5 / (5.5 - pr2.z);
-  x3.setLineDash(dash); x3.strokeStyle = color; x3.beginPath();
-  x3.moveTo(W/2 + pr1.x*f1*H*0.4, H/2 - pr1.y*f1*H*0.4);
-  x3.lineTo(W/2 + pr2.x*f2*H*0.4, H/2 - pr2.y*f2*H*0.4);
-  x3.stroke();
-}
-
-function draw3D(forceGreen = false){
-  const W=c3d.width, H=c3d.height; x3.clearRect(0,0,W,H);
-  jP = document.getElementById('pSl').value*Math.PI/180;
-  jR = document.getElementById('rSl').value*Math.PI/180;
-  jY = document.getElementById('ySl').value*Math.PI/180;
-  
-  // HIGH FREQUENCY CENTERING
-  const res = calculateState(jP, jR, jY, jigX, jigY, jigZ, forceGreen ? 120 : 60);
-  jigX=res.tx; jigY=res.ty; jigZ=res.tz; points = res.pts;
-  const err = updateMeters(document.getElementById('insType').value, points, {x:jigX,y:jigY,z:jigZ}, forceGreen);
-  
-  // RESTORED VOLUMETRIC SKIN
-  const alpha = document.getElementById('alphaSl').value/100;
-  const cols = 2*N; let faces = [];
-  for(let i=0; i<N; i++) for(let j=0; j<cols; j++){
-    const p1=surface[i*cols+j], p2=surface[i*cols+(j+1)%cols], p3=surface[(i+1)*cols+(j+1)%cols], p4=surface[(i+1)*cols+j];
-    faces.push({pts:[p1,p2,p3,p4], z: getProjected({x:(p1.x+p3.x)/2, y:(p1.y+p3.y)/2, z:(p1.z+p3.z)/2},W,H).z});
-  }
-  faces.sort((a,b) => a.z - b.z);
-  faces.forEach(f => {
-    x3.beginPath(); f.pts.forEach((p, idx) => {
-       const pr = getProjected(p,W,H); const fctr = 2.5/(5.5-pr.z);
-       if (pr.z < 5.4) idx===0 ? x3.moveTo(W/2+pr.x*fctr*H*0.4, H/2-pr.y*fctr*H*0.4) : x3.lineTo(W/2+pr.x*fctr*H*0.4, H/2-pr.y*fctr*H*0.4);
-    });
-    x3.closePath(); const shade = Math.floor(120 + f.z * 40); x3.fillStyle = `rgba(${shade-30},${shade},${shade+40},${alpha})`;
-    x3.fill(); x3.strokeStyle = `rgba(255,255,255,${alpha*0.3})`; x3.lineWidth = 0.5; x3.stroke();
-  });
-  
-  const center = {x:jigX, y:jigY, z:jigZ}, type = document.getElementById('insType').value, mult = 100;
-  if(type === 'cube') {
-    for(let i=0; i<4; i++) {
-      let p1 = points[i*2], p2 = points[i*2+1], dx = p2.x - p1.x, dy = p2.y - p1.y, dz = p2.z - p1.z;
-      drawClippedLine({x:center.x+dx*mult, y:center.y+dy*mult, z:center.z+dz*mult}, {x:center.x-dx*mult, y:center.y-dy*mult, z:center.z-dz*mult}, W, H, 'rgba(255,255,255,0.45)', [2,2]);
-    }
-  } else {
-    points.forEach(p => {
-       let dx = p.x - center.x, dy = p.y - center.y, dz = p.z - center.z;
-       drawClippedLine({x:center.x+dx*mult, y:center.y+dy*mult, z:center.z+dz*mult}, {x:center.x-dx*mult, y:center.y-dy*mult, z:center.z-dz*mult}, W, H, 'rgba(255,255,255,0.45)', [2,2]);
-    });
-  }
-  x3.lineWidth=2.5;
-  const edges = type==='cube' ? cubeEdges : tetraEdges;
-  edges.forEach(e => drawClippedLine(points[e[0]], points[e[1]], W, H, '#4a9'));
-  
-  const st=document.getElementById('status');
-  if(!scanning && equilibriumFound) { st.textContent='Geometric Equilibrium Locked'; st.className='status found'; }
-  else if(scanning) { st.textContent='Sieve active... Rattling Skeleton'; st.className='status active'; }
-  else { st.textContent='Ready'; st.className='status'; }
-  return err;
-}
-
-// Grid scan state — deliberately NOT named gridR to avoid conflict with surface data
-let gScanActive=false, gScanP=0, gScanRot=0, gScanY=0;
-const G_STEP=12; // degrees per grid step
-
-function scoreCandidate(res, type){
-  const edgeList = type==='cube' ? cubeEdges : tetraEdges;
-  const d = type==='cube'
-    ? [dist(res.pts[0],res.pts[1]), dist(res.pts[2],res.pts[3]), dist(res.pts[4],res.pts[5]), dist(res.pts[6],res.pts[7])]
-    : res.pts.map(pt=>dist(pt,{x:res.tx,y:res.ty,z:res.tz}));
-  const dAvg=d.reduce((a,b)=>a+b,0)/d.length, dErr=Math.max(...d.map(v=>Math.abs(v-dAvg)));
-  const e=edgeList.map(edge=>dist(res.pts[edge[0]],res.pts[edge[1]]));
-  const eAvg=e.reduce((a,b)=>a+b,0)/e.length, eErr=Math.max(...e.map(v=>Math.abs(v-eAvg)));
-  return dErr+eErr;
-}
-
-function applyAngles(tP,tR,tY){
-  jP=tP; jR=tR; jY=tY;
-  document.getElementById('pSl').value=Math.round(((tP*180/Math.PI)%360+360)%360);
-  document.getElementById('rSl').value=Math.round(((tR*180/Math.PI)%360+360)%360);
-  document.getElementById('ySl').value=Math.round(((tY*180/Math.PI)%360+360)%360);
-}
-
-function scanStep(){
-  if(!scanning)return;
-  const type=document.getElementById('insType').value;
-  const st=document.getElementById('status');
-
-  if(gScanActive){
-    // Phase 2: systematic grid sweep 360x360x360 at G_STEP intervals
-    const total=Math.pow(360/G_STEP,3);
-    const done=gScanP*(360/G_STEP)*(360/G_STEP)+gScanRot*(360/G_STEP)+gScanY;
-    st.textContent='Grid scan '+Math.round(done/total*100)+'% — err:'+bestErr.toFixed(3);
-    st.className='status active';
-
-    for(let b=0;b<12;b++){
-      const tP=gScanP*G_STEP*Math.PI/180, tR=gScanRot*G_STEP*Math.PI/180, tY=gScanY*G_STEP*Math.PI/180;
-      const res=calculateState(tP,tR,tY,0,0,0,16);
-      const sc=scoreCandidate(res,type);
-      if(sc<bestErr){bestErr=sc; applyAngles(tP,tR,tY);}
-      gScanY++;
-      if(gScanY>=360/G_STEP){gScanY=0;gScanRot++;}
-      if(gScanRot>=360/G_STEP){gScanRot=0;gScanP++;}
-      if(gScanP>=360/G_STEP){gScanActive=false;scanCounter=0;break;}
-    }
-    if(bestErr<0.005){stopScan();draw3D(false);return;}
-    onUIChange(); scanId=requestAnimationFrame(scanStep); return;
-  }
-
-  // Phase 1: jitter annealing
-  scanCounter++;
-  st.textContent='Rattling '+Math.round(scanCounter/950*100)+'% — err:'+bestErr.toFixed(3);
-  st.className='status active';
-
-  if(bestErr<0.005){stopScan();draw3D(false);return;}
-
-  if(scanCounter>950){
-    if(bestErr>0.025){
-      // Not converged well enough — fall back to full grid scan
-      gScanActive=true; gScanP=0; gScanRot=0; gScanY=0;
-      st.textContent='Starting grid scan...'; st.className='status active';
-    } else {
-      stopScan(); draw3D(false);
-    }
-    scanId=requestAnimationFrame(scanStep); return;
-  }
-
-  const range=Math.PI*Math.pow(0.985,scanCounter/2.2);
-  const iters=bestErr<0.05?42:22;
-  for(let i=0;i<iters;i++){
-    const tP=jP+(Math.random()-0.5)*range, tR=jR+(Math.random()-0.5)*range, tY=jY+(Math.random()-0.5)*range;
-    const res=calculateState(tP,tR,tY,jigX,jigY,jigZ,12);
-    const sc=scoreCandidate(res,type);
-    if(sc<bestErr){bestErr=sc; applyAngles(tP,tR,tY);}
-  }
-  onUIChange(); scanId=requestAnimationFrame(scanStep);
-}
-
-function toggleScan(){ scanning?stopScan():startScan(); }
-function startScan(){ scanning=true; scanCounter=0; bestErr=999; equilibriumFound=false; gScanActive=false; document.getElementById('scanBtn').textContent='Stop'; scanStep(); }
-function stopScan(){ scanning=false; gScanActive=false; cancelAnimationFrame(scanId); document.getElementById('scanBtn').textContent='Auto-find Equilibrium'; }
-function onUIChange(){ ['p', 'r', 'y', 'alpha'].forEach(k => { const el = document.getElementById(k+'Sl'), vEl = document.getElementById(k+'V'); if(vEl) vEl.textContent = (k==='alpha'?el.value+'%':el.value+'°'); }); draw3D(); }
-function resetJig(){ stopScan(); jigX=0; jigY=0; jigZ=0; bestErr=999; calculateState(jP, jR, jY, 0, 0, 0, 120); onUIChange(); }
-function newCurve(){ genSurface(); resetJig(); }
-
-c3d.addEventListener('mousedown', e => { isDragging = true; lastMX = e.clientX; lastMY = e.clientY; });
-window.addEventListener('mouseup', () => isDragging = false);
-window.addEventListener('mousemove', e => { if(isDragging){ vY+=(e.clientX-lastMX)*0.01; vP+=(e.clientY-lastMY)*0.01; lastMX=e.clientX; lastMY=e.clientY; draw3D(); } });
-
-genSurface();
-resetJig();
-
-  window.addEventListener('load', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const shape = urlParams.get('shape'); // Looks for ?shape=tetrahedron
-    const select = document.getElementById('insType'); // Matches your <select id="insType">
-    
-    if (shape && select) {
-      select.value = shape;
-      // Trigger resetJig() which is defined in your onchange attribute
-      select.dispatchEvent(new Event('change')); 
-    }
-  });
+// ---------- start-up ----------
+(function init() {
+  const dpr = window.devicePixelRatio || 1; W = Math.min(440, window.innerWidth - 24); H = Math.round(W * 0.78);
+  c3d.width = W * dpr; c3d.height = H * dpr; c3d.style.width = W + 'px'; c3d.style.height = H + 'px'; x3.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const [v, l] of SURFACES) { const o = document.createElement('option'); o.value = v; o.textContent = l; $('surfType').appendChild(o); }
+  const q = new URLSearchParams(location.search);
+  if (SHAPES[q.get('shape')]) $('insType').value = q.get('shape');
+  if (SURFACES.some(([v]) => v === q.get('surface'))) $('surfType').value = q.get('surface');
+  seed = q.has('seed') ? (+q.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;
+  newSurface(false);
+})();
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inscribed Cube Viewfinder v19</title>
+<title>Inscribed Cube Viewfinder</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px;}
@@ -65,8 +65,9 @@
   <div class="meter"><div class="mlabel">Max Found Scale</div><div class="mval" id="mMax">—</div></div>
 </div>
 <div class="status" id="status">Ready</div>
+<div class="sub" style="margin-top:8px;max-width:440px;">Demonstration only: this grows the largest cube that fits <em>inside</em> the surface. Its vertices are not all on the surface, so it is not an inscribed cube. Use the Skeletal Space Finder for verified inscribed shapes.</div>
 
-<div class="nav"><a href="index.html">← Back to suite</a></div>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script>
 const c3d=document.getElementById('c3d'),x3=c3d.getContext('2d');
@@ -215,8 +216,8 @@ function onUIChange() {
 function scanStep() {
   if (!scanning) return;
   scanCounter++;
-  if (scanCounter > SCAN_LIMIT) { stopScan(); document.getElementById('status').textContent = 'Equilibrium Reached.'; return; }
-  document.getElementById('status').textContent = `Directed Jitter... ${Math.floor(scanCounter/SCAN_LIMIT*100)}%`;
+  if (scanCounter > SCAN_LIMIT) { stopScan(); document.getElementById('status').textContent = 'Largest contained cube found (not an inscribed cube)'; return; }
+  document.getElementById('status').textContent = `Growing contained cube... ${Math.floor(scanCounter/SCAN_LIMIT*100)}%`;
   
   let temp = 1.0 - (scanCounter / SCAN_LIMIT);
   for(let i=0; i<6; i++){ 
@@ -246,7 +247,7 @@ function startScan() {
   document.getElementById('scanBtn').textContent = 'Stop'; scanStep();
 }
 function stopScan() { scanning = false; cancelAnimationFrame(scanId); document.getElementById('scanBtn').textContent = 'Auto-find Cube'; }
-function newSurface() { stopScan(); genSurface(); maxFoundSz = 0; bestCX=0; bestCY=0; bestCZ=0; bestP=0.78; bestR=0; bestY=0; document.getElementById('mMax').textContent = '—'; document.getElementById('pitchSl').value = 45; document.getElementById('rollSl').value = 0; document.getElementById('yawSl').value = 0; onUIChange(); document.getElementById('status').textContent = 'New Random Geometry Sealed.'; }
+function newSurface() { stopScan(); genSurface(); maxFoundSz = 0; bestCX=0; bestCY=0; bestCZ=0; bestP=0.78; bestR=0; bestY=0; document.getElementById('mMax').textContent = '—'; document.getElementById('pitchSl').value = 45; document.getElementById('rollSl').value = 0; document.getElementById('yawSl').value = 0; onUIChange(); document.getElementById('status').textContent = 'New surface generated'; }
 function toggleScan() { scanning ? stopScan() : startScan(); }
 
 genSurface(); draw3D();

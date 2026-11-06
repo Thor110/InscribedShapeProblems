@@ -40,7 +40,7 @@
 <div class="sub">
   Edward James Gordon — Odd Perfect Number Problem (Heuristic)<br>
   An odd number lacks the N/2 anchor. Its proper divisors, starting at most N/3, are plausibly incapable of summing to N — but this is a heuristic motivation, not a proof. The non-existence of odd perfect numbers remains an open problem in number theory.
-  Drag the slider to explore any odd number and watch the divisor segments fail to bridge the gap.
+  Drag the slider to explore odd numbers. Most fall short of N, but odd abundant numbers (the smallest is 945) overshoot it, so the open question is whether the sum can ever land exactly on N.
 </div>
 
 <canvas id="canvas" height="100"></canvas>
@@ -61,7 +61,7 @@
 </div>
 
 <div class="divisors" id="divisorList">Divisors: 1, 7, 11</div>
-<div class="status deficit" id="status">Sum falls short by 58 — the divisors cannot bridge the gap to N</div>
+<div class="status deficit" id="status">Sum falls short by 58 (deficient)</div>
 
 <div class="controls">
   <button onclick="setN(3)">N = 3</button>
@@ -73,7 +73,7 @@
   <button onclick="scanForPerfect()" id="scanBtn">Scan for odd perfect</button>
 </div>
 
-<div class="nav"><a href="index.html">← Back to suite</a></div>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script>
 const cv=document.getElementById('canvas'),ctx=cv.getContext('2d');
@@ -118,10 +118,10 @@ function render(n){
     st.textContent='Perfect — sum equals N exactly (this would be extraordinary)';
     st.className='status perfect';
   } else if(gap>0){
-    st.textContent='Sum falls short by '+gap.toLocaleString()+' — the divisors cannot bridge the gap to N';
+    st.textContent='Sum falls short by '+gap.toLocaleString()+' (deficient)';
     st.className='status deficit';
   } else {
-    st.textContent='Sum exceeds N by '+Math.abs(gap).toLocaleString();
+    st.textContent='Sum exceeds N by '+Math.abs(gap).toLocaleString()+' — an odd abundant number: odd divisors alone can overshoot N';
     st.className='status excess';
   }
 
@@ -231,18 +231,23 @@ function scanStep(){
     document.getElementById('status').textContent='Scan complete — no odd perfect number found up to '+max.toLocaleString();
     return;
   }
-  document.getElementById('nSl').value=scanN;
-  render(scanN);
-  const divs=getDivisors(scanN);
-  const total=divs.reduce((s,x)=>s+x,0);
-  if(total===scanN){
-    document.getElementById('status').textContent='Odd perfect number found at N = '+scanN+' (extraordinary!)';
+  // Test a batch of odd numbers per frame; render only the last one tested.
+  let last=scanN,found=false;
+  for(let k=0;k<400&&scanN<=max;k++){
+    last=scanN;
+    if(getDivisors(scanN).reduce((s,x)=>s+x,0)===scanN){found=true;break;}
+    scanN+=2;
+  }
+  document.getElementById('nSl').value=last;
+  document.getElementById('nV').textContent=last.toLocaleString();
+  render(last);
+  if(found){
+    document.getElementById('status').textContent='Odd perfect number found at N = '+last+' (extraordinary!)';
     scanning=false;
     document.getElementById('scanBtn').textContent='Scan for odd perfect';
     document.getElementById('scanBtn').classList.remove('active');
     return;
   }
-  scanN+=2;
   scanId=requestAnimationFrame(scanStep);
 }
 

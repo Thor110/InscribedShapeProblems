@@ -40,17 +40,8 @@
 <div class="sub">Edward James Gordon — Inscribed Square Problem</div>
 <canvas id="canvas"></canvas>
 <div class="controls">
-  <select id="shapeType" onchange="newCurve()">
-    <option value="random">Random blob</option>
-    <option value="star">Star</option>
-    <option value="ellipse">Ellipse</option>
-    <option value="triangle">Triangle-like</option>
-    <option value="crescent">Crescent</option>
-    <option value="polygon">Polygon</option>
-    <option value="teardrop">Teardrop</option>
-    <option value="heart">Heart-like</option>
-  </select>
-  <button onclick="newCurve()">New curve</button>
+  <select id="shapeType" onchange="newCurve(false)"></select>
+  <button onclick="newCurve(true)">New curve</button>
   <button onclick="resetSquare()">Reset square</button>
   <button onclick="toggleScan()" id="scanBtn">Auto-find</button>
   <div class="slrow">Size<input type="range" id="szSl" min="4" max="380" value="50" step="1" oninput="onSz(this.value)"><span id="szV">50</span></div>
@@ -71,125 +62,36 @@
 </div>
 <div class="status" id="status">Expand the square — it scales down when it meets the boundary</div>
 
-<div class="nav"><a href="index.html">← Back to suite</a></div>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
 
+<script src="shapes2d.js"></script>
 <script>
+// Squares are accepted only when every side and diagonal matches a square to this relative tolerance.
+const TOL=1e-9;
 const cv=document.getElementById('canvas'),ctx=cv.getContext('2d');
 let W,H,curve=[],cen={x:0,y:0};
 let sqX=0,sqY=0,sqSz=50,sqAng=0;
 let dragging=false,dOX=0,dOY=0;
 let scanning=false,scanT=0,scanId=null;
-let wX=0,wY=0,lockedFrame=null;
+let wX=0,wY=0,lockedFrame=null,geo=null,seed=(Math.random()*2**31)|0;
 let prevSD=null,prevT=null,prevWX=0,prevWY=0;
 const VN=['A','B','C','D'],VC=['#e55','#ca6','#69a','#4a9'];
 
 function resize(){const mw=Math.min(window.innerWidth-40,700);W=cv.width=mw;H=cv.height=Math.round(mw*0.68);}
 
-function buildCurve(pts){
-  const sm=[];
-  for(let i=0;i<pts.length;i++){
-    const a=pts[(i-1+pts.length)%pts.length],b=pts[i],c=pts[(i+1)%pts.length];
-    sm.push({x:(a.x+2*b.x+c.x)/4,y:(a.y+2*b.y+c.y)/4});
-  }
-  curve=sm;
-  let sx=0,sy=0;for(const p of curve){sx+=p.x;sy+=p.y;}
-  cen={x:sx/curve.length,y:sy/curve.length};wX=cen.x;wY=cen.y;
-}
-
 function genCurve(){
-  const type=document.getElementById('shapeType').value;
-  const cx=W/2,cy=H/2,base=Math.min(W,H)*0.34;
-  const N=800,pts=[];
-  switch(type){
-    case'random':{
-      const b=Array.from({length:5},()=>0.45+Math.random()*0.85);
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2,r=base+b.reduce((s,v,j)=>s+base*0.13*v*Math.cos((j+2)*t+j*2.1),0);
-        pts.push({x:cx+r*Math.cos(t),y:cy+r*Math.sin(t)});
-      }
-      break;
-    }
-    case'star':{
-      const n=4+Math.floor(Math.random()*3),inner=0.42+Math.random()*0.2,rot=Math.random()*Math.PI;
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2+rot;
-        const blend=(Math.sin(n*t)+1)/2;
-        const r=base*(inner+(1-inner)*blend);
-        pts.push({x:cx+r*Math.cos(t),y:cy+r*Math.sin(t)});
-      }
-      break;
-    }
-    case'ellipse':{
-      const rx=base*(0.55+Math.random()*0.5),ry=base*(0.4+Math.random()*0.5);
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2;
-        pts.push({x:cx+rx*Math.cos(t),y:cy+ry*Math.sin(t)});
-      }
-      break;
-    }
-    case'triangle':{
-      const rot=Math.random()*Math.PI*2;
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2;
-        const seg=Math.floor(t/(Math.PI*2/3));
-        const frac=(t%(Math.PI*2/3))/(Math.PI*2/3);
-        const a0=seg*Math.PI*2/3+rot,a1=a0+Math.PI*2/3;
-        pts.push({x:cx+base*0.88*(Math.cos(a0)*(1-frac)+Math.cos(a1)*frac),y:cy+base*0.88*(Math.sin(a0)*(1-frac)+Math.sin(a1)*frac)});
-      }
-      break;
-    }
-    case'crescent':{
-      const R=base*0.9,r2=base*0.62,offX=base*0.26;
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2;
-        const ox=cx+R*Math.cos(t),oy=cy+R*Math.sin(t);
-        const push=Math.max(0,(ox-(cx-offX+r2))/r2)*0.45;
-        pts.push({x:ox-push*(ox-(cx+offX)),y:oy-push*(oy-cy)*0.3});
-      }
-      break;
-    }
-    case'polygon':{
-      const n=5+Math.floor(Math.random()*4),rot=Math.random()*Math.PI*2;
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2+rot;
-        const seg=Math.floor(t/(Math.PI*2/n))%n;
-        const frac=(t%(Math.PI*2/n))/(Math.PI*2/n);
-        const a0=seg*Math.PI*2/n+rot,a1=a0+Math.PI*2/n;
-        pts.push({x:cx+base*0.85*(Math.cos(a0)*(1-frac)+Math.cos(a1)*frac),y:cy+base*0.85*(Math.sin(a0)*(1-frac)+Math.sin(a1)*frac)});
-      }
-      break;
-    }
-    case'teardrop':{
-      const ry=base*(0.72+Math.random()*0.22),rx=base*(0.48+Math.random()*0.22);
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2;
-        const px=cx+rx*Math.sin(t)*(1+0.32*Math.sin(t));
-        const py=cy+ry*(Math.cos(t)-0.18*Math.cos(2*t))*0.88;
-        pts.push({x:px,y:py});
-      }
-      break;
-    }
-    case'heart':{
-      for(let i=0;i<N;i++){
-        const t=i/N*Math.PI*2;
-        const px=cx+base*0.68*Math.sin(t)**3;
-        const py=cy-base*0.58*(0.8125*Math.cos(t)-0.3125*Math.cos(2*t)-0.125*Math.cos(3*t)-0.0625*Math.cos(4*t));
-        pts.push({x:px,y:py});
-      }
-      break;
-    }
+  curve=Shapes2D.fit(Shapes2D.generate(document.getElementById('shapeType').value,seed),W,H,24);
+  geo=Shapes2D.accel(curve);
+  // Start at the deepest interior point on a coarse grid (the centroid can lie outside non-convex curves).
+  let best=null;
+  for(let i=0;i<24;i++)for(let j=0;j<24;j++){
+    const x=W*(i+0.5)/24,y=H*(j+0.5)/24;
+    if(geo.inside(x,y)){const d=geo.dist(x,y);if(!best||d>best.d)best={x,y,d};}
   }
-  buildCurve(pts);
+  cen=best||{x:W/2,y:H/2};wX=cen.x;wY=cen.y;
 }
 
-function inside(px,py){
-  let ins=false;
-  for(let i=0,j=curve.length-1;i<curve.length;j=i++){
-    const xi=curve[i].x,yi=curve[i].y,xj=curve[j].x,yj=curve[j].y;
-    if(((yi>py)!==(yj>py))&&px<(xj-xi)*(py-yi)/(yj-yi)+xi)ins=!ins;
-  }
-  return ins;
-}
+function inside(px,py){return geo.inside(px,py);}
 
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 
@@ -254,7 +156,7 @@ function draw(){
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(VN[i],p.x,p.y-15);
     });
     updateMeters(A,B,C,D);
-    document.getElementById('status').textContent='Inscribed square found — all four vertices on the boundary';
+    document.getElementById('status').textContent='Inscribed square verified — max relative error '+(lockedFrame.err||0).toExponential(2);
     document.getElementById('status').className='status found';
     return;
   }
@@ -345,7 +247,8 @@ cv.addEventListener('touchmove',e=>{
 },{passive:false});
 cv.addEventListener('touchend',()=>dragging=false);
 
-function newCurve(){
+function newCurve(fresh){
+  if(fresh)seed=(Math.random()*2**31)|0;
   stopScan();lockedFrame=null;resize();genCurve();
   sqX=cen.x;sqY=cen.y;sqSz=50;sqAng=0;syncSliders(50,0);
   document.getElementById('status').textContent='Expand the square — it scales down when it meets the boundary';
@@ -359,32 +262,24 @@ function resetSquare(){stopScan();lockedFrame=null;sqX=cen.x;sqY=cen.y;sqSz=50;s
 // Return the OUTERMOST intersection in the given direction (farthest from origin)
 // For concave shapes like stars this gives the spanning chord, not a short clip
 function rayOuter(ox,oy,dx,dy){
-  let best=null;
-  for(let i=0;i<curve.length;i++){
-    const j=(i+1)%curve.length,ax=curve[i].x,ay=curve[i].y,bx=curve[j].x,by=curve[j].y;
-    const ex=bx-ax,ey=by-ay,den=dx*ey-dy*ex;
-    if(Math.abs(den)<1e-9)continue;
-    const t=((ax-ox)*ey-(ay-oy)*ex)/den,u=((ax-ox)*dy-(ay-oy)*dx)/den;
-    if(t>0.1&&u>=0&&u<=1){
-      if(!best||t>best.t)best={x:ox+t*dx,y:oy+t*dy,t};
-    }
-  }
-  return best;
+  const t=geo.far(ox,oy,dx,dy);
+  return t<0?null:{x:ox+t*dx,y:oy+t*dy,t};
 }
 
 function findCenter(ang,sx,sy){
   let cx=sx,cy=sy;
   const dx1=Math.cos(ang),dy1=Math.sin(ang),dx2=-dy1,dy2=dx1;
-  for(let i=0;i<80;i++){
+  let converged=false;
+  for(let i=0;i<600;i++){
     const f1=rayOuter(cx,cy,dx1,dy1),b1=rayOuter(cx,cy,-dx1,-dy1);
     if(!f1||!b1)return null;
     const nx=(f1.x+b1.x)/2,ny=(f1.y+b1.y)/2;
     const f2=rayOuter(nx,ny,dx2,dy2),b2=rayOuter(nx,ny,-dx2,-dy2);
     if(!f2||!b2)return null;
     cx=(f2.x+b2.x)/2;cy=(f2.y+b2.y)/2;
-    if(Math.hypot(cx-nx,cy-ny)<0.02)break;
+    if(Math.hypot(cx-nx,cy-ny)<1e-10*geo.S){converged=true;break;}
   }
-  return{x:cx,y:cy};
+  return converged?{x:cx,y:cy}:null;
 }
 
 function computeFrame(ang,sx,sy){
@@ -414,26 +309,43 @@ function applyFrame(fr){
   syncSliders(sz,sqAng);
 }
 
+// Max relative deviation of the four sides and two diagonals from a perfect square.
+function squareError(fr){
+  const s=[dist(fr.A,fr.B),dist(fr.B,fr.C),dist(fr.C,fr.D),dist(fr.D,fr.A)],m=(s[0]+s[1]+s[2]+s[3])/4;
+  let e=Math.max(...s.map(v=>Math.abs(v-m)/m));
+  e=Math.max(e,Math.abs(dist(fr.A,fr.C)-m*Math.SQRT2)/m,Math.abs(dist(fr.B,fr.D)-m*Math.SQRT2)/m);
+  for(const p of [fr.A,fr.B,fr.C,fr.D])e=Math.max(e,geo.dist(p.x,p.y)/m);
+  return e;
+}
+
+// Bisect the angle between two frames whose diagonal difference has opposite
+// signs, then polish with Newton on (centre x, centre y, angle). The result is
+// accepted only if it is a square to within TOL; a sign change caused by a jump
+// (non-convex curve) fails this check and the scan continues.
 function bisect(t1,t2,sd1,wx1,wy1,wx2,wy2){
   let lo=t1,hi=t2,sdLo=sd1,lwx=wx1,lwy=wy1,hwx=wx2,hwy=wy2;
-  for(let i=0;i<60;i++){
-    const tm=(lo+hi)/2,mwx=(lwx+hwx)/2,mwy=(lwy+hwy)/2;
-    const vm=computeFrame(tm,mwx,mwy);
-    if(!vm){// can't compute — narrow from hi side
-      hi=tm;continue;
-    }
-    if(Math.abs(vm.signedDelta)<0.05){applyFrame(vm);return true;}
+  for(let i=0;i<50;i++){
+    const tm=(lo+hi)/2,vm=computeFrame(tm,(lwx+hwx)/2,(lwy+hwy)/2);
+    if(!vm){hi=tm;continue;}
     if(sdLo*vm.signedDelta<=0){hi=tm;hwx=vm.P.x;hwy=vm.P.y;}
     else{lo=tm;sdLo=vm.signedDelta;lwx=vm.P.x;lwy=vm.P.y;}
   }
-  // RECTIFIED FIX:
-  const finalVm = computeFrame((lo+hi)/2, (lwx+hwx)/2, (lwy+hwy)/2);
-  if (finalVm && Math.abs(finalVm.signedDelta) < 1.0) { 
-    // Only apply if it's actually a square (delta near zero)
-    applyFrame(finalVm); 
-    return true;
+  const g=computeFrame((lo+hi)/2,(lwx+hwx)/2,(lwy+hwy)/2);
+  if(!g)return false;
+  const S=geo.S,F=p=>{
+    const d1x=Math.cos(p[2]),d1y=Math.sin(p[2]);
+    const f1=geo.far(p[0],p[1],d1x,d1y),b1=geo.far(p[0],p[1],-d1x,-d1y),f2=geo.far(p[0],p[1],-d1y,d1x),b2=geo.far(p[0],p[1],d1y,-d1x);
+    if(f1<0||b1<0||f2<0||b2<0)return null;
+    return[(f1-b1)/S,(f2-b2)/S,(f1+b1-f2-b2)/S];
+  };
+  const sol=Shapes2D.newton(F,[g.P.x,g.P.y,g.ang],[1e-7*S,1e-7*S,1e-8],60);
+  let fr=g;
+  if(sol){
+    const [x,y,ang]=sol.x,d1x=Math.cos(ang),d1y=Math.sin(ang),r=[geo.far(x,y,d1x,d1y),geo.far(x,y,-d1x,-d1y),geo.far(x,y,-d1y,d1x),geo.far(x,y,d1y,-d1x)];
+    if(r.every(t=>t>0))fr={A:{x:x-r[1]*d1x,y:y-r[1]*d1y},C:{x:x+r[0]*d1x,y:y+r[0]*d1y},B:{x:x+r[3]*d1y,y:y-r[3]*d1x},D:{x:x-r[2]*d1y,y:y+r[2]*d1x},P:{x,y},ang,signedDelta:0};
   }
-  // If it's a rhombus (delta too large), return false so the scan continues
+  const e=squareError(fr);
+  if(e<TOL&&dist(fr.A,fr.C)>1e-3*geo.S){fr.err=e;applyFrame(fr);return true;}
   return false;
 }
 
@@ -441,7 +353,7 @@ function scanStep(){
   if(!scanning)return;
   scanT+=0.004;
   if(scanT > Math.PI/2 + 0.05){
-    stopScan();document.getElementById('status').textContent='Scan complete — try new curve';return;
+    stopScan();document.getElementById('status').textContent='Scan complete — no square verified from this start; try the Skeletal Shape Finder, which searches more widely';return;
   }
   const v=computeFrame(scanT,wX,wY);
   if(v){
@@ -455,8 +367,6 @@ function scanStep(){
       if(bisect(prevT,scanT,prevSD,prevWX,prevWY,v.P.x,v.P.y)){
         stopScan();
         updateMeters(lockedFrame.A,lockedFrame.B,lockedFrame.C,lockedFrame.D);
-        document.getElementById('status').textContent='Inscribed square found — all four vertices on the boundary';
-        document.getElementById('status').className='status found';
         draw();return;
       }
     }
@@ -480,7 +390,11 @@ function stopScan(){
   document.getElementById('scanBtn').textContent='Auto-find';document.getElementById('scanBtn').classList.remove('active');
 }
 
-window.addEventListener('resize',()=>{resize();genCurve();sqX=cen.x;sqY=cen.y;draw();});
+window.addEventListener('resize',()=>{resize();genCurve();sqX=cen.x;sqY=cen.y;lockedFrame=null;draw();});
+Shapes2D.populateSelect(document.getElementById('shapeType'));
+{const q=new URLSearchParams(location.search);
+ if(q.get('curve')&&Shapes2D.list.some(([v])=>v===q.get('curve')))document.getElementById('shapeType').value=q.get('curve');
+ if(q.has('seed'))seed=+q.get('seed')|0;}
 resize();genCurve();sqX=cen.x;sqY=cen.y;draw();
 </script>
 </body>
