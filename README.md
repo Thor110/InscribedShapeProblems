@@ -445,9 +445,11 @@ The results below make this precise, and the [Number Stability viewer](https://t
 - **Odd numbers come arbitrarily close.** Up to 4,000,000 the nearest misses are $\sigma(N) - 2N = \pm 6$, for example $N = 442{,}365 = 3 \cdot 5 \cdot 7 \cdot 11 \cdot 383$ with $\sigma(N)/N = 2.000014$. A simple construction gets as close as you like: multiply distinct odd primes, each time taking the smallest one that keeps $\sigma(N)/N$ below 2 (3, 5, 7, 11, 389, 29959, 128194589, …). The gap to 2 roughly squares at each step, reaching $7 \times 10^{-29}$ after 8 primes. So there is no gap that odd numbers must leave.
 - **Descartes' spoof.** $D = 3^2 \cdot 7^2 \cdot 11^2 \cdot 13^2 \cdot 22021$ has "$\sigma(D) = 2D$" exactly if 22021 is treated as a prime. It is not ($22021 = 19^2 \cdot 61$). So a proof must use the fact that the factors are actually prime, not just the shape of the divisor sum.
 
-**Nearest misses: best undersized and best oversized.** `tools/nearest-misses.js` computes $\sigma(N)$ for every odd $N$ up to $10^{10}$ (5 billion numbers, under a minute on 4 cores). It records how close each comes to $2N$ from below (deficient) and from above (abundant), in the spirit of the best undersized and best oversized constructions in [ClassicalGeometryProblems](https://github.com/Thor110/ClassicalGeometryProblems). The two sides close in on the target from either side, and the target, an odd perfect number, lies between them.
+**Nearest misses: best undersized and best oversized.** `tools/nearest-misses.js` computes $\sigma(N)$ for every $N$ up to $10^{10}$ (ten billion numbers, odd and even, in under a minute and a half on 4 cores). It records how close each comes to $2N$ from below (deficient) and from above (abundant), in the spirit of the best undersized and best oversized constructions in [ClassicalGeometryProblems](https://github.com/Thor110/ClassicalGeometryProblems). The two sides close in on the target from either side; for even numbers the target is hit exactly, and for odd numbers it never is.
 
-![Record nearest misses of odd numbers to perfection](images/nearest-misses.svg)
+![Closest misses to perfection in each decade, odd and even](images/nearest-misses.svg)
+
+*Odd numbers.*
 
 | Closest odd misses up to $10^{10}$ | $N$ | $\sigma(N) - 2N$ | $\sigma(N)/N$ |
 |---|---|---|---|
@@ -455,11 +457,34 @@ The results below make this precise, and the [Number Stability viewer](https://t
 | From above | 2,586,415,095 | $+18$ | $2 + 7.0 \times 10^{-9}$ |
 | Smallest miss from above | 8,925, 32,445 and 442,365 | $+6$ | |
 
-- **Relative misses keep shrinking.** On a log scale the records fall steadily as $N$ grows, so odd numbers come ever closer to perfect as a fraction of $N$. This matches the construction above, which gets arbitrarily close.
-- **The absolute miss never gets below 6.** Apart from 3, 5 and 9, no odd number up to $10^{10}$ misses by less than 6. Only eight miss by exactly 6: 7, 15, 315, 1155 and 815,634,435 from below, and 8925, 32,445 and 442,365 from above. The dashed line in the chart is a miss of exactly 6, and the records approach it but never cross it. Result 3 above explains the steps of 6. Whether a miss of exactly 0 is possible is the open problem.
+- **Relative misses keep shrinking.** Decade by decade the closest misses fall steadily, so odd numbers come ever closer to perfect as a fraction of $N$. This matches the construction above, which gets arbitrarily close.
+- **The absolute miss never gets below 6.** Apart from 3, 5 and 9, no odd number up to $10^{10}$ misses by less than 6. Only eight miss by exactly 6: 7, 15, 315, 1155 and 815,634,435 from below, and 8925, 32,445 and 442,365 from above. Result 3 above explains the steps of 6. Whether a miss of exactly 0 is possible is the open problem.
 - About 0.41% of odd numbers are abundant (20.5 million up to $10^{10}$).
 
-This is a measurement, not a proof. The known bound $N > 10^{1500}$ for an odd perfect number is far beyond any search. What it shows is the shape of the problem: misses shrink relative to $N$, but come in whole steps that never reach zero in the range searched. Raw data are in `data/nearest-misses.json`, and the viewer's fourth panel shows the chart and the decade-by-decade results.
+*Even numbers: the same picture, with the spine.* Even numbers hit the target exactly six times below $10^{10}$, at 6, 28, 496, 8128, 33,550,336 and 8,589,869,056 (all six even perfect numbers in range, found by the search, which is a check on it). Their misses follow the binary spine exactly:
+
+4. **Spine minus partner.** For $N = 2^k p$ with $p$ an odd prime,
+   $$\sigma(N) - 2N = (2^{k+1} - 1)(p + 1) - 2^{k+1}p = \underbrace{(2^{k+1} - 1)}_{\text{spine sum}} - \;p .$$
+   The miss is the spine sum minus the partner prime. It is 0 exactly when $p$ is the spine sum (a Mersenne prime: the even perfect numbers); $+2$ when $p$ is two less, as in $20 = 4 \cdot 5$ and $1952 = 32 \cdot 61$; and $-2$ when $p$ is two more. That last needs $2^{k+1} + 1$ prime, which happens only when $k + 1$ is a power of two: a **Fermat prime**. Up to $10^{10}$ the numbers that miss by $-2$ are exactly 10, 136, 32,896 and 2,147,516,416, that is $2^k$ times the Fermat primes 5, 17, 257 and 65,537.
+5. **The spine on its own.** $\sigma(2^k) = 2^{k+1} - 1$, so every power of two misses by exactly $-1$: one short, the gap a Mersenne prime would fill. These are the closest misses from below in every decade, and no other number is known to miss by $-1$.
+6. **Perfect times a prime.** If $P$ is perfect and $p$ is a prime not dividing $P$, then $\sigma(Pp) = 2P(p + 1)$, so $Pp$ misses by exactly $2P$. Every $6p$ misses by $+12$ and every $28p$ by $+56$: infinitely many numbers miss by the same fixed amount.
+7. **When a miss can be odd.** $\sigma(N)$ is odd exactly when $N$ is a square or twice a square. (For an odd prime $q$, $\sigma(q^b)$ is odd exactly when $b$ is even, and $\sigma(2^k)$ is always odd.) So an odd miss needs $N = 2^k s^2$ with $s$ odd. Up to $10^{10}$ the only even numbers that miss by an odd amount of at most 10 are the 33 powers of two ($-1$), 18 ($+3$), 50 ($-7$) and 196 ($+7$). For odd $N$ it needs $N$ to be a square, and the only one is 9 ($-5$).
+
+| | Even numbers | Odd numbers |
+|---|---|---|
+| Exact hits up to $10^{10}$ | 6 (whenever the partner prime equals the spine sum) | none (and none is known at all) |
+| Closest misses | $-1$ (every power of two), then $\pm2$ (the spine rule) | $\pm6$, in steps of 6 (result 3) |
+| Odd misses possible? | only when $N = 2^k s^2$ | only when $N$ is a square |
+
+*The exceptions: looking in the opposite direction.* Result 3 says that odd numbers divisible by 3, with a prime like 5, 11 or 17 to an odd power, miss in steps of 6. Running the same calculation backwards gives a constraint on an odd perfect number itself:
+
+8. **An odd perfect number is divisible by 9, or its special prime is $\equiv 1 \pmod{12}$.** Write $N = p^a m^2$ as in Euler's form.
+   - If $3 \nmid N$: suppose $p \equiv 2 \pmod 3$. Then, as in result 3, $3 \mid \sigma(p^a)$, so $3 \mid \sigma(N) = 2N$, which is a contradiction. So $p \equiv 1 \pmod 3$, and with $p \equiv 1 \pmod 4$ this gives $p \equiv 1 \pmod{12}$.
+   - If $3 \mid N$: $3 \ne p$, because $p \equiv 1 \pmod 4$, so 3 appears in $m^2$ to an even power, and $9 \mid N$. $\blacksquare$
+
+The odd numbers *not* divisible by 3 are the exceptions to the steps of 6, and the search shows how far they stay from perfect. Of the 3.3 billion of them up to $10^{10}$, exactly **one** is abundant: $5{,}391{,}411{,}025 = 5^2 \cdot 7 \cdot 11 \cdot 13 \cdot 17 \cdot 19 \cdot 23 \cdot 29$, the smallest odd abundant number not divisible by 3, which overshoots by 0.3%. The closest from below is $5{,}763{,}232{,}475$ (a miss of 0.13%), against $7 \times 10^{-9}$ for odd numbers divisible by 3. Without the prime 3, the bound of result 1 needs at least seven distinct primes ($5, 7, \dots, 23$) just to allow passing $2N$, and the smallest actual example uses eight. Nielsen (2015) proved that an odd perfect number not divisible by 3 would need at least 12 distinct prime factors.
+
+This is a measurement, not a proof. The known bound $N > 10^{1500}$ for an odd perfect number is far beyond any search. What it shows is the shape of the problem: even numbers land on the mark whenever the spine meets a Mersenne prime, while odd numbers come ever closer in relative terms but, in the range searched, miss by whole steps. Raw data are in `data/nearest-misses.json`, and the viewer's fourth panel shows the chart and the decade-by-decade results.
 
 **What is known.** Computer-assisted work has pushed the constraints very far:
 - $N > 10^{1500}$, with at least 101 prime factors counted with multiplicity (Ochem–Rao 2012);
@@ -574,7 +599,7 @@ node tests/run-study.js charts   # rebuild the charts from data/ only
 node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
 node tools/certify-square.js     # the computer-assisted proof of Theorem 6 (exit code 0 = valid)
 node tools/certify-tetra.js      # the computer-assisted proof of Theorem 7 (add --quick for a fast, smaller T)
-node tools/nearest-misses.js     # odd numbers up to 10^10: nearest misses to perfection (add e.g. 1e8 for a quick run)
+node tools/nearest-misses.js     # every number up to 10^10: nearest misses to perfection (add e.g. 1e8 for a quick run)
 ```
 
 ## References

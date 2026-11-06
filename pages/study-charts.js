@@ -129,39 +129,44 @@
   }
 
 
-  // Log–log chart: record nearest misses of odd numbers to perfection, from below
-  // (deficient, σ(n) < 2n) and from above (abundant, σ(n) > 2n), with the reference
-  // line |σ(n) − 2n| = 6 (relative miss 6/n).
+  // Log–log chart: the closest miss to perfection in each decade, |σ(n)/n − 2| against n,
+  // for odd and even numbers, from below (deficient) and from above (abundant), with reference
+  // lines for absolute misses of exactly 1 and exactly 6 (relative miss 1/n and 6/n).
   function missesChart(data, opts = {}) {
-    const W = 760, H = 420, m = { l: 72, r: 170, t: 64, b: 52 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
-    const recs = [...data.records.below.map(r => ({ ...r, side: 'below' })), ...data.records.above.map(r => ({ ...r, side: 'above' }))];
+    const W = 760, H = 440, m = { l: 72, r: 190, t: 64, b: 52 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const series = [
+      ['odd', 'below', 'var(--s1)', 'Odd, from below'], ['odd', 'above', 'var(--s2)', 'Odd, from above'],
+      ['even', 'below', 'var(--s3)', 'Even, from below'], ['even', 'above', 'var(--s4)', 'Even, from above'],
+    ].filter(([c]) => data[c]);
+    const pick = (c, side) => data[c].decades.map(D => D[side]).filter(Boolean);
+    const recs = series.flatMap(([c, side]) => pick(c, side));
     const xMax = Math.ceil(Math.log10(data.limit)), yMin = Math.floor(Math.log10(Math.min(...recs.map(r => r.rel)))), yMax = 0;
     const x = n => m.l + (Math.log10(n) / xMax) * pw, y = r => m.t + ((yMax - Math.log10(r)) / (yMax - yMin)) * ph;
     const sup = k => String(k).replace(/-/g, '⁻').replace(/\d/g, c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[c]);
-    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(opts.title || 'Nearest misses of odd numbers to perfection')}">${styleFor(opts.dark)}
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(opts.title || 'Nearest misses to perfection')}">${styleFor(opts.dark)}
   <g class="viz"><rect width="${W}" height="${H}" fill="var(--surface)" rx="6"/>
-  <text class="title" x="${m.l}" y="26">${esc(opts.title || 'How close odd numbers come to being perfect')}</text>
-  <text x="${m.l}" y="45">${esc(opts.subtitle || `Record nearest misses |σ(n)/n − 2| among odd n up to 10${sup(xMax)}, from below and from above`)}</text>`;
+  <text class="title" x="${m.l}" y="26">${esc(opts.title || 'How close numbers come to being perfect')}</text>
+  <text x="${m.l}" y="45">${esc(opts.subtitle || `Closest miss |σ(n)/n − 2| in each decade up to 10${sup(xMax)}, odd and even, from below and from above`)}</text>`;
     for (let k = yMin; k <= yMax; k++) s += `<line class="grid" x1="${m.l}" x2="${m.l + pw}" y1="${y(10 ** k)}" y2="${y(10 ** k)}"/><text x="${m.l - 8}" y="${y(10 ** k) + 4}" text-anchor="end">10${sup(k)}</text>`;
     for (let k = 0; k <= xMax; k++) s += `<text x="${x(10 ** k)}" y="${m.t + ph + 18}" text-anchor="middle">10${sup(k)}</text>`;
     s += `<line class="axis" x1="${m.l}" x2="${m.l + pw}" y1="${m.t + ph}" y2="${m.t + ph}"/>`;
-    s += `<text x="${m.l + pw / 2}" y="${H - 12}" text-anchor="middle">Odd number n (log scale)</text>`;
+    s += `<text x="${m.l + pw / 2}" y="${H - 12}" text-anchor="middle">Number n (log scale)</text>`;
     s += `<text transform="translate(18 ${m.t + ph / 2}) rotate(-90)" text-anchor="middle">Relative miss |σ(n)/n − 2| (log scale)</text>`;
-    // reference line: absolute miss 6
-    const n0 = Math.max(1, 6 / 10 ** yMax), n1 = 10 ** xMax;
-    s += `<line x1="${x(n0)}" y1="${y(6 / n0)}" x2="${x(n1)}" y2="${y(Math.max(6 / n1, 10 ** yMin))}" stroke="var(--axis)" stroke-dasharray="5 4" stroke-width="1.2"/>`;
-    const lx = x(n1), ly = y(Math.max(6 / n1, 10 ** yMin));
-    s += `<text x="${lx + 8}" y="${ly + 4}">miss of exactly 6</text>`;
-    for (const [side, col, label] of [['below', 'var(--s1)', 'From below (deficient)'], ['above', 'var(--s2)', 'From above (abundant)']]) {
-      const pts = recs.filter(r => r.side === side);
+    // reference lines: absolute misses of exactly 1 and exactly 6, clipped to the plot
+    for (const a of [1, 6]) {
+      const n0 = Math.max(1, a / 10 ** yMax), n1 = Math.min(10 ** xMax, a / 10 ** yMin);
+      s += `<line x1="${x(n0)}" y1="${y(a / n0)}" x2="${x(n1)}" y2="${y(a / n1)}" stroke="var(--axis)" stroke-dasharray="5 4" stroke-width="1.2"/>`;
+      s += `<text x="${x(n1) + (n1 < 10 ** xMax ? -4 : 6)}" y="${y(a / n1) + (n1 < 10 ** xMax ? 14 : 4)}" text-anchor="${n1 < 10 ** xMax ? 'end' : 'start'}">miss of exactly ${a}</text>`;
+    }
+    series.forEach(([c, side, col, label], i) => {
+      const pts = pick(c, side);
       if (pts.length > 1) s += `<polyline fill="none" stroke="${col}" stroke-width="1.5" stroke-opacity="0.55" points="${pts.map(r => `${x(r.n)},${y(r.rel)}`).join(' ')}"/>`;
       for (const r of pts) {
-        const tip = `n = ${r.n.toLocaleString('en-US')}: σ(n) − 2n = ${r.gap > 0 ? '+' : ''}${r.gap}, so σ(n)/n = 2 ${r.gap < 0 ? '−' : '+'} ${r.rel.toExponential(2)} (record from ${side})`;
+        const tip = `n = ${r.n.toLocaleString('en-US')} (${c}): σ(n) − 2n = ${r.gap > 0 ? '+' : ''}${r.gap}, so σ(n)/n = 2 ${r.gap < 0 ? '−' : '+'} ${r.rel.toExponential(2)}`;
         s += `<circle cx="${x(r.n)}" cy="${y(r.rel)}" r="3.5" fill="${col}" stroke="var(--surface)" stroke-width="1.5" data-tip="${esc(tip)}"><title>${esc(tip)}</title></circle>`;
       }
-      const last = pts[pts.length - 1];
-      if (last) s += `<rect x="${m.l + pw + 12}" y="${side === 'below' ? m.t + 4 : m.t + 24}" width="10" height="10" rx="2" fill="${col}"/><text class="t1" x="${m.l + pw + 28}" y="${side === 'below' ? m.t + 13 : m.t + 33}">${label}</text>`;
-    }
+      s += `<rect x="${m.l + pw + 12}" y="${m.t + 4 + 20 * i}" width="10" height="10" rx="2" fill="${col}"/><text class="t1" x="${m.l + pw + 28}" y="${m.t + 13 + 20 * i}">${label}</text>`;
+    });
     return s + `</g></svg>`;
   }
 
