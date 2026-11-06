@@ -36,7 +36,7 @@ const triangleSweep = {
 
 const spinCube = { frames: 32, step: i => { viewYaw += (2 * Math.PI) / 32; draw3D(); } };
 // Pages without a search: wait for `ready`, then call `step(i)` once per frame.
-const rippleGrow = { frames: 29, step: i => { $('amp').value = (0.005 * i).toFixed(3); drawCurve(true); } };
+const rippleGrow = { frames: 31, step: i => { $('amp').value = (0.005 * i).toFixed(3); drawCurve(true); } };
 
 const DEMOS = [
   { name: 'viewfinder_demo', page: 'pages/inscribed-square-viewfinder.html?curve=random&seed=7', width: 560, running: 'scanning' },

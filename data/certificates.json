@@ -5,11 +5,14 @@
   "a": 1,
   "b": "3/5"
  },
- "T": "14/100",
+ "T": "15/100",
  "chambersAllowance": 0.036,
  "ok": true,
  "certificate": {
   "ok": true,
+  "method": "direct",
+  "rouche": false,
+  "direct": true,
   "degree": 1,
   "det": [
    0.9356725902716514,
@@ -51,8 +54,14 @@
   "maxDeviation": 0.1540181208715199,
   "betweenSamples": 0.00011060187425886194,
   "bound": 0.15412872274577882,
-  "Teff": 0.3379898987322338,
-  "room": 0.34587127725421984
+  "Teff": 0.36213203435596475,
+  "room": 0.34587127725421984,
+  "minG": 0.3660591607494153,
+  "gMoveBetweenSamples": 0.00008037814084922769,
+  "minGBoundary": 0.3659787826085659,
+  "degMargin": 0.23211832149882966,
+  "degreeHolds": true,
+  "roomDirect": 0.3659787826085659
  },
  "diagonal": {
   "tRange": [
@@ -64,7 +73,7 @@
    1.134521246530136
   ],
   "minDiagonal": 1.0541040615798567,
-  "guaranteed": 0.7741040615798565
+  "guaranteed": 0.7541040615798565
  },
- "seconds": 0.201
+ "seconds": 0.282
 }

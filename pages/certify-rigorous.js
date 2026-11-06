@@ -88,13 +88,14 @@
   // Scan some faces of the cube: the largest enclosure of |G − L| at the samples.
   function scan(problem, S, faces = allFaces(S.n)) {
     const { n, z, J, K, c, N, ys } = S, { Gi } = problem, y = new Array(n), ps = new Array(n);
-    let maxH = 0, samples = 0;
+    let maxH = 0, samples = 0, minG = Infinity, degMargin = Infinity;
     for (const [fixed, sign] of faces) {
       const idx = new Array(n - 1).fill(0);
       for (;;) {
         for (let d = 0, f = 0; d < n; d++) y[d] = d === fixed ? sign * c : ys[idx[f++]];
         for (let r = 0; r < n; r++) { let s = z[r]; for (let k = 0; k < n; k++) s += K[r][k] * y[k]; ps[r] = s; }
         const g = Gi(ps);
+        let h = 0, gl = 0;
         for (let r = 0; r < n; r++) {
           // L_r = Σ J_rk (ps_k − z_k), enclosed with outward rounding
           let lo = 0, hi = 0;
@@ -102,26 +103,42 @@
             const dl = rd(ps[k] - z[k]), dh = ru(ps[k] - z[k]), j = J[r][k];
             const a1 = j * dl, a2 = j * dh; lo = rd(lo + rd(Math.min(a1, a2))); hi = ru(hi + ru(Math.max(a1, a2)));
           }
-          maxH = Math.max(maxH, ru(Math.max(g[r].hi - lo, hi - g[r].lo)));
+          h = Math.max(h, ru(Math.max(g[r].hi - lo, hi - g[r].lo)));            // upper bound of |G_r − L_r|
+          gl = Math.max(gl, g[r].lo > 0 ? g[r].lo : g[r].hi < 0 ? -g[r].hi : 0); // lower bound of ‖G‖∞
         }
+        maxH = Math.max(maxH, h); minG = Math.min(minG, gl); degMargin = Math.min(degMargin, rd(gl - h));
         samples++;
         let f = 0; while (f < n - 1 && ++idx[f] === N) idx[f++] = 0;
         if (f === n - 1) break;
       }
     }
-    return { maxH, samples };
+    return { maxH, samples, minG, degMargin };
   }
 
   // Combine: the certificate holds if the largest deviation, plus the most G − L can
   // change between samples, plus the perturbation, is below c_eff.
+  // Combine. Two sufficient conditions, both checked:
+  //  (Rouché)  ‖G_E − L‖∞ + Teff < c_eff on ∂Q;
+  //  (direct)  ‖G_E − L‖∞ < ‖G_E‖∞ on ∂Q (so deg G_E = deg L = sign det J), and
+  //            Teff < min ‖G_E‖∞ on ∂Q (so every G within Teff of G_E has the same degree).
+  // The direct form allows larger boxes, because G_E may bend away from L as long as
+  // it stays away from zero. Between samples, G moves by at most lip_G·r and G − L by
+  // at most (lip_G + ‖J‖∞)·r, where r bounds the distance from ∂Q to the nearest sample.
   function finish(problem, S, scans) {
     const maxH = Math.max(...scans.map(r => r.maxH)), samples = scans.reduce((t, r) => t + r.samples, 0);
+    const minG = Math.min(...scans.map(r => r.minG)), degMargin = Math.min(...scans.map(r => r.degMargin));
     const rp = up.add(up.mul(S.normK, S.hmax / 2), S.flerr);          // max-norm distance from ∂Q to the nearest sample
-    const between = up.mul(up.add(problem.lipG, S.normJ), rp);
+    const between = up.mul(up.add(problem.lipG, S.normJ), rp), gMove = up.mul(problem.lipG, rp);
     const bound = up.add(maxH, between), room = rd(S.cEff - bound);
+    const rouche = S.degree !== 0 && ru(bound + problem.Teff) < S.cEff;
+    const minGBoundary = rd(minG - gMove), degreeHolds = S.cEff > 0 && rd(degMargin - up.add(gMove, between)) > 0;
+    const direct = S.degree !== 0 && degreeHolds && problem.Teff < minGBoundary;
     return {
-      ok: S.degree !== 0 && ru(bound + problem.Teff) < S.cEff, degree: S.degree, det: S.det, zero: S.z, J: S.J, K: S.K, c: S.c, cEff: S.cEff, contraction: S.contraction,
-      normJ: S.normJ, normK: S.normK, samples, gridPoints: S.N, gridSpacing: S.hmax, roundingInSamples: S.flerr, maxDeviation: maxH, betweenSamples: between, bound, Teff: problem.Teff, room,
+      ok: rouche || direct, method: rouche ? 'Rouché' : direct ? 'direct' : 'none', rouche, direct,
+      degree: S.degree, det: S.det, zero: S.z, J: S.J, K: S.K, c: S.c, cEff: S.cEff, contraction: S.contraction,
+      normJ: S.normJ, normK: S.normK, samples, gridPoints: S.N, gridSpacing: S.hmax, roundingInSamples: S.flerr,
+      maxDeviation: maxH, betweenSamples: between, bound, Teff: problem.Teff, room,
+      minG, gMoveBetweenSamples: gMove, minGBoundary, degMargin, degreeHolds, roomDirect: degreeHolds ? minGBoundary : 0,
     };
   }
   const certify = problem => { const S = setup(problem); return finish(problem, S, [scan(problem, S)]); };
@@ -131,8 +148,8 @@
   // Opposite corners A = γ(t), C = −γ(t') (the ellipse is centrally symmetric).
   // |γ'(t)| ≤ 2/(1 + t²) ≤ 2 for b ≤ 1, and |ΔB| ≤ (|ΔA| + |ΔC|)/√2, so G is
   // 2√2-Lipschitz in the max-norm on (t, t').
-  function squareProblem(T, c, N) {
-    const a = exact(1), b = ratio(3, 5), sd = V.ellipsoidSD([a, b]), one = exact(1), two = exact(2);
+  function squareProblem(T, c, N, bRatio = [3, 5]) {
+    const a = exact(1), b = ratio(bRatio[0], bRatio[1]), sd = V.ellipsoidSD([a, b]), one = exact(1), two = exact(2);
     const gam = t => { const t2 = sqr(t), den = add(one, t2); return [div(sub(one, t2), den), div(mul(mul(two, b), t), den)]; };
     const corners = p => {
       const A = gam(exact(p[0])), C = gam(exact(p[1])).map(neg), h = exact(0.5);
@@ -175,16 +192,21 @@
     // |Δ(x + s·w)| ≤ |Δx|₂ + |Δs|·|w| ≤ (√3 + |w|)·‖Δp‖∞
     return { n: 4, Gi, W, lipG: up.add(up.sqrt(3), wmax), Teff: ratio(T[0], T[1]).hi, start: [0, 0, 0, 0.75], c, N, T };
   }
-  // The circumradius s is affine on Q, so its minimum is at one of the 16 corners.
-  function tetraRadius(prob, res) {
-    const { K, zero: z, c } = res; let m = Infinity;
+  // The circumradius s is affine on Q, so its minimum and maximum are at corners.
+  function tetraRadius(prob, res, max = false) {
+    const { K, zero: z, c } = res; let m = max ? -Infinity : Infinity;
     for (let k = 0; k < 16; k++) {
       let s = exact(z[3]); for (let r = 0; r < 4; r++) s = add(s, mul(exact(K[3][r]), exact((k >> r) & 1 ? c : -c)));
-      m = Math.min(m, s.lo);
+      m = max ? Math.max(m, s.hi) : Math.min(m, s.lo);
     }
     return m;
   }
+  // Other orientations. Turning the tetrahedron by an angle θ moves each vertex x + s·w
+  // by s·|R'w − Rw| ≤ s·θ, which moves G by at most s_max·θ. So a certificate with
+  // room m on ∂Q (m = min ‖G_E‖∞ there, direct method) proves, for every surface within
+  // T of the ellipsoid, a tetrahedron in every orientation within angle (m − T)/s_max.
+  const orientationAngle = (res, T, sMax) => (res.roomDirect > T ? rd(rd(res.roomDirect - T) / sMax) : 0);
 
-  const api = { certify, setup, scan, finish, allFaces, squareProblem, squareDiagonal, tetraDirs, tetraProblem, tetraRadius, sdBox };
+  const api = { certify, setup, scan, finish, allFaces, squareProblem, squareDiagonal, tetraDirs, tetraProblem, tetraRadius, orientationAngle, sdBox };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.CertifyRigorous = api;
 })(typeof window !== 'undefined' ? window : globalThis);

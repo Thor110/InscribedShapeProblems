@@ -1,6 +1,6 @@
 # Inscribed polytopes in curves and surfaces: a dimension count, a centring argument, and a computer-assisted certificate
 
-*Thor110. Preprint, working draft. Interactive companion: <https://thor110.github.io/InscribedShapeProblems/>. Code and data: <https://github.com/Thor110/InscribedShapeProblems>.*
+*Edward James Gordon aka Thor110. Preprint, working draft. Interactive companion: <https://thor110.github.io/InscribedShapeProblems/>. Code and data: <https://github.com/Thor110/InscribedShapeProblems>.*
 
 ## Abstract
 
@@ -10,8 +10,8 @@ We study four inscribed-shape problems: an equilateral triangle or a square in a
 2. **Simplices in convex bodies.** An elementary "centring jig" argument shows that every convex body in $\mathbb{R}^n$ contains an inscribed regular simplex in every orientation that is *admissible* for it, and in every orientation when its boundary is $C^1$ (Theorems 2 and 3). For smooth bodies this is a special case of Gromov's theorem, but the proof uses only Brouwer's fixed-point theorem.
 3. **Admissibility is needed.** Bodies with sharp corners can lose orientations: an isosceles triangle with apex below $60°$ has no inscribed equilateral triangle pointing at its apex (Proposition 5).
 4. **A limit criterion for squares.** Non-shrinking squares on approximations give a square on the limit (Lemma 4).
-5. **A computer-assisted proof.** Every Jordan curve whose polar radius stays within $0.14$ of that of the ellipse $x^2 + y^2/0.36 = 1$ has an inscribed square (Theorem 6), proved in interval arithmetic. This class contains nowhere-differentiable curves that are neither locally monotone nor symmetric.
-6. **The same in 3D.** Every surface whose radius stays within $0.06$ of that of a $1 \times 0.8 \times 0.6$ ellipsoid has an inscribed regular tetrahedron (Theorem 7). This includes surfaces that are not $C^1$, outside Gromov's theorem.
+5. **A computer-assisted proof.** Every Jordan curve whose polar radius stays within $0.15$ of that of the ellipse $x^2 + y^2/0.36 = 1$ has an inscribed square (Theorem 6), proved in interval arithmetic. This class contains nowhere-differentiable curves that are neither locally monotone nor symmetric.
+6. **The same in 3D.** Every surface whose radius stays within $0.12$ of that of a $1 \times 0.8 \times 0.6$ ellipsoid has an inscribed regular tetrahedron (Theorem 7), and within $0.06$ in every orientation within $3.76°$ of a given one. This includes surfaces that are not $C^1$, outside Gromov's theorem.
 7. **Numerical studies.** Four studies probe the open continuous cases:
    - on fractal curves and surfaces refined level by level, the largest inscribed squares and the tracked regular tetrahedra converge rather than shrink;
    - rectangles of 9 aspect ratios are found on all 9 test curves;
@@ -95,42 +95,47 @@ For generic smooth curves the number of inscribed squares is odd, and the number
 
 Let $E$ be the ellipse with semi-axes $1$ and $b = 0.6$, with polar radius $r_E(\theta) = (\cos^2\theta + \sin^2\theta/b^2)^{-1/2}$. For continuous $\rho > 0$ let $\gamma_\rho(\theta) = \rho(\theta)(\cos\theta, \sin\theta)$.
 
-> **Theorem 6.** If $|\rho(\theta) - r_E(\theta)| \le 0.14$ for all $\theta$, then $\gamma_\rho$ has an inscribed square, with diagonal at least $0.774$.
+> **Theorem 6.** If $|\rho(\theta) - r_E(\theta)| \le 0.15$ for all $\theta$, then $\gamma_\rho$ has an inscribed square, with diagonal at least $0.754$.
 
 *Proof outline.*
 1. **Square equations.** With $A$ and $C$ as opposite corners, the other corners are
    $$B, D = \tfrac12\big((I \mp R)A + (I \pm R)C\big),$$
    where $R$ is the rotation by $90°$. Parametrise $A$ and $C$ by the rational parametrisation $\gamma_E(t) = \big(\tfrac{1-t^2}{1+t^2}, \tfrac{2bt}{1+t^2}\big)$ and its antipode, carried along rays to the perturbed curve. Let $G_\rho(t, t') = (\mathrm{sd}_\rho(B), \mathrm{sd}_\rho(D))$, where $\mathrm{sd}_\rho$ is the signed distance to $\gamma_\rho$.
 2. **Perturbation bound.** For radial curves, $|\rho - \sigma| \le T$ implies $|\mathrm{sd}_\rho - \mathrm{sd}_\sigma| \le T$ everywhere: compare along rays when the two signs differ. The corners $B, D$ move by at most $\sqrt2\,T$. So $\|G_\rho - G_E\|_\infty \le (1 + \sqrt2)T$.
-3. **Degree lemma.** Let $Q = z + K([-c, c]^n)$ for any point $z$ and matrices $J, K$ with $\det J \ne 0$, and let $L(p) = J(p - z)$, so $\|L\|_\infty \ge c_{\rm eff} = c(1 - \|JK - I\|_\infty)$ on $\partial Q$. If $\|G_E - L\|_\infty + \tau < c_{\rm eff}$ on $\partial Q$, then every $G$ within $\tau$ of $G_E$ satisfies $\deg(G, Q, 0) = \operatorname{sign}\det J \ne 0$, so it has a zero in $Q$. This test needs no winding number and works in any dimension.
+3. **Degree lemma.** Let $Q = z + K([-c, c]^n)$ for any point $z$ and matrices $J, K$ with $\det J \ne 0$, and let $L(p) = J(p - z)$, so $\|L\|_\infty \ge c_{\rm eff} = c(1 - \|JK - I\|_\infty) > 0$ on $\partial Q$. Suppose that on $\partial Q$:
+   - $\|G_E - L\|_\infty < \|G_E\|_\infty$, which makes the homotopy from $L$ to $G_E$ zero-free, so $\deg(G_E, Q, 0) = \operatorname{sign}\det J$;
+   - and $\tau < \|G_E\|_\infty$.
+
+   Then every $G$ within $\tau$ of $G_E$ has a zero in $Q$. This test needs no winding number and works in any dimension.
 4. **The computation**, all in interval arithmetic with outward rounding:
-   - $\|G_E - L\|_\infty \le 0.1541$ on $\partial Q$, from 80,000 samples with $c = 0.5$ and an explicit Lipschitz bound between them;
-   - so $0.1541 + (1+\sqrt2)\cdot 0.14 = 0.4921 < c_{\rm eff} = 0.5000$;
+   - on $\partial Q$, from 80,000 samples with $c = 0.5$ and explicit Lipschitz bounds between them, $\|G_E\|_\infty \ge 0.3660 > (1+\sqrt2)\cdot 0.15 = 0.3621$;
+   - and $\|G_E\|_\infty - \|G_E - L\|_\infty \ge 0.23 > 0$;
    - and $|A - C| \ge 1.054$ on $Q$, so the square is non-degenerate.
 
    The signed distance to the ellipse is enclosed exactly: the closest-point equation's root is bracketed and the bracket verified in intervals. No trigonometric functions are used.
 
 The computation takes under a second (`node tools/certify-square.js`), and runs live on the companion page. Only IEEE 754 arithmetic ($+, -, \times, \div, \sqrt{\ }$, each correctly rounded) and about 300 lines of code are trusted.
 
-> **Corollary 6.1.** Let $W(\theta) = (1 - 2^{-1/2})\sum_{k \ge 0} 2^{-k/2}\cos(2^k(\theta - 0.3))$. The curve $\rho = r_E + 0.14\,W$ has an inscribed square, and so does $r_E + 0.14 f$ for every continuous $|f| \le 1$.
+> **Corollary 6.1.** Let $W(\theta) = (1 - 2^{-1/2})\sum_{k \ge 0} 2^{-k/2}\cos(2^k(\theta - 0.3))$. The curve $\rho = r_E + 0.15\,W$ has an inscribed square, and so does $r_E + 0.15 f$ for every continuous $|f| \le 1$.
 
-The curve $r_E + 0.14\,W$ lies outside the classical cases:
+The curve $r_E + 0.15\,W$ lies outside the classical cases:
 - it is nowhere differentiable (Hardy);
 - it is not locally a graph in any direction, since a monotone coordinate would make $W$ differentiable almost everywhere, so it is not locally monotone;
 - it has no reflection or point symmetry.
 
-Theorem 6's neighbourhood is $3.9$ times wider than $1/(10\kappa) = 0.036$ for this ellipse. We do not claim that no other smooth reference curve brings Corollary 6.1 within Chambers' theorem. The certificate's value is that it is explicit, checkable, and reaches a rough class directly.
+Theorem 6's neighbourhood is $4.2$ times wider than $1/(10\kappa) = 0.036$ for this ellipse. We do not claim that no other smooth reference curve brings Corollary 6.1 within Chambers' theorem. The certificate's value is that it is explicit, checkable, and reaches a rough class directly.
 
 **Tetrahedra on rough surfaces.** In 3D, fix the tetrahedron's orientation, with unit vectors $w_0, \dots, w_3$ from its centre to its vertices; an exactly orthogonal rational rotation (a Cayley transform) keeps them exact. The unknowns are the centre $x$ and circumradius $s$, and the equations are $G(x, s) = (\mathrm{sd}(x + s w_k))_k \in \mathbb{R}^4$. The vertices do not depend on the surface, so a radial perturbation of size $T$ moves $G$ by at most $T$, and the degree lemma applies with $n = 4$.
 
-> **Theorem 7.** Let $E$ be the ellipsoid with semi-axes $1, 0.8, 0.6$. Every surface $\rho(\omega)\omega$ with $|\rho - r_E| \le 0.06$ has an inscribed regular tetrahedron (in a fixed orientation) with circumradius at least $0.5505$.
+> **Theorem 7.** Let $E$ be the ellipsoid with semi-axes $1, 0.8, 0.6$. Every surface $\rho(\omega)\omega$ with $|\rho - r_E| \le 0.12$ has an inscribed regular tetrahedron (in a fixed orientation) with circumradius at least $0.4325$. If $|\rho - r_E| \le 0.06$, it has one in every orientation within $3.76°$ of that one.
 
-The computation (`node tools/certify-tetra.js`, under a minute on 4 cores) samples the 8 faces of the 4D box ($c = 0.14$) at 64 million points:
-- $\|G_E - L\|_\infty \le 0.0655$ at the samples;
-- at most $0.0078$ more between samples;
-- $0.0733 + T = 0.1333 < c_{\rm eff} = 0.14$.
+The computation (`node tools/certify-tetra.js`, under two minutes on 4 cores) samples the 8 faces of the 4D box ($c = 0.24$) at 64 million points. On $\partial Q$:
+- $\|G_E\|_\infty \ge 0.1255 > T = 0.12$, after subtracting the most $G_E$ can change between samples;
+- $\|G_E\|_\infty - \|G_E - L\|_\infty \ge 0.0239 - 0.0206 > 0$.
 
-With $F(\omega) = (1 - 2^{-1/2})\sum_k 2^{-k/2}\cos(2^k\langle\omega, e\rangle)$, the surface $r_E + 0.06\,F$ is not $C^1$, so Gromov's theorem does not cover it, but Theorem 7 does.
+Turning the tetrahedron by an angle $\theta$ moves $G$ by at most $s_{\max}\theta$, which acts as one more perturbation. That gives the open set of orientations.
+
+With $F(\omega) = (1 - 2^{-1/2})\sum_k 2^{-k/2}\cos(2^k\langle\omega, e\rangle)$, the surface $r_E + 0.12\,F$ is not $C^1$, so Gromov's theorem does not cover it, but Theorem 7 does.
 
 **A negative result.** The same method fails on a self-similar Weierstrass blob $\rho = 1 + \sum_k 0.085\cdot 2^{-k/2}\cos(m2^k\theta + \phi_k)$. Taking the $K$-octave truncation as the base curve, the certifiable perturbation is about $1/5$ of the remaining tail at every $K$ tested:
 

@@ -28,11 +28,11 @@
 </head>
 <body>
 <h1>Square Certificate</h1>
-<div class="sub">A computer-assisted proof (<a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/PROOFS.md#theorem-6--a-computer-assisted-certificate">PROOFS.md, Theorem 6</a>) that every curve whose radius stays within T = 0.14 of a 1 × 0.6 ellipse's has an inscribed square, including nowhere-differentiable, non-symmetric fractal curves such as the one drawn here. The proof runs in your browser below, in interval arithmetic, in under a second.<br>Left: the curve, the ellipse (dashed), and a square found numerically on the fractal. Right: the proof. The edge of a box of candidate squares is mapped to the square equations G = (g₁, g₂) (green). It stays close to the dashed square, which is what the linearised equations would give, so it winds once around the origin and keeps well away from it. A perturbation of size T moves it by at most (1 + √2)T, the grey square, so no perturbation that small can remove the square.</div>
-<div class="controls">Ripple size<input type="range" id="amp" min="0" max="0.14" step="0.005" value="0.14" oninput="drawCurve(false)" onchange="drawCurve(true)"><span id="ampV">0.140</span></div>
+<div class="sub">A computer-assisted proof (<a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/PROOFS.md#theorem-6--a-computer-assisted-certificate">PROOFS.md, Theorem 6</a>) that every curve whose radius stays within T = 0.15 of a 1 × 0.6 ellipse's has an inscribed square, including nowhere-differentiable, non-symmetric fractal curves such as the one drawn here. The proof runs in your browser below, in interval arithmetic, in under a second.<br>Left: the curve, the ellipse (dashed), and a square found numerically on the fractal. Right: the proof. The edge of a box of candidate squares is mapped to the square equations G = (g₁, g₂) (green). It stays close to the dashed square, which is what the linearised equations would give, so it winds once around the origin and keeps well away from it. A perturbation of size T moves it by at most (1 + √2)T, the grey square, so no perturbation that small can remove the square.</div>
+<div class="controls">Ripple size<input type="range" id="amp" min="0" max="0.15" step="0.005" value="0.15" oninput="drawCurve(false)" onchange="drawCurve(true)"><span id="ampV">0.150</span></div>
 <div class="panels">
   <div class="panel"><canvas id="curve" width="400" height="400"></canvas><div class="cap" id="capCurve"></div></div>
-  <div class="panel"><canvas id="loop" width="400" height="400"></canvas><div class="cap">Green: G on the edge of the box. Dashed: the linearised equations on the same edge (a square of half-width c). Grey: max(|g₁|, |g₂|) ≤ (1 + √2)T, everything a perturbation of size T could move the origin to.</div></div>
+  <div class="panel"><canvas id="loop" width="400" height="400"></canvas><div class="cap">Green: G on the edge of the box. Dashed: the linearised equations on the same edge (a square of half-width c). Grey: max(|g₁|, |g₂|) ≤ (1 + √2)T, everything a perturbation of size T could move the origin to. The green loop never enters it.</div></div>
 </div>
 <div class="status" id="status">Computing the certificate…</div>
 <table id="tbl"></table>
@@ -44,7 +44,7 @@
 <script src="inscribed-2d.js"></script>
 <script>
 'use strict';
-const $ = id => document.getElementById(id), a = 1, b = 0.6, T = 0.14;
+const $ = id => document.getElementById(id), a = 1, b = 0.6, T = 0.15;
 const rE = th => 1 / Math.sqrt((Math.cos(th) / a) ** 2 + (Math.sin(th) / b) ** 2);
 // Weierstrass ripple W(θ) = Σ 2^(−k/2) cos(2^k(θ − θ0)) / Σ 2^(−k/2): |W| ≤ 1, nowhere differentiable (Hardy).
 const W0 = 1 / (1 - Math.SQRT1_2), th0 = 0.3, W = (th, K = 14) => { let s = 0; for (let k = 0; k < K; k++) s += 2 ** (-k / 2) * Math.cos(2 ** k * (th - th0)); return s / W0; };
@@ -87,17 +87,16 @@ function drawLoop() {
 let prob = null;
 function run() {
   const t0 = performance.now();
-  prob = CertifyRigorous.squareProblem([14, 100], 0.5, 20000); cert = CertifyRigorous.certify(prob);
+  prob = CertifyRigorous.squareProblem([15, 100], 0.5, 20000); cert = CertifyRigorous.certify(prob);
   const diag = CertifyRigorous.squareDiagonal(prob, cert, 200), ok = cert.ok && diag.guaranteed > 0, secs = ((performance.now() - t0) / 1000).toFixed(1);
   $('status').textContent = ok ? `Certificate valid for T = ${T}, proved in interval arithmetic` : 'Certificate failed'; $('status').className = 'status' + (ok ? ' ok' : '');
   const row = (k, v, ok) => `<tr><td>${k}</td><td class="${ok ? 'ok' : ''}">${v}</td></tr>`;
   $('tbl').innerHTML = row('Degree of the linearised equations (sign of det J)', cert.degree, cert.degree !== 0)
-    + row(`Largest |G − L| on the box edge (${cert.samples.toLocaleString()} samples)`, cert.maxDeviation.toFixed(4), true)
-    + row('+ most it can change between samples', cert.betweenSamples.toExponential(2), true)
-    + row('+ perturbation (1 + √2)T', cert.Teff.toFixed(4), true)
-    + row('must be below the box half-width c', `${(cert.bound + cert.Teff).toFixed(4)} < ${cert.cEff.toFixed(4)}`, cert.ok)
+    + row(`Smallest |G| on the box edge (${cert.samples.toLocaleString()} samples, minus the most it can change between them)`, cert.minGBoundary.toFixed(4), true)
+    + row('must exceed the perturbation (1 + √2)T', `${cert.minGBoundary.toFixed(4)} > ${cert.Teff.toFixed(4)}`, cert.direct)
+    + row('|G − L| < |G| on the edge (fixes the degree), margin', cert.degMargin.toFixed(4), cert.degreeHolds)
     + row('Diagonal of the guaranteed square at least', diag.guaranteed.toFixed(4), diag.guaranteed > 0)
-    + row('Largest T this box certifies', (cert.room / (1 + Math.SQRT2)).toFixed(4), true)
+    + row('Largest T this box certifies', (cert.roomDirect / (1 + Math.SQRT2)).toFixed(4), true)
     + row("Chambers' allowance 1/(10κ) for this ellipse", (1 / (10 * (a / b ** 2))).toFixed(4), true)
     + row('Time to check, in this browser', secs + ' s', true);
   drawLoop(); drawCurve();

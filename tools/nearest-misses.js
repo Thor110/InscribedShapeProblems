@@ -11,7 +11,7 @@
 // σ(2^k·m) = (2^(k+1) − 1)·σ(m) for odd m.
 // Output: data/nearest-misses.json and images/nearest-misses.svg.
 //
-//   node tools/nearest-misses.js            # every n up to 10^10 (a few minutes on 4 cores)
+//   node tools/nearest-misses.js            # every n up to 10^11 (about 20 minutes on 4 cores)
 //   node tools/nearest-misses.js 1e8        # a smaller limit
 'use strict';
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
@@ -92,7 +92,7 @@ function scan(task) {
 
 if (!isMainThread) { parentPort.postMessage(scan(workerData)); return; }
 
-const LIMIT = Number(process.argv[2] || 1e10);
+const LIMIT = Number(process.argv[2] || 1e11);
 const t0 = Date.now();
 const CHUNK = 2 * SEG * 8, tasks = [];
 for (let s = 1; s < LIMIT; s += CHUNK) tasks.push({ start: s, end: Math.min(LIMIT, s + CHUNK), limit: LIMIT });
