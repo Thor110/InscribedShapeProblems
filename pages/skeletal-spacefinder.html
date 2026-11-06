@@ -39,6 +39,8 @@
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
   .nav a:hover{color:#888;}
 </style>
+<link rel="stylesheet" href="site.css">
+<script src="site-nav.js" defer></script>
 </head>
 <body>
 <h1>Skeletal Space Finder</h1>
@@ -75,6 +77,7 @@
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script src="surfaces3d.js"></script>
+<script src="space3d.js"></script>
 <script src="inscribed-nd.js"></script>
 <script src="registry.js"></script>
 <script>
@@ -121,25 +124,7 @@ for (const sh of Object.values(SHAPES)) {
 }
 const shape = () => SHAPES[$('insType').value];
 
-const matMul = (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
-const matVec = (A, v) => A.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
-function rotVec(w) { // Rodrigues: rotation matrix for rotation vector w
-  const th = Math.hypot(...w); if (th < 1e-300) return [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
-  const [x, y, z] = w.map(v => v / th), c = Math.cos(th), s = Math.sin(th), C = 1 - c;
-  return [[c + x * x * C, x * y * C - z * s, x * z * C + y * s], [y * x * C + z * s, c + y * y * C, y * z * C - x * s], [z * x * C - y * s, z * y * C + x * s, c + z * z * C]];
-}
-function euler(p, r, y) { // rotate about x (pitch), then y (roll), then z (yaw)
-  const Rx = [[1, 0, 0], [0, Math.cos(p), -Math.sin(p)], [0, Math.sin(p), Math.cos(p)]];
-  const Ry = [[Math.cos(r), 0, Math.sin(r)], [0, 1, 0], [-Math.sin(r), 0, Math.cos(r)]];
-  const Rz = [[Math.cos(y), -Math.sin(y), 0], [Math.sin(y), Math.cos(y), 0], [0, 0, 1]];
-  return matMul(Rz, matMul(Ry, Rx));
-}
-function toEuler(R) { return [Math.atan2(R[2][1], R[2][2]), Math.asin(Math.max(-1, Math.min(1, -R[2][0]))), Math.atan2(R[1][0], R[0][0])]; }
-function randRot(Rn) { // uniform random rotation via a random unit quaternion
-  const [u1, u2, u3] = [Rn(), Rn(), Rn()], a = Math.sqrt(1 - u1), b = Math.sqrt(u1);
-  const [w, x, y, z] = [a * Math.sin(2 * Math.PI * u2), a * Math.cos(2 * Math.PI * u2), b * Math.sin(2 * Math.PI * u3), b * Math.cos(2 * Math.PI * u3)];
-  return [[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)], [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)], [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]];
-}
+const { matMul, matVec, rotVec, euler, toEuler, randRot, solveSym } = Space3D;   // pages/space3d.js
 
 function jigRays(c, R) {
   const r = [];
@@ -156,17 +141,6 @@ function residual(c, R) {
 function points(c, R, r) { return shape().dirs.map((u, k) => { const v = matVec(R, u); return [c[0] + r[k] * v[0], c[1] + r[k] * v[1], c[2] + r[k] * v[2]]; }); }
 
 // ---------- Levenberg–Marquardt over centre (3) and optionally rotation (3) ----------
-function solveSym(A, b) {
-  const n = b.length, M = A.map((r, i) => r.concat([b[i]]));
-  for (let c = 0; c < n; c++) {
-    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
-    if (Math.abs(M[p][c]) < 1e-300) return null; [M[c], M[p]] = [M[p], M[c]];
-    for (let r = c + 1; r < n; r++) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
-  }
-  const x = new Array(n).fill(0);
-  for (let r = n - 1; r >= 0; r--) { let s = M[r][n]; for (let k = r + 1; k < n; k++) s -= M[r][k] * x[k]; x[r] = s / M[r][r]; }
-  return x;
-}
 function apply(st, d) { return { c: [st.c[0] + d[0], st.c[1] + d[1], st.c[2] + d[2]], R: d.length > 3 ? matMul(rotVec([d[3], d[4], d[5]]), st.R) : st.R }; }
 const cost = f => f.reduce((s, v) => s + v * v, 0);
 function lmInit(c, R, rotate) { const f = residual(c, R); return f && { c, R, f, cost: cost(f), lam: 1e-3, rotate, done: false, it: 0, stall: 0 }; }
@@ -292,11 +266,13 @@ function draw3D() {
 }
 
 // Registry: offer verified shapes that are not recorded yet.
+let registryTimer = 0;
 function showRegistry(v) {
   const el = $('registry');
+  clearTimeout(registryTimer);   // check once the sliders settle, not on every movement (it flickered)
   if (!v || !v.ok) { el.style.display = 'none'; return; }
   const L = Surfaces3D.LEVELS[surfType];
-  Registry.panel(el, { dim: 3, shape: $('insType').value, curve: L ? { type: surfType, seed, level: L[2] } : { type: surfType, seed }, vertices: v.P.map(p => p.slice()), finder: 'Skeletal Space Finder' });
+  registryTimer = setTimeout(() => Registry.panel(el, { dim: 3, shape: $('insType').value, curve: L ? { type: surfType, seed, level: L[2] } : { type: surfType, seed }, vertices: v.P.map(p => p.slice()), finder: 'Skeletal Space Finder' }), 250);
 }
 function refresh() {
   if (!locked) { cur = verify(jig.c, jig.R); }

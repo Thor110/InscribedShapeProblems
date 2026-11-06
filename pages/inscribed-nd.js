@@ -261,22 +261,27 @@
     // hits, then solve "all rays equal" over the position only. For a simplex this
     // is n equations in n unknowns, so a solution exists at every orientation on a
     // smooth convex surface (PROOFS.md, Theorem 2).
-    function solvePose(R, c0, opts = {}) {
+    // The *Steps versions pause after every solver iteration (for pages that must stay
+    // responsive); solvePose and refine run them to the end. Results are identical.
+    function* solvePoseSteps(R, c0, opts = {}) {
       let st = { c: c0.slice(), R };
       for (let i = 0; i < (opts.rattle ?? 20); i++) { const r = rays(st); if (!r) break; const P = points(st, r); st = { c: st.c.map((v, d) => v + 0.7 * (P.reduce((s2, p) => s2 + p[d], 0) / m - v)), R }; }
-      const g = lm(st, opts.maxIt || 100, spread, true); let x; while (!(x = g.next()).done);
+      const g = lm(st, opts.maxIt || 100, spread, true); let x; while (!(x = g.next()).done) yield;
       st = x.value || st;
       const v = verify(st);
       return v && Object.assign({ st, ok: v.err < (opts.tol || 1e-9) && v.size > 0.02 }, v);
     }
+    const drain = g => { let x; while (!(x = g.next()).done); return x.value; };
+    const solvePose = (R, c0, opts) => drain(solvePoseSteps(R, c0, opts));
     // Continue a known solution (position and orientation both free): solve
     // "all rays equal" from st with Levenberg–Marquardt over every degree of freedom.
-    function refine(st0, opts = {}) {
-      const g = lm({ c: st0.c.slice(), R: st0.R }, opts.maxIt || 100); let x; while (!(x = g.next()).done);
+    function* refineSteps(st0, opts = {}) {
+      const g = lm({ c: st0.c.slice(), R: st0.R }, opts.maxIt || 100); let x; while (!(x = g.next()).done) yield;
       const st = x.value || st0, v = verify(st);
       return v && Object.assign({ st, ok: v.err < (opts.tol || 1e-9) && v.size > 0.02 }, v);
     }
-    return { search, verify, solvePose, refine, directions: U, surface: S, np: npAll };
+    const refine = (st0, opts) => drain(refineSteps(st0, opts));
+    return { search, verify, solvePose, refine, solvePoseSteps, refineSteps, directions: U, surface: S, np: npAll };
   }
 
   // Run a search to completion (Node / tests).

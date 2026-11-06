@@ -140,6 +140,7 @@
     ].filter(([c]) => data[c]);
     const pick = (c, side) => data[c].decades.map(D => D[side]).filter(Boolean);
     const recs = series.flatMap(([c, side]) => pick(c, side));
+    if (!recs.length) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 60" width="${W}" height="60">${styleFor(opts.dark)}<g class="viz"><text x="16" y="34">No near misses to plot yet.</text></g></svg>`;
     const xMax = Math.ceil(Math.log10(data.limit)), yMin = Math.floor(Math.log10(Math.min(...recs.map(r => r.rel)))), yMax = 0;
     const x = n => m.l + (Math.log10(n) / xMax) * pw, y = r => m.t + ((yMax - Math.log10(r)) / (yMax - yMin)) * ph;
     const sup = k => String(k).replace(/-/g, '⁻').replace(/\d/g, c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[c]);

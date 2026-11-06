@@ -92,8 +92,10 @@ const page = `<!DOCTYPE html>
   .nav a{color:var(--muted);text-decoration:none;}
   @media print{.nav{display:none;} body{font-size:11pt;background:#fff;color:#000;} main{max-width:none;padding:0;} h2{break-after:avoid;} blockquote,table,mjx-container{break-inside:avoid;}}
 </style>
+<link rel="stylesheet" href="site.css">
+<script src="site-nav.js" defer></script>
 </head>
-<body>
+<body class="paper-page">
 <main>
 ${glyphs}
 <div class="nav"><a href="../index.html">← Back to suite</a><a href="${REPO}PAPER.md">Markdown source</a><a href="${REPO}PAPER.pdf">PDF</a></div>

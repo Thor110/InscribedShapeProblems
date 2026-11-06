@@ -1,0 +1,43 @@
+# Loads every page of the site at desktop and phone width (tests/smoke.js) and fails if
+# any page throws an error, fails to load a resource, overflows sideways or has an
+# unlabeled control. Runs on pushes and pull requests that touch the site.
+name: Website smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'pages/**'
+      - 'data/**'
+      - 'tests/smoke.js'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'pages/**'
+      - 'data/**'
+      - 'tests/smoke.js'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke test
+        run: node tests/smoke.js

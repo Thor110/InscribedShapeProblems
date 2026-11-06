@@ -35,6 +35,8 @@
   .nav a:hover{color:#888;}
   @media (max-width:520px){.meters{grid-template-columns:repeat(2,1fr);}}
 </style>
+<link rel="stylesheet" href="site.css">
+<script src="site-nav.js" defer></script>
 </head>
 <body>
 <h1>Skeletal Shape Finder</h1>
@@ -424,7 +426,9 @@ function syncSlider() {
 }
 
 // Starting points for the search: the deepest interior point first, then a spread of others.
+let startsCache = null;   // the starting points depend only on the curve and the seed
 function interiorStarts() {
+  if (startsCache && startsCache.curve === curve && startsCache.seed === seed) return startsCache.out.map(p => ({ ...p }));
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   for (const p of curve) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
   const pts = [], G = 22;
@@ -436,7 +440,8 @@ function interiorStarts() {
   const R = Shapes2D.rng(seed * 7 + 1), out = pts.slice(0, 1);
   const rest = pts.slice(1).filter(p => p.d > 0.02 * S);
   while (out.length < 12 && rest.length) out.push(rest.splice(Math.floor(R() * rest.length), 1)[0]);
-  return out;
+  startsCache = { curve, seed, out };
+  return out.map(p => ({ ...p }));
 }
 
 function resetJig() {

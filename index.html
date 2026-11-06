@@ -3,86 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inscribed Viewfinder Suite</title>
+<title>Inscribed Shape Problems</title>
+<link rel="stylesheet" href="pages/site.css">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{
-    background:#0a0a0f;
-    color:#e0ddd8;
-    font-family:'Courier New',monospace;
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content: center;
-    padding:16px;
-  }
-  h1{font-size:16px;letter-spacing:0.3em;text-transform:uppercase;color:#666;margin-bottom:8px;}
-  .sub{font-size:11px;color:#777;margin-bottom:32px;letter-spacing:0.15em;text-align:center;max-width: 500px; line-height: 1.6;}
-  
-  .nav-group {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: 100%;
-    max-width: 320px;
-  }
-
-  /* Matching the viewfinder button style exactly */
-  .btn-link {
-    display: block;
-    text-decoration: none;
-    background: transparent;
-    border: 1px solid #2a2a3a;
-    color: #888;
-    padding: 14px 20px;
-    font-family: 'Courier New',monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    cursor: pointer;
-    text-transform: uppercase;
-    text-align: center;
-    transition: all 0.15s;
-  }
-
-  .btn-link:hover {
-    border-color: #555;
-    color: #ccc;
-    background: #111;
-  }
-
-  .footer {
-    margin-top: 48px;
-    font-size: 9px;
-    color: #666;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
+  body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 16px;}
+  h1{font-size:16px;letter-spacing:0.3em;text-transform:uppercase;color:#888;margin-bottom:8px;text-align:center;}
+  .sub{font-size:11px;color:#888;margin-bottom:28px;letter-spacing:0.08em;text-align:center;max-width:560px;line-height:1.7;}
+  h2{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#4a9;margin:22px 0 10px;font-weight:normal;}
+  .wrap{width:100%;max-width:640px;}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  @media (max-width:520px){.grid{grid-template-columns:1fr;}}
+  .btn-link{display:block;text-decoration:none;border:1px solid #2a2a3a;color:#999;padding:12px 14px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;transition:all 0.15s;}
+  .btn-link:hover{border-color:#555;color:#ddd;background:#111;}
+  .btn-link small{display:block;margin-top:5px;font-size:9px;letter-spacing:0.04em;text-transform:none;color:#777;line-height:1.5;}
+  .proved{border:1px solid #1e2a24;background:#0d1310;padding:14px 16px;font-size:11px;line-height:1.75;color:#bbb;}
+  .proved li{margin-left:16px;margin-bottom:4px;}
+  .proved a{color:#6a8;}
+  .proved .note{margin-top:8px;color:#888;font-size:10px;}
+  .footer{margin-top:40px;font-size:9px;color:#777;letter-spacing:0.1em;text-transform:uppercase;text-align:center;line-height:1.8;}
+  .footer a{color:#888;}
 </style>
 </head>
 <body>
+<h1>Inscribed Shape Problems</h1>
+<div class="sub">Mechanical jigs, visualisations and proofs for the inscribed square, rectangle, triangle, tetrahedron and cube problems, from Jordan curves to fractal surfaces.</div>
 
-<h1>Inscribed Viewfinder Suite</h1>
-<div class="sub">
-  A collection of mechanical jigs and visualisations for probing the existence of inscribed shapes within Jordan curves and Jordan surfaces.
-</div>
+<div class="wrap">
+  <h2>What has been proved</h2>
+  <div class="proved">
+    <ul>
+      <li><b>No cube in general:</b> a generic smooth convex surface has no inscribed cube (Theorem 1).</li>
+      <li><b>Simplices in convex bodies:</b> an elementary proof of regular simplices in every admissible orientation (Theorems 2–3), and why admissibility is needed (Proposition 5).</li>
+      <li><b>Squares near an ellipse, fractals included:</b> every curve within 0.15 of a 1 × 0.6 ellipse has an inscribed square (Theorem 6), <a href="pages/certificate.html">proved live in your browser</a> in interval arithmetic.</li>
+      <li><b>Tetrahedra near an ellipsoid:</b> every surface within 0.13 of a 1 × 0.8 × 0.6 ellipsoid has an inscribed regular tetrahedron (Theorem 7), with a range of orientations.</li>
+      <li><b>Odd perfect numbers:</b> Euler's form, the steps of 6 and forced steps, machine-checked in Lean.</li>
+    </ul>
+    <div class="note">The open problems themselves (squares and tetrahedra in every continuous curve and surface, odd perfect numbers) remain open. The computer-assisted proofs are confirmed by three independent programs. Details: <a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/PROOFS.md">PROOFS.md</a> · <a href="pages/paper.html">the preprint</a>.</div>
+  </div>
 
-<div class="nav-group">
-  <a href="pages/inscribed-square-viewfinder.html" class="btn-link">Inscribed Square Viewfinder</a>
-  <a href="pages/inscribed-cube-viewfinder.html" class="btn-link">Inscribed Cube Viewfinder</a>
-  <a href="pages/skeletal-shapefinder.html" class="btn-link">Skeletal Shape Finder</a>
-  <a href="pages/skeletal-spacefinder.html" class="btn-link">Skeletal Space Finder</a>
-  <a href="pages/inscribed-study.html" class="btn-link">Square Shrinkage &amp; Rectangle Sweep</a>
-  <a href="pages/certificate.html" class="btn-link">Square Certificate (computer-assisted proof)</a>
-  <a href="pages/paper.html" class="btn-link">Preprint (paper write-up)</a>
-  <a href="pages/dimension-explorer.html" class="btn-link">Dimension Explorer (2D–6D)</a>
-  <a href="pages/registry.html" class="btn-link">Verified Results</a>
-  <a href="pages/number-stability.html" class="btn-link">Odd Perfect Numbers (Number Stability)</a>
+  <h2>Explore</h2>
+  <div class="grid">
+    <a href="pages/inscribed-square-viewfinder.html" class="btn-link">Square Viewfinder<small>Drag and rotate a square inside a curve, or let it search.</small></a>
+    <a href="pages/skeletal-shapefinder.html" class="btn-link">Skeletal Shape Finder<small>Squares, rectangles, triangles and polygons on 2D curves and fractals.</small></a>
+    <a href="pages/inscribed-cube-viewfinder.html" class="btn-link">Cube Viewfinder<small>Search for inscribed cubes, and see why generic surfaces have none.</small></a>
+    <a href="pages/skeletal-spacefinder.html" class="btn-link">Skeletal Space Finder<small>Tetrahedra, octahedra and cubes on 3D surfaces.</small></a>
+    <a href="pages/dimension-explorer.html" class="btn-link">Dimension Explorer<small>Simplices, cross-polytopes and hypercubes from 2D to 6D.</small></a>
+  </div>
+
+  <h2>Studies and proofs</h2>
+  <div class="grid">
+    <a href="pages/inscribed-study.html" class="btn-link">Numerical Studies<small>Square shrinkage, rectangle sweep, tetrahedra on fractal surfaces, parity counts.</small></a>
+    <a href="pages/certificate.html" class="btn-link">Square Certificate<small>The computer-assisted proof of Theorem 6, run in your browser.</small></a>
+    <a href="pages/paper.html" class="btn-link">Preprint<small>The paper-style write-up, with every proof in the appendix.</small></a>
+    <a href="pages/registry.html" class="btn-link">Verified Results<small>Inscribed shapes found and checked, submitted by anyone.</small></a>
+  </div>
+
+  <h2>Numbers</h2>
+  <div class="grid">
+    <a href="pages/number-stability.html" class="btn-link">Odd Perfect Numbers<small>The binary spine, steps of 6, forced steps, and nearest misses up to 10¹¹.</small></a>
+  </div>
 </div>
 
 <div class="footer">
-  Surgical Determinism · Geometric Sieve v1.0
+  Surgical Determinism · Geometric Sieve v1.0<br>
+  <a href="https://github.com/Thor110/InscribedShapeProblems">Source on GitHub</a> · Edward James Gordon (Thor110)
 </div>
-
 </body>
 </html>

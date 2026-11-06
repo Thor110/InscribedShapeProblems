@@ -1,0 +1,13 @@
+/* Shared styles for every page: the navigation bar and keyboard focus. Each page keeps
+   its own layout and colours; this file only adds what should look the same everywhere. */
+.site-nav{width:100%;max-width:900px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;
+  font:10px/1.8 'Courier New',monospace;letter-spacing:0.08em;text-transform:uppercase;}
+.site-nav a{color:#777;text-decoration:none;border-bottom:1px solid transparent;}
+.site-nav a:hover{color:#ccc;}
+.site-nav a[aria-current="page"]{color:#4a9;border-bottom-color:#4a9;}
+.site-nav .home{color:#999;}
+@media (prefers-color-scheme: light){.paper-page .site-nav a{color:#6b6862;} .paper-page .site-nav a:hover{color:#1d1c1a;}}
+/* a visible outline for keyboard users on every control */
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:2px solid #4a9;outline-offset:2px;}
+.skip-link{position:absolute;left:-9999px;}
+.skip-link:focus{left:8px;top:8px;background:#0a0a0f;color:#4a9;padding:4px 8px;z-index:10;}

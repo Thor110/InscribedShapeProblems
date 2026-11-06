@@ -17,6 +17,9 @@
   select,input{background:#0d0d14;border:1px solid #2a2a3a;color:#aaa;padding:5px 8px;font-family:inherit;font-size:11px;}
   .chart{width:100%;max-width:800px;overflow-x:auto;}
   .chart svg{max-width:100%;height:auto;display:block;margin:0 auto;}
+  /* On narrow screens keep charts at a readable size and let them scroll sideways
+     (a 760-wide chart squeezed to a phone would have ~6 px text). */
+  @media (max-width:640px){.chart{overflow-x:auto;-webkit-overflow-scrolling:touch;} .chart svg{max-width:none;width:auto;margin:0;}}
   /* charts follow the site's dark theme regardless of OS setting */
   body .viz{--surface:#0d0d14;--text1:#e0ddd8;--text2:#8a8983;--grid:#1e1e2a;--axis:#3a3a4a;--none:#15151d;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;}
   .status{margin-top:6px;font-size:10px;color:#777;letter-spacing:0.08em;text-transform:uppercase;text-align:center;min-height:14px;}
@@ -33,6 +36,8 @@
   .nav{margin-top:20px;font-size:10px;}
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
 </style>
+<link rel="stylesheet" href="site.css">
+<script src="site-nav.js" defer></script>
 </head>
 <body>
 <h1>Inscribed Shape Study</h1>
@@ -227,7 +232,9 @@ document.addEventListener('click', e => {
     drawShape(Shapes2D.generate(f.family, sqData.seed || 1, l.level), l.best, `${f.label}, level ${l.level} (${l.vertices.toLocaleString()} edges): largest verified square, diagonal ${l.largest.toFixed(4)} of the curve's width; ${l.count} distinct squares verified at this level.`);
   } else if (kind === 'te' && teData) {
     const f = teData.families[+a], l = f.levels.find(v => v.level === +b);
-    drawTetra(Surfaces3D.make(f.family, f.seed || 1, l.level), l.best, `${f.label}, level ${l.level}: ${l.count} of ${l.tracked} tetrahedra carried over. Shown: the largest, circumradius ${l.largest.toFixed(4)} of the mean surface radius (smallest ${l.smallest.toFixed(4)}).`);
+    // the chart plots the smallest tetrahedron, so draw that one (saved data from before it was stored shows the largest)
+    const small = !!l.smallestP;
+    drawTetra(Surfaces3D.make(f.family, f.seed || 1, l.level), small ? l.smallestP : l.best, `${f.label}, level ${l.level}: ${l.count} of ${l.tracked} tetrahedra carried over. Shown: the ${small ? 'smallest' : 'largest'}, circumradius ${(small ? l.smallest : l.largest).toFixed(4)} of the mean surface radius (${small ? 'largest' : 'smallest'} ${(small ? l.largest : l.smallest).toFixed(4)}).`);
   } else if (kind === 'rc' && rcData) {
     const r = rcData.curves.filter(c => c.cells.length)[+a], c = r.cells[+b];
     const pts = r.level === undefined ? Shapes2D.generate(r.type, rcData.seed || 1) : Shapes2D.generate(r.type, rcData.seed || 1, r.level);

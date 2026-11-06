@@ -34,6 +34,8 @@
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
   .nav a:hover{color:#888;}
 </style>
+<link rel="stylesheet" href="site.css">
+<script src="site-nav.js" defer></script>
 </head>
 <body>
 <h1>Inscribed Square Viewfinder</h1>
@@ -77,7 +79,14 @@ let wX=0,wY=0,lockedFrame=null,geo=null,seed=(Math.random()*2**31)|0;
 let prevSD=null,prevT=null,prevWX=0,prevWY=0;
 const VN=['A','B','C','D'],VC=['#e55','#ca6','#69a','#4a9'];
 
-function resize(){const mw=Math.min(window.innerWidth-40,700);W=cv.width=mw;H=cv.height=Math.round(mw*0.68);}
+// The drawing works in CSS pixels (W × H); the backing store is scaled by the screen's
+// pixel density so lines stay sharp on phones and high-resolution displays.
+function resize(){
+  const mw=Math.min(window.innerWidth-40,700),dpr=window.devicePixelRatio||1;
+  W=mw;H=Math.round(mw*0.68);
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
 
 function genCurve(){
   curve=Shapes2D.fit(Shapes2D.generate(document.getElementById('shapeType').value,seed),W,H,24);
@@ -204,7 +213,7 @@ function syncSliders(sz,angRad){
 function onSz(v){sqSz=+v;document.getElementById('szV').textContent=v;lockedFrame=null;draw();}
 function onRt(v){sqAng=+v*Math.PI/180;document.getElementById('rtV').textContent=v+'°';lockedFrame=null;draw();}
 
-function gp(e){const r=cv.getBoundingClientRect(),s=e.touches?e.touches[0]:e;return{x:s.clientX-r.left,y:s.clientY-r.top};}
+function gp(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
 
 function startDragFromLocked(){
   // Restore exact state — sqAng is already correct, do not recompute
@@ -215,38 +224,24 @@ function startDragFromLocked(){
   lockedFrame=null;
 }
 
-cv.addEventListener('mousedown',e=>{
+// Pointer events cover mouse, touch and pen; capturing the pointer keeps the drag
+// going (and ends it) even if the pointer leaves the canvas.
+cv.addEventListener('pointerdown',e=>{
   const p=gp(e);
   const cx=lockedFrame?lockedFrame.P.x:sqX,cy=lockedFrame?lockedFrame.P.y:sqY;
   const r=Math.max((lockedFrame?dist(lockedFrame.A,lockedFrame.C)/Math.SQRT2:sqSz)*0.5,30);
   if(Math.hypot(p.x-cx,p.y-cy)<r){
     if(lockedFrame)startDragFromLocked();
-    dragging=true;dOX=p.x-sqX;dOY=p.y-sqY;
+    dragging=true;dOX=p.x-sqX;dOY=p.y-sqY;cv.setPointerCapture(e.pointerId);
   }
 });
-cv.addEventListener('mousemove',e=>{
+cv.addEventListener('pointermove',e=>{
   if(!dragging)return;
   const p=gp(e),nx=p.x-dOX,ny=p.y-dOY;
   if(inside(nx,ny)){sqX=nx;sqY=ny;}
   draw();
 });
-window.addEventListener('mouseup',()=>dragging=false);   // releasing outside the canvas also ends the drag
-cv.addEventListener('touchstart',e=>{
-  e.preventDefault();const p=gp(e);
-  const cx=lockedFrame?lockedFrame.P.x:sqX,cy=lockedFrame?lockedFrame.P.y:sqY;
-  const r=Math.max((lockedFrame?dist(lockedFrame.A,lockedFrame.C)/Math.SQRT2:sqSz)*0.5,30);
-  if(Math.hypot(p.x-cx,p.y-cy)<r){
-    if(lockedFrame)startDragFromLocked();
-    dragging=true;dOX=p.x-sqX;dOY=p.y-sqY;
-  }
-},{passive:false});
-cv.addEventListener('touchmove',e=>{
-  e.preventDefault();if(!dragging)return;
-  const p=gp(e),nx=p.x-dOX,ny=p.y-dOY;
-  if(inside(nx,ny)){sqX=nx;sqY=ny;}
-  draw();
-},{passive:false});
-cv.addEventListener('touchend',()=>dragging=false);
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])cv.addEventListener(ev,()=>dragging=false);
 
 function newCurve(fresh){
   if(fresh)seed=(Math.random()*2**31)|0;

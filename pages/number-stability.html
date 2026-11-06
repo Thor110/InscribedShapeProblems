@@ -38,11 +38,14 @@
   .panel th{color:#555;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;}
   .panel td.ok{color:#4a9;} .panel td.bad{color:#ca6;}
   #missChart svg{width:100%;height:auto;display:block;}
+  @media (max-width:640px){#missChart svg{width:auto;}}   /* natural size, readable text; the box scrolls sideways */
   .viz.viz-dark{--surface:#0d0d14;--text1:#e0ddd8;--text2:#8d8a84;--grid:#1e1e2a;--axis:#4a4a55;--s1:#3987e5;--s2:#d95926;}
   .nav{margin-top:20px;font-size:10px;}
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
   .nav a:hover{color:#888;}
 </style>
+<link rel="stylesheet" href="site.css">
+<script src="site-nav.js" defer></script>
 </head>
 <body>
 <h1>Number Stability</h1>

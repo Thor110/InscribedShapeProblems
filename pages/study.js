@@ -36,6 +36,7 @@
   const MAX_SEEDS = 40;
 
   const budget = verts => (verts <= 4096 ? { starts: 10, random: 300, track: 600 } : { starts: 4, random: 80, track: 150 });
+  // the median, taking the upper of the two middle values for even counts (as in the saved data)
   const median = a => { if (!a.length) return NaN; const b = a.slice().sort((p, q) => p - q); return b[Math.floor(b.length / 2)]; };
   const topSeeds = found => found.slice(0, MAX_SEEDS).map(f => ({ x: f.x, y: f.y, ang: f.ang, r: f.r, diag: f.diag }));
 
@@ -122,6 +123,8 @@
     for (let i = 0; i < N; i++) { let v = [R() - 0.5, R() - 0.5, R() - 0.5]; const L = Math.hypot(...v); v = v.map(x => x / L); s += rad(v); }
     return s / N;
   }
+  // Run a solver step by step, reporting `tick` as progress after each step.
+  function* paced(steps, tick) { let x; while (!(x = steps.next()).done) yield tick; return x.value; }
   function* tetraStudy(opts = {}) {
     const { Surfaces3D, InscribedND } = mod3D();
     const seed = opts.seed || 1, K = opts.orientations || 16, out = [];
@@ -133,30 +136,34 @@
       let sols = [];
       for (let L = F.levels[0]; L <= maxL; L++) {
         const t0 = Date.now(), b = Surfaces3D.make(F.family, seed, L), next = [];
+        const tick = { kind: 'tetra', family: F.label, level: L, maxLevel: maxL, data: out };
+        yield tick;   // let the page update between heavy steps (results are unaffected)
         if (L === F.levels[0]) {
           const P = problem(b);
-          for (const Q of Qs) { const v = P.solvePose(Q, [0, 0, 0]); next.push(v && v.ok ? v : null); yield { kind: 'tetra', family: F.label, level: L, maxLevel: maxL, data: out }; }
+          for (const Q of Qs) { const v = yield* paced(P.solvePoseSteps(Q, [0, 0, 0]), tick); next.push(v && v.ok ? v : null); yield tick; }
         } else {
           const a = Surfaces3D.make(F.family, seed, L - 1);
+          yield tick;
           for (const v0 of sols) {
             if (!v0) { next.push(null); continue; }
             // adaptive homotopy from the previous level's surface to this one
             let t = 0, h = 1, cur = v0.st, last = null;
             while (t < 1) {
-              const tt = Math.min(1, t + h), v = problem(u => (1 - tt) * a(u) + tt * b(u)).refine(cur, { maxIt: 60 });
+              const tt = Math.min(1, t + h), v = yield* paced(problem(u => (1 - tt) * a(u) + tt * b(u)).refineSteps(cur, { maxIt: 60 }), tick);
               if (v && v.ok) { t = tt; cur = v.st; last = v; h = Math.min(1, h * 2); } else { h /= 2; if (h < 1 / 128) break; }
               yield { kind: 'tetra', family: F.label, level: L, maxLevel: maxL, data: out };
             }
             next.push(t >= 1 ? last : null);
           }
         }
+        yield tick;
         const mr = meanRadius(b, InscribedND.rng(seed + L)), live = next.filter(Boolean), sizes = live.map(v => v.size / mr);
         const ratios = next.map((v, i) => (v && sols[i] ? v.size / sols[i].size : null)).filter(x => x !== null);
-        const big = live.reduce((m, v) => (!m || v.size > m.size ? v : m), null);
+        const big = live.reduce((m, v) => (!m || v.size > m.size ? v : m), null), small = live.reduce((m, v) => (!m || v.size < m.size ? v : m), null);
         rec.levels.push({
           level: L, vertices: L, count: live.length, tracked: L === F.levels[0] ? K : sols.filter(Boolean).length,   // all K at the first level
           smallest: sizes.length ? Math.min(...sizes) : 0, largest: sizes.length ? Math.max(...sizes) : 0, median: median(sizes),
-          minRatio: ratios.length ? Math.min(...ratios) : NaN, best: big ? big.P : null, ms: Date.now() - t0,
+          minRatio: ratios.length ? Math.min(...ratios) : NaN, best: big ? big.P : null, smallestP: small ? small.P : null, ms: Date.now() - t0,
         });
         sols = next;
         yield { kind: 'tetra', family: F.label, level: L, maxLevel: maxL, data: out, levelDone: true };

@@ -74,18 +74,25 @@ A full review of the site (all 11 pages and their scripts) was done on 2026-11-0
 **Tidying**
 - `pages/certify.js`, which no page used, moved to `tools/certify-float.js`.
 
-### Planned, in order
+### Done in the follow-up round
 
-1. **A smoke test in GitHub Actions.** Run `node tests/smoke.js` on every push that changes `pages/` or `index.html`, next to the GIF workflow, so a broken page is caught before anyone sees it. *Small.*
-2. **Charts readable on phones.** The SVG charts have a 760-unit-wide layout, so on a 390 px screen their 12 px text shrinks to about 6 px. Either draw a narrower layout under 500 px or keep the chart at full size inside a sideways-scrolling box. *Small to medium.*
-3. **A shared look and navigation.** Each page carries its own copy of the same dark styles and its own "Back to suite" link. One stylesheet and a small header with links to every page would make the site consistent and easier to change. It would also give the home page room for a short "what has been proved" summary linking the certificate page, PROOFS.md, the Lean proofs and the paper. *Medium.*
-4. **Shared code for the finders.** The two 3D pages share about 120 copied lines (rotations, mesh, drawing, the search loop). The Skeletal Shape Finder re-implements geometry that already exists in `shapes2d.js` and `inscribed-2d.js`. Moving these into shared scripts removes a class of "fixed in one place but not the other" bugs. The GIF fingerprints will re-record the affected demos automatically. *Medium.*
-5. **Sharper canvases.** The Square Viewfinder ignores the screen's pixel density, so it is blurry on phones and high-resolution displays. It should also use pointer events like the other pages, which handle mouse, touch and pen in one place. *Small.*
-6. **Smoother long computations.** The tetrahedron study occasionally blocks the page for 300–400 ms between updates (surface set-up between yields). The 3D drawing could also batch outlines into one path, though that changes how overlapping lines blend, so the GIFs would change. *Small.*
-7. **Smaller items.**
-   - The registry panel on the Skeletal Space Finder re-checks and flickers on every slider movement; it should only update when the result changes.
-   - The study's "median" returns the upper middle value for even counts.
-   - The tetrahedron chart plots the smallest tetrahedron but clicking draws the largest.
-   - The nearest-misses chart has no guard for an empty record list.
-   - The finder searches could cache their interior starting points per curve.
-8. **Lighter README media.** The eight demo GIFs total about 15 MB. Short MP4 or WebM clips would be a fraction of the size at better quality, but GitHub's README only autoplays GIFs (videos need a click), so this trades autoplay for size. *Optional.*
+1. **The smoke test runs on GitHub** (`.github/workflows/smoke.yml`) for every push or pull request that touches the site.
+2. **Charts are readable on phones.** On narrow screens each chart keeps its natural size, so its text stays at the intended size, and the chart box scrolls sideways; the page itself does not.
+3. **Shared look and navigation.**
+   - `pages/site.css` and `pages/site-nav.js` add the same navigation bar to every page, with the current page highlighted, and a visible keyboard-focus outline on every control.
+   - The home page now opens with a "What has been proved" summary, and its links are grouped into Explore, Studies and proofs, and Numbers.
+4. **Shared code, first part.** The seven rotation and linear-algebra helpers copied between the two 3D finders now live once, in `pages/space3d.js`. Search results and GIFs are unchanged.
+5. **Sharper Square Viewfinder.** It draws at the screen's pixel density and uses pointer events (mouse, touch and pen), capturing the pointer so a drag always ends cleanly.
+6. **No blocking in the tetrahedron study.** The solver now pauses between iterations (`solvePoseSteps` and `refineSteps` in `inscribed-nd.js`, which give identical results). In 25 seconds of the study, pauses over 50 ms went from 79 (longest 341 ms) to one of 53 ms.
+7. **Smaller items:**
+   - the registry panel waits until the sliders settle before checking;
+   - a click on the tetrahedron chart draws the plotted (smallest) tetrahedron, for data computed from now on;
+   - the nearest-misses chart handles an empty record list;
+   - the shape finder computes its starting points once per curve;
+   - the study's "median" is documented as taking the upper middle value, matching the saved data.
+
+### Still planned
+
+1. **Shared code, second part.** The Skeletal Shape Finder still has its own copies of the curve geometry (ray hits, distance, Newton's method) that `shapes2d.js` and `inscribed-2d.js` also contain. The two 3D pages still each have their own mesh, drawing and search-loop code. Unifying these needs care, because the GIFs must stay reproducible; a pixel comparison of each re-recorded GIF would confirm it. *Medium.*
+2. **Batched 3D outlines.** Drawing all mesh outlines as one path would be faster, but it changes how overlapping lines blend, so the GIFs would change slightly. *Small; cosmetic.*
+3. **README media.** The demo GIFs total about 15 MB. Video would be far smaller, but GitHub does not autoplay video in a README, so for now the GIFs stay. *Optional.*
