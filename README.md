@@ -230,7 +230,7 @@ A summary of where each part of the project stands, combining the literature wit
 | **Cube** | Verified only on surfaces with central or mirror symmetry; elsewhere the closest cube misses by 5e-5 to 5e-2 | **Disproved** for generic surfaces ([PROOFS.md](PROOFS.md), Theorem 1); true for centrally symmetric convex bodies (Hausel–Makai–Szűcs) |
 | **Regular pentagon / hexagon** (controls) | Verified only on the circle and on curves with 5-fold (pentagon) or 3- or 6-fold (hexagon) symmetry | Known to fail in general: a non-circular ellipse has no inscribed regular pentagon, because five points determine a conic |
 | Expansion paradox | — | Does not hold as stated (see caveat in that section) |
-| Odd perfect number heuristic | — | Refuted as stated (odd abundant numbers such as 945 exist), and no argument from divisor sizes can work. Replaced by provable results: at least 3 distinct primes, Euler's form ([Odd Perfect Numbers](#odd-perfect-numbers)) |
+| Odd perfect number heuristic | — | The claim (odd divisors never arrive exactly at $N$) is the open conjecture. The size-based reasoning for it fails, since odd abundant numbers such as 945 pass $N$. The binary-spine intuition is made exact, with provable results: at least 3 distinct primes, Euler's form ([Odd Perfect Numbers](#odd-perfect-numbers)) |
 
 **Shape coverage.** The finders now cover the inscribed shapes studied in the literature for planar Jordan curves: squares, rectangles of any aspect ratio, and triangles of any shape. Regular pentagons and hexagons are included as controls. In 3D they cover the regular tetrahedron, octahedron and cube. Not included, by design:
 - **Icosahedron and dodecahedron:** with 7 DoF against 12 or 20 vertex conditions they fail even more decisively than the cube.
@@ -410,7 +410,17 @@ Because the Jordan boundary forbids self-intersection, this intersection cannot 
 
 A number is **perfect** if its proper divisors add up to it, e.g. $6 = 1 + 2 + 3$ and $28 = 1 + 2 + 4 + 7 + 14$. Euclid and Euler showed that the even perfect numbers are exactly $2^{p-1}(2^p - 1)$ with $2^p - 1$ prime. **No odd perfect number has ever been found, and nobody has proved that none exists.** It is one of the oldest open problems in mathematics.
 
-Write $\sigma(N)$ for the sum of *all* divisors of $N$, so $N$ is perfect exactly when $\sigma(N) = 2N$. The ratio $\sigma(N)/N$ (the *abundancy*) is the quantity to watch. The original intuition here, that an odd number "lacks the $N/2$ anchor", is right in spirit, and the results below make it precise. But it cannot become a proof on its own, for reasons the [Number Stability viewer](https://thor110.github.io/InscribedShapeProblems/pages/number-stability.html) demonstrates.
+Write $\sigma(N)$ for the sum of *all* divisors of $N$, so $N$ is perfect exactly when $\sigma(N) = 2N$. The ratio $\sigma(N)/N$ (the *abundancy*) is the quantity to watch. **The conjecture, as originally meant.** *The proper divisors of an odd number can never reach $N$*: "reach" in the sense of *arrive exactly at* $N$, landing on it, not passing it. Read that way, it is exactly the odd perfect number conjecture, and it is open. Every odd number checked so far misses: up to 4,000,000, apart from 3, 5, 7, 9 and 15, none comes closer than 6, either from below or from above.
+
+**The binary spine, from the bottom up.** The intuition that odd numbers "lack the $N/2$ anchor" becomes exact when it is read from the small end. Take $28 = 4 \cdot 7$:
+- the spine $1 + 2 + 4 = 7$ adds up to exactly the other prime factor;
+- so the divisors are the spine $1, 2, 4$ and seven times the spine $7, 14, 28$, totalling $7 + 49 = 56 = 2 \cdot 28$.
+
+In general $1 + 2 + \dots + 2^{k} = 2^{k+1} - 1$, one short of the next power of two, and an even number is perfect exactly when that sum is a prime $q$ and $N = 2^k q$. In terms of the ratio $\sigma(N)/N$: the spine alone gives $2 - 2^{-k}$, just under 2, and $q$ supplies exactly the missing factor, since $\frac{2^{k+1} - 1}{2^k} \cdot \frac{q + 1}{q} = 2$.
+
+An odd number has no spine. Each odd prime-power block contributes far less on its own: under $1.5$ for powers of 3, under $1.25$ for powers of 5, under $1.17$ for powers of 7. So an odd perfect number would need many blocks whose contributions multiply to *exactly* 2, and the single factor of 2 in that product must come from one block alone (Euler's form, below). That one special prime is the odd world's only "anchor".
+
+The results below make this precise, and the [Number Stability viewer](https://thor110.github.io/InscribedShapeProblems/pages/number-stability.html) shows each step. They also show why reasoning from the *sizes* of divisors alone cannot settle the conjecture.
 
 **What can be proved, elementarily.**
 
@@ -423,7 +433,7 @@ Write $\sigma(N)$ for the sum of *all* divisors of $N$, so $N$ is perfect exactl
 
 **Why the size argument cannot work.** Three facts rule out any proof that uses only how large the divisors are:
 
-- **Odd numbers can overshoot.** Odd *abundant* numbers exist: $\sigma(945) - 945 = 975 > 945$. So "the smaller divisors cannot reach $N$" is false.
+- **Odd numbers can pass $N$.** Odd *abundant* numbers exist. $945 = 3^3 \cdot 5 \cdot 7$ has no $N/2$ (its largest proper divisor is $315 = N/3$), yet its proper divisors add up to $975$, which is $30$ more than $945$. So an argument that odd divisors are *too small* to get to $N$ cannot work. What remains open is whether they can ever land *exactly* on $N$.
 - **Odd numbers come arbitrarily close.** Up to 4,000,000 the nearest misses are $\sigma(N) - 2N = \pm 6$, for example $N = 442{,}365 = 3 \cdot 5 \cdot 7 \cdot 11 \cdot 383$ with $\sigma(N)/N = 2.000014$. A simple construction gets as close as you like: multiply distinct odd primes, each time taking the smallest one that keeps $\sigma(N)/N$ below 2 (3, 5, 7, 11, 389, 29959, 128194589, …). The gap to 2 roughly squares at each step, reaching $7 \times 10^{-29}$ after 8 primes. So there is no gap that odd numbers must leave.
 - **Descartes' spoof.** $D = 3^2 \cdot 7^2 \cdot 11^2 \cdot 13^2 \cdot 22021$ has "$\sigma(D) = 2D$" exactly if 22021 is treated as a prime. It is not ($22021 = 19^2 \cdot 61$). So a proof must use the fact that the factors are actually prime, not just the shape of the divisor sum.
 
@@ -442,7 +452,7 @@ Pomerance has given a probabilistic heuristic suggesting that none exist. It is 
 
 <details><summary>The original heuristic (kept for reference)</summary>
 
-This was the starting intuition for the section above. It is not a proof: its central claim, that the smaller divisors "cannot bridge the gap", is false (see 945 above), and Descartes' spoof shows that no argument of this kind can succeed.
+This was the starting intuition for the section above. Its claim that an odd number's divisors can never reach $N$ means *arrive exactly at* $N$, and in that sense it is the open conjecture. The supporting reasoning, that without $N/2$ the remaining divisors are too small to get there, does not prove it: some odd numbers, such as 945, pass $N$. Descartes' spoof shows that no argument from the sizes of divisors alone can succeed. The bottom-up reading of the binary spine above is the exact version of this intuition.
 
 While modern number theory attempts to find a "Monster" odd perfect number through computational brute force, this heuristic argues the structure of an odd number's divisor set makes perfection implausible.
 
