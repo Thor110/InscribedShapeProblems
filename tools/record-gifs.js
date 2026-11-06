@@ -6,13 +6,20 @@
 // result is written to images/<name>.gif. Pages without a search (the
 // certificate) instead get a scripted sequence of frames.
 //
-// Usage:  npm install && npm run gifs            (all demos)
-//         node tools/record-gifs.js square cube  (only demos whose name matches)
-const { chromium } = require('playwright');
-const { GIFEncoder, quantize, applyPalette } = require('gifenc');
-const { PNG } = require('pngjs');
+// Each GIF is re-recorded only when something it depends on changes. Its
+// fingerprint covers its page, the scripts that page loads, the demo's settings
+// and the recorder's own recording code; images/gif-manifest.json stores the
+// fingerprint of each GIF as last recorded. (Fingerprints use the inputs, not the
+// GIF bytes, so machines with different fonts never re-record each other's GIFs.)
+//
+// Usage:  npm install && npm run gifs              (all demos)
+//         node tools/record-gifs.js square cube    (only demos whose name matches)
+//         node tools/record-gifs.js --changed      (only demos whose inputs changed)
+//         node tools/record-gifs.js --stale        (list them; needs no npm install)
+//         node tools/record-gifs.js --mark         (accept the current GIFs as up to date)
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const ROOT = path.resolve(__dirname, '..');
 const url = rel => 'file://' + path.join(ROOT, rel);
@@ -104,6 +111,7 @@ async function record(browser, demo) {
 }
 
 function encode(frames, file) {
+  const { GIFEncoder, quantize, applyPalette } = require('gifenc'), { PNG } = require('pngjs');
   const gif = GIFEncoder();
   for (const { png, delay } of frames) {
     const { width, height, data } = PNG.sync.read(png);
@@ -114,14 +122,47 @@ function encode(frames, file) {
   fs.writeFileSync(file, Buffer.from(gif.bytes()));
 }
 
+// ---- fingerprints ----
+const MANIFEST = path.join(ROOT, 'images', 'gif-manifest.json');
+// Files a page depends on: the page and the local scripts it loads.
+function dependencies(page) {
+  const html = path.join(ROOT, page.split('?')[0]), dir = path.dirname(html), files = [html];
+  for (const m of fs.readFileSync(html, 'utf8').matchAll(/<script[^>]+src="([^"]+)"/g)) if (!/^https?:/.test(m[1])) files.push(path.join(dir, m[1]));
+  return files;
+}
+function fingerprint(demo) {
+  const h = crypto.createHash('sha256');
+  // the demo's settings, including the source of its scripted steps
+  h.update(JSON.stringify(demo, (k, v) => (typeof v === 'function' ? v.toString() : v)));
+  // the recorder's recording code and timing (not its comments or the demo list)
+  h.update(record.toString() + encode.toString() + [FRAME_MS, MAX_SEARCH_FRAMES, HOLD_MS].join());
+  for (const f of dependencies(demo.page)) h.update(path.relative(ROOT, f) + '\0' + fs.readFileSync(f));
+  return h.digest('hex').slice(0, 16);
+}
+const readManifest = () => { try { return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch { return {}; } };
+const writeManifest = m => fs.writeFileSync(MANIFEST, JSON.stringify(m, null, 1) + '\n');
+const isStale = (demo, m) => m[demo.name] !== fingerprint(demo) || !fs.existsSync(path.join(ROOT, 'images', demo.name + '.gif'));
+
 (async () => {
-  const only = process.argv.slice(2);
+  const args = process.argv.slice(2), flags = new Set(args.filter(a => a.startsWith('--'))), only = args.filter(a => !a.startsWith('--'));
+  const manifest = readManifest();
+  let demos = DEMOS.filter(d => !only.length || only.some(o => d.name.includes(o)));
+  if (flags.has('--stale') || flags.has('--changed')) demos = demos.filter(d => isStale(d, manifest));
+  if (flags.has('--stale')) {
+    console.log(demos.length ? demos.map(d => d.name).join(' ') : '(none)');
+    if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `stale=${demos.map(d => d.name).join(' ')}\n`);
+    return;
+  }
+  if (flags.has('--mark')) { for (const d of demos) manifest[d.name] = fingerprint(d); writeManifest(manifest); console.log('Marked as up to date:', demos.map(d => d.name).join(', ')); return; }
+  if (!demos.length) { console.log('All GIFs are up to date.'); return; }
+  const { chromium } = require('playwright');
   const browser = await chromium.launch();
-  for (const demo of DEMOS.filter(d => !only.length || only.some(o => d.name.includes(o)))) {
+  for (const demo of demos) {
     const t = Date.now();
     const { out, status } = await record(browser, demo);
     const file = path.join(ROOT, 'images', demo.name + '.gif');
     encode(out, file);
+    manifest[demo.name] = fingerprint(demo); writeManifest(manifest);
     console.log(`${demo.name}.gif  ${out.length} frames  ${(fs.statSync(file).size / 1e6).toFixed(2)} MB  ${((Date.now() - t) / 1000).toFixed(0)} s  — ${status.trim()}`);
   }
   await browser.close();

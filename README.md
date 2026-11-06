@@ -574,11 +574,26 @@ The GIFs in `images/` are recorded automatically from the live pages:
 
 ```bash
 npm install
-npm run gifs                       # all demos
-node tools/record-gifs.js cube     # only demos whose name contains "cube"
+npm run gifs                                 # all demos
+node tools/record-gifs.js cube               # only demos whose name contains "cube"
+node tools/record-gifs.js --changed          # only demos whose inputs changed
+node tools/record-gifs.js --stale            # list those demos (needs no npm install)
+node tools/record-gifs.js --mark             # accept the current GIFs as up to date
 ```
 
-The recorder drives each page with a fixed seed and advances the search one step per frame, so the output is identical from run to run. The demos are listed at the top of `tools/record-gifs.js`. On GitHub, the **Update demo GIFs** workflow (`.github/workflows/update-gifs.yml`) does the same whenever `pages/` changes on `main`, or on demand from the Actions tab, and commits the new GIFs. The pages also accept `?pace=N` to watch a search in slow motion, and the Space Finder accepts `?rot=pitch,roll,yaw` to set the starting rotation.
+The recorder drives each page with a fixed seed and advances the search one step per frame, so the output is identical from run to run. The demos are listed at the top of `tools/record-gifs.js`.
+
+**GIFs are re-recorded only when necessary.** Each GIF has a fingerprint in `images/gif-manifest.json`, covering:
+- its page;
+- the scripts that page loads;
+- the demo's settings;
+- the recorder's own recording code.
+
+A GIF counts as stale only when that fingerprint changes. So editing the Number Stability page, for example, re-records nothing, and editing `surfaces3d.js` re-records only the three 3D demos. Fingerprints use the inputs rather than the GIF bytes, so a GIF recorded on one machine is never replaced just because another machine renders fonts slightly differently.
+
+On GitHub, the **Update demo GIFs** workflow (`.github/workflows/update-gifs.yml`) runs on pushes to `main` that touch `pages/` or the recorder. It first checks for stale GIFs, which needs no installation. If none are stale it stops within seconds; otherwise it records just those and commits them with the updated manifest. Run it from the Actions tab with **all** ticked to re-record every GIF.
+
+The pages also accept `?pace=N` to watch a search in slow motion, and the Space Finder accepts `?rot=pitch,roll,yaw` to set the starting rotation.
 
 ## Running the checks
 

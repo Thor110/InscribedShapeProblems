@@ -1,16 +1,22 @@
-# Re-records the README demonstration GIFs whenever the pages or the recorder
-# change on main (or on demand from the Actions tab), and commits them if they
-# differ. The commit only touches images/, so it does not re-trigger this workflow.
+# Re-records the README demonstration GIFs on main, but only the ones whose inputs
+# changed: each GIF's page, the scripts that page loads, its demo settings and the
+# recorder's recording code are fingerprinted in images/gif-manifest.json. The first
+# step needs no dependencies, so when nothing is stale the run ends in seconds.
+# The commit only touches images/, so it does not re-trigger this workflow.
 name: Update demo GIFs
 
 on:
   workflow_dispatch:
+    inputs:
+      all:
+        description: 'Re-record every GIF, not just the stale ones'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - 'pages/**'
       - 'tools/record-gifs.js'
-      - 'package.json'
 
 permissions:
   contents: write
@@ -30,16 +36,30 @@ jobs:
         with:
           node-version: 22
 
+      - name: Find GIFs whose inputs changed
+        id: stale
+        run: |
+          if [ "${{ inputs.all }}" = "true" ]; then
+            echo "stale=all" >> "$GITHUB_OUTPUT"
+          else
+            node tools/record-gifs.js --stale
+          fi
+
       - name: Install dependencies
+        if: steps.stale.outputs.stale != ''
         run: npm install --no-audit --no-fund
 
       - name: Install Chromium
+        if: steps.stale.outputs.stale != ''
         run: npx playwright install --with-deps chromium
 
       - name: Record GIFs
-        run: npm run gifs
+        if: steps.stale.outputs.stale != ''
+        run: |
+          if [ "${{ steps.stale.outputs.stale }}" = "all" ]; then npm run gifs; else node tools/record-gifs.js --changed; fi
 
       - name: Commit updated GIFs
+        if: steps.stale.outputs.stale != ''
         run: |
           if git diff --quiet -- images; then
             echo "GIFs unchanged."
