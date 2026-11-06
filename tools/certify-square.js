@@ -1,37 +1,33 @@
-// Computer-assisted certificate (PROOFS.md, Theorem 6): every radial Jordan curve
-// whose radius stays within T of the 1 × 0.6 ellipse's has an inscribed square,
-// in particular nowhere-differentiable, non-symmetric fractal curves such as the
-// ellipse plus a random-phase Weierstrass ripple of size up to T.
-// Writes data/certificates.json and prints every quantity the proof uses.
-// Usage: node tools/certify-square.js
+#!/usr/bin/env node
+// The computer-assisted proof of PROOFS.md, Theorem 6, in interval arithmetic:
+// every Jordan curve whose polar radius stays within T = 0.14 of the ellipse
+// x² + y²/0.6² = 1's has an inscribed square. Writes data/certificates.json and exits
+// with code 0 if the certificate is valid. Takes about a second.
+'use strict';
 const fs = require('fs'), path = require('path');
-const Cf = require('../pages/certify.js');
-const a = 1, b = 0.6, T = 0.13;
-// Ellipse in polar form about its centre, with analytic bounds:
-//   r = (cos²θ/a² + sin²θ/b²)^(-1/2),  b ≤ r ≤ a,
-//   r' = −(r³/2)·sin 2θ·(1/b² − 1/a²)          ⇒ |r'| ≤ (a³/2)·q,  q = 1/b² − 1/a²,
-//   r'' = (3/r)·r'² − r³·cos 2θ·q             ⇒ |r''| ≤ 3a⁵q²/4·(4/(b·a))… bounded crudely by 3a⁵q² + a³q.
-const q = 1 / b ** 2 - 1 / a ** 2;
-const spec = {
-  r: th => 1 / Math.sqrt((Math.cos(th) / a) ** 2 + (Math.sin(th) / b) ** 2),
-  rmax: a, rmin: b, d1: (a ** 3 * q) / 2, d2: 3 * a ** 5 * q * q + a ** 3 * q,
-  T, u0: 0.125, v0: 0.625, c: 0.5, polygon: 1 << 19,
-};
-const t0 = Date.now(), cert = Cf.certify(spec);
-const curvature = a / b ** 2;   // maximum curvature of the ellipse
-const out = {
+const R = require('../pages/certify-rigorous.js');
+
+const T = [14, 100], c = 0.5, N = 20000;
+const t0 = Date.now(), P = R.squareProblem(T, c, N), r = R.certify(P), diag = R.squareDiagonal(P, r, 200), seconds = (Date.now() - t0) / 1000;
+const ok = r.ok && diag.guaranteed > 0;
+const f = (x, d = 4) => x.toFixed(d), Tn = T[0] / T[1];
+
+console.log(`Certificate ${ok ? 'VALID' : 'FAILED'} for T = ${Tn} (ellipse 1 × 0.6), interval arithmetic`);
+console.log(`  square on the ellipse at t = t' = ${f(r.zero[0], 6)} (corners γ(t) and −γ(t'))`);
+console.log(`  degree (sign det J, det ∈ [${f(r.det[0])}, ${f(r.det[1])}]):  ${r.degree}`);
+console.log(`  box half-width c = ${c}; on ∂Q, |L|∞ ≥ c_eff = ${r.cEff.toFixed(9)}`);
+console.log(`  max |G − L| over ${r.samples.toLocaleString()} boundary samples:   ${f(r.maxDeviation)}`);
+console.log(`  + most it can change between samples:       ${r.betweenSamples.toExponential(2)}`);
+console.log(`  + perturbation (1 + √2)·T:                  ${f(r.Teff)}`);
+console.log(`  = ${f(r.bound + r.Teff)}  <  c_eff = ${f(r.cEff)}: ${r.ok}`);
+console.log(`  largest T this box certifies:               ${f(r.room / (1 + Math.SQRT2))}`);
+console.log(`  diagonal of the guaranteed square ≥ ${f(diag.minDiagonal)} − 2T = ${f(diag.guaranteed)}`);
+console.log(`  Chambers' allowance 1/(10κ) for this ellipse: 0.0360  →  T is ${f(Tn / 0.036, 2)}× larger`);
+console.log(`  ${seconds.toFixed(1)} s`);
+
+fs.writeFileSync(path.join(__dirname, '..', 'data', 'certificates.json'), JSON.stringify({
   theorem: 'Every Jordan curve ρ(θ)(cos θ, sin θ) with ρ continuous and |ρ(θ) − r_E(θ)| ≤ T for all θ, where r_E is the polar radius of the ellipse x² + y²/0.6² = 1, has an inscribed square.',
-  ellipse: { a, b }, T, chambersAllowance: 1 / (10 * curvature), ratioToChambers: T / (1 / (10 * curvature)),
-  certificate: cert, seconds: (Date.now() - t0) / 1000,
-};
-fs.writeFileSync(path.resolve(__dirname, '../data/certificates.json'), JSON.stringify(out, null, 1) + '\n');
-console.log(`Certificate ${cert.ok ? 'VALID' : 'FAILED'} for T = ${T} (ellipse ${a} × ${b})`);
-console.log(`  winding number of G around the box:        ${cert.winding} (computed ${cert.windingRaw.toFixed(6)})`);
-console.log(`  min max(|g1|,|g2|) on the box boundary:     ${cert.boundaryMin.toFixed(6)}  (after the Lipschitz allowance between ${cert.samples} samples)`);
-console.log(`  needed: (1+√2)T + e + rounding =            ${cert.threshold.toFixed(6)}`);
-console.log(`  polygon error e (2^19 vertices):            ${cert.eRad.toExponential(2)}`);
-console.log(`  box u-range ${cert.uRange.map(x=>x.toFixed(4)).join('–')}, v-range ${cert.vRange.map(x=>x.toFixed(4)).join('–')}: disjoint = ${cert.rangesDisjoint}`);
- console.log(`  diagonal of the guaranteed square ≥        ${cert.diagonalLowerBound.toFixed(4)}  (the ellipse's own square: ${cert.diagonalAtZero.toFixed(4)})`);
-console.log(`  largest T this box certifies:               ${cert.maxT.toFixed(4)}`);
-console.log(`  Chambers' allowance for this ellipse 1/(10κ): ${out.chambersAllowance.toFixed(4)}  →  T is ${out.ratioToChambers.toFixed(2)}× larger`);
-process.exit(cert.ok ? 0 : 1);
+  method: 'interval arithmetic with outward rounding (pages/interval.js, pages/certify-rigorous.js)',
+  ellipse: { a: 1, b: '3/5' }, T: `${T[0]}/${T[1]}`, chambersAllowance: 0.036, ok, certificate: r, diagonal: diag, seconds,
+}, null, 1) + '\n');
+process.exit(ok ? 0 : 1);

@@ -30,6 +30,13 @@
   .status.deficit{color:#ca6;}
   .status.perfect{color:#4a9;}
   .status.excess{color:#e55;}
+  .panel{max-width:700px;width:100%;margin-top:22px;border-top:1px solid #1a1a24;padding-top:14px;}
+  .panel h2{font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#888;font-weight:normal;margin-bottom:6px;}
+  .panel p{font-size:11px;color:#666;line-height:1.7;margin-bottom:8px;}
+  .panel table{border-collapse:collapse;font-size:11px;width:100%;}
+  .panel td,.panel th{border:1px solid #1e1e2a;padding:4px 8px;text-align:left;font-weight:normal;color:#999;word-break:break-all;}
+  .panel th{color:#555;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;}
+  .panel td.ok{color:#4a9;} .panel td.bad{color:#ca6;}
   .nav{margin-top:20px;font-size:10px;}
   .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
   .nav a:hover{color:#888;}
@@ -38,9 +45,8 @@
 <body>
 <h1>Number Stability</h1>
 <div class="sub">
-  Edward James Gordon — Odd Perfect Number Problem (Heuristic)<br>
-  An odd number lacks the N/2 anchor. Its proper divisors, starting at most N/3, are plausibly incapable of summing to N — but this is a heuristic motivation, not a proof. The non-existence of odd perfect numbers remains an open problem in number theory.
-  Drag the slider to explore odd numbers. Most fall short of N, but odd abundant numbers (the smallest is 945) overshoot it, so the open question is whether the sum can ever land exactly on N.
+  Edward James Gordon — Odd Perfect Number Problem<br>
+  No odd perfect number has ever been found, and none is known to be impossible: the question is open. An odd number lacks the N/2 divisor, so its largest proper divisor is at most N/3. But that alone cannot rule perfection out: odd abundant numbers (the smallest is 945) overshoot N, and odd numbers come arbitrarily close to landing on it exactly. Drag the slider to explore, and see the panels below for what can be proved.
 </div>
 
 <canvas id="canvas" height="100"></canvas>
@@ -58,6 +64,8 @@
   <div class="meter"><div class="mlabel">Largest divisor</div><div class="mval" id="mLargest">11</div></div>
   <div class="meter"><div class="mlabel">Largest / N</div><div class="mval" id="mRatio">14.3%</div></div>
   <div class="meter"><div class="mlabel">Divisor count</div><div class="mval" id="mCount">3</div></div>
+  <div class="meter"><div class="mlabel">Sum of all divisors σ(N) / N</div><div class="mval" id="mAb">1.247</div></div>
+  <div class="meter" style="grid-column:span 2"><div class="mlabel">Euler's form p^a·m², p ≡ a ≡ 1 (mod 4) — required of an odd perfect number</div><div class="mval" id="mEuler">—</div></div>
 </div>
 
 <div class="divisors" id="divisorList">Divisors: 1, 7, 11</div>
@@ -71,6 +79,27 @@
   <button onclick="setN(945)">N = 945</button>
   <button onclick="setN(3003)">N = 3003</button>
   <button onclick="scanForPerfect()" id="scanBtn">Scan for odd perfect</button>
+</div>
+
+
+<div class="panel">
+  <h2>1 · How many primes an odd perfect number needs</h2>
+  <p>σ(N)/N = Π (1 + 1/p + … + 1/p^a) &lt; Π p/(p − 1) over the distinct primes p of N, and p/(p − 1) is largest for the smallest primes. So an odd number with k distinct prime factors has σ(N)/N below the product over the first k odd primes. Perfection needs σ(N)/N = 2 exactly. This is the precise form of "no N/2 anchor": without the prime 2, odd numbers need several primes to get anywhere near 2.</p>
+  <table id="primeBound"></table>
+</div>
+
+<div class="panel">
+  <h2>2 · Odd numbers come arbitrarily close</h2>
+  <p>The closest odd numbers up to 4,000,000, by σ(N)/N: none is perfect, but the misses get smaller. Then a construction that gets as close as you like: multiply distinct odd primes, each time choosing the smallest prime that keeps σ(N)/N below 2. The gap to 2 roughly squares at every step, so there is no fixed "gap" an odd number must leave, and no argument from the sizes of divisors alone can rule out an odd perfect number.</p>
+  <table id="records"></table>
+  <div class="controls"><button onclick="greedyStep()">Add a prime</button><button onclick="greedyReset()">Reset</button></div>
+  <table id="greedy" style="margin-top:8px"></table>
+</div>
+
+<div class="panel">
+  <h2>3 · Descartes' spoof</h2>
+  <p>In 1638 Descartes found D = 3²·7²·11²·13²·22021 = 198,585,576,189. If 22021 were prime, the usual formula would give σ(D) = 2D exactly: an odd perfect number. It is not prime (22021 = 19²·61), and the true σ(D)/D is 2.1453. D satisfies every condition that uses only sizes and the multiplicative formula, so any proof that odd perfect numbers do not exist must use the fact that the factors are actually prime.</p>
+  <table id="spoof"></table>
 </div>
 
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
@@ -250,6 +279,51 @@ function scanStep(){
   }
   scanId=requestAnimationFrame(scanStep);
 }
+
+
+// ---- what can be proved ----
+function factor(n){const f=[];for(let p=2;p*p<=n;p++){let a=0;while(n%p===0){n/=p;a++;}if(a)f.push([p,a]);}if(n>1)f.push([n,1]);return f;}
+function eulerForm(n){
+  // n = p^a·m² with p ≡ a ≡ 1 (mod 4): exactly one prime has an odd exponent, and it and its exponent are 1 mod 4
+  const odd=factor(n).filter(([,a])=>a%2);
+  if(odd.length!==1)return odd.length===0?'no — N is a perfect square':'no — '+odd.length+' primes have odd exponents';
+  const [p,a]=odd[0];
+  return p%4===1&&a%4===1?'yes — special prime '+p+(a>1?'^'+a:''):'no — the odd exponent is on '+p+(a>1?'^'+a:'')+', not ≡ 1 (mod 4)';
+}
+const _render=render;
+render=function(n){_render(n);const t=getDivisors(n).reduce((s,x)=>s+x,0)+n;document.getElementById('mAb').textContent=(t/n).toFixed(4);const e=eulerForm(n);const el=document.getElementById('mEuler');el.textContent=e;el.className='mval '+(e.startsWith('yes')?'perfect':'');};
+
+(function(){
+  const pr=[3,5,7,11,13,17];let P=1,rows='<tr><th>Distinct odd primes</th><th>Largest possible σ(N)/N</th><th>Can reach 2?</th></tr>';
+  pr.forEach((p,i)=>{P*=p/(p-1);rows+=`<tr><td>${i+1} (${pr.slice(0,i+1).join(', ')}, …)</td><td>below ${P.toFixed(4)}</td><td class="${P>2?'ok':'bad'}">${P>2?'not ruled out by this bound':'no — so an odd perfect number has at least 3 distinct primes'}</td></tr>`;});
+  rows+='<tr><td colspan="3">Known (much harder): at least 10 distinct primes (Nielsen 2015), at least 101 prime factors with multiplicity and N &gt; 10^1500 (Ochem–Rao 2012).</td></tr>';
+  document.getElementById('primeBound').innerHTML=rows;
+  const rec=[[315,'3²·5·7',-6],[1155,'3·5·7·11',-6],[8925,'3·5²·7·17',6],[32445,'3²·5·7·103',6],[442365,'3·5·7·11·383',6]];
+  document.getElementById('records').innerHTML='<tr><th>N</th><th>Factors</th><th>σ(N) − 2N</th><th>σ(N)/N</th></tr>'+rec.map(([n,f,d])=>`<tr><td>${n.toLocaleString()}</td><td>${f}</td><td>${d>0?'+':''}${d}</td><td>${((2*n+d)/n).toFixed(6)}</td></tr>`).join('');
+  const D=198585576189n,pp=(p,a)=>{let s=0n,q=1n;for(let i=0;i<=a;i++){s+=q;q*=p;}return s;};
+  const base=pp(3n,2)*pp(7n,2)*pp(11n,2)*pp(13n,2), spoof=base*(1n+22021n), real=base*pp(19n,2)*pp(61n,1);
+  document.getElementById('spoof').innerHTML=`<tr><th></th><th>σ(D)</th><th>σ(D) / D</th></tr><tr><td>Treating 22021 as prime</td><td>${spoof.toLocaleString()}</td><td class="ok">${spoof===2n*D?'exactly 2':'—'}</td></tr><tr><td>True value (22021 = 19²·61)</td><td>${real.toLocaleString()}</td><td class="bad">${(Number(real*1000000n/D)/1e6).toFixed(4)}</td></tr>`;
+})();
+
+function modpow(b,e,m){let r=1n;b%=m;while(e>0n){if(e&1n)r=r*b%m;b=b*b%m;e>>=1n;}return r;}
+function isPrimeBig(n){ // Miller–Rabin with the first 13 prime bases: deterministic below 3.3·10^24
+  const B=[2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n,41n];if(n<2n)return false;for(const p of B)if(n%p===0n)return n===p;
+  let d=n-1n,s=0;while(!(d&1n)){d>>=1n;s++;}
+  for(const a of B){let x=modpow(a,d,n);if(x===1n||x===n-1n)continue;let c=false;for(let i=1;i<s;i++){x=x*x%n;if(x===n-1n){c=true;break;}}if(!c)return false;}return true;
+}
+let gNum=1n,gDen=1n,gPrimes=[];
+function greedyReset(){gNum=1n;gDen=1n;gPrimes=[];greedyShow();}
+function greedyStep(){
+  if(gPrimes.length>=8)return;   // the next prime would exceed the range where the primality test is exact
+  let p=gNum/(2n*gDen-gNum)+1n;const last=gPrimes[gPrimes.length-1];if(last&&p<=last)p=last+1n;if(!(p&1n))p++;
+  while(!isPrimeBig(p)||!(gNum*(p+1n)<2n*gDen*p))p+=2n;
+  gNum*=p+1n;gDen*=p;gPrimes.push(p);greedyShow();
+}
+function greedyShow(){
+  const rows=gPrimes.map((p,i)=>{let n=1n,num=1n;for(const q of gPrimes.slice(0,i+1)){n*=q;num*=q+1n;}const gap=Number((2n*n-num)*10n**40n/n)/1e40;return `<tr><td>${i+1}</td><td>${p.toLocaleString()}</td><td>${n.toLocaleString()}</td><td>${gap.toExponential(2)}</td></tr>`;}).join('');
+  document.getElementById('greedy').innerHTML='<tr><th>Step</th><th>Prime added</th><th>N (product)</th><th>2 − σ(N)/N</th></tr>'+(rows||'<tr><td colspan="4">Press "Add a prime".</td></tr>');
+}
+greedyShow();
 
 document.getElementById('nSl').addEventListener('input',update);
 new ResizeObserver(()=>render(+document.getElementById('nSl').value)).observe(cv);

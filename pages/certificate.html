@@ -28,22 +28,23 @@
 </head>
 <body>
 <h1>Square Certificate</h1>
-<div class="sub">A computer-assisted proof (<a href="https://github.com/Thor110/InscribedSquareProblem/blob/main/PROOFS.md#theorem-6--a-computer-assisted-certificate">PROOFS.md, Theorem 6</a>) that every curve whose radius stays within T = 0.13 of a 1 × 0.6 ellipse's has an inscribed square, including nowhere-differentiable, non-symmetric fractal curves such as the one drawn here. Left: the curve, the ellipse (dashed), and a square found numerically on the fractal. Right: the proof. Each point of the box's edge in (u, v) is mapped to the square equations G = (g₁, g₂); the image loop winds once around the origin and never enters the grey square, which is everything a perturbation of size T could reach. So no perturbation that small can remove the square.</div>
-<div class="controls">Ripple size<input type="range" id="amp" min="0" max="0.13" step="0.005" value="0.13" oninput="drawCurve(false)" onchange="drawCurve(true)"><span id="ampV">0.130</span></div>
+<div class="sub">A computer-assisted proof (<a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/PROOFS.md#theorem-6--a-computer-assisted-certificate">PROOFS.md, Theorem 6</a>) that every curve whose radius stays within T = 0.14 of a 1 × 0.6 ellipse's has an inscribed square, including nowhere-differentiable, non-symmetric fractal curves such as the one drawn here. The proof runs in your browser below, in interval arithmetic, in under a second.<br>Left: the curve, the ellipse (dashed), and a square found numerically on the fractal. Right: the proof. The edge of a box of candidate squares is mapped to the square equations G = (g₁, g₂) (green). It stays close to the dashed square, which is what the linearised equations would give, so it winds once around the origin and keeps well away from it. A perturbation of size T moves it by at most (1 + √2)T, the grey square, so no perturbation that small can remove the square.</div>
+<div class="controls">Ripple size<input type="range" id="amp" min="0" max="0.14" step="0.005" value="0.14" oninput="drawCurve(false)" onchange="drawCurve(true)"><span id="ampV">0.140</span></div>
 <div class="panels">
   <div class="panel"><canvas id="curve" width="400" height="400"></canvas><div class="cap" id="capCurve"></div></div>
-  <div class="panel"><canvas id="loop" width="400" height="400"></canvas><div class="cap">The image of the box edge under G (green), the origin (white), and the grey square max(|g₁|,|g₂|) ≤ (1+√2)T + e, which a perturbation of size T could reach.</div></div>
+  <div class="panel"><canvas id="loop" width="400" height="400"></canvas><div class="cap">Green: G on the edge of the box. Dashed: the linearised equations on the same edge (a square of half-width c). Grey: max(|g₁|, |g₂|) ≤ (1 + √2)T, everything a perturbation of size T could move the origin to.</div></div>
 </div>
 <div class="status" id="status">Computing the certificate…</div>
 <table id="tbl"></table>
 <div class="nav"><a href="../index.html">← Back to suite</a></div>
 
 <script src="shapes2d.js"></script>
-<script src="certify.js"></script>
+<script src="interval.js"></script>
+<script src="certify-rigorous.js"></script>
 <script src="inscribed-2d.js"></script>
 <script>
 'use strict';
-const $ = id => document.getElementById(id), a = 1, b = 0.6, T = 0.13, q = 1 / b ** 2 - 1 / a ** 2;
+const $ = id => document.getElementById(id), a = 1, b = 0.6, T = 0.14;
 const rE = th => 1 / Math.sqrt((Math.cos(th) / a) ** 2 + (Math.sin(th) / b) ** 2);
 // Weierstrass ripple W(θ) = Σ 2^(−k/2) cos(2^k(θ − θ0)) / Σ 2^(−k/2): |W| ≤ 1, nowhere differentiable (Hardy).
 const W0 = 1 / (1 - Math.SQRT1_2), th0 = 0.3, W = (th, K = 14) => { let s = 0; for (let k = 0; k < K; k++) s += 2 ** (-k / 2) * Math.cos(2 ** k * (th - th0)); return s / W0; };
@@ -70,26 +71,35 @@ function drawCurve(search = true) {
 }
 function drawLoop() {
   const cv = $('loop'), ctx = cv.getContext('2d'); view(ctx, 400, 400);
-  const C = Certify.radialCurve(rE, 1 << 19, (a ** 3 * q) / 2, 3 * a ** 5 * q * q + a ** 3 * q, a), G = Certify.makeG(C);
-  const pts = [], P = cert.box;
-  for (let e = 0; e < 4; e++) { const p = P[e], r = P[(e + 1) % 4]; for (let i = 0; i < 300; i++) { const t = i / 300; pts.push(G(p[0] + t * (r[0] - p[0]), p[1] + t * (r[1] - p[1]))); } }
-  const m = Math.max(...pts.map(g => Math.max(Math.abs(g[0]), Math.abs(g[1])))) * 1.15, k = 190 / m, X = x => 200 + k * x, Y = y => 200 - k * y;
-  ctx.fillStyle = 'rgba(140,140,150,0.25)'; ctx.fillRect(X(-cert.threshold), Y(cert.threshold), 2 * k * cert.threshold, 2 * k * cert.threshold);
+  const { zero: z, K, c } = cert, Gm = p => prob.Gi(p).map(v => (v.lo + v.hi) / 2), pts = [];
+  const Y = [[-c, -c], [c, -c], [c, c], [-c, c]];
+  for (let e = 0; e < 4; e++) for (let i = 0; i < 300; i++) {
+    const t = i / 300, y = [0, 1].map(d => Y[e][d] + t * (Y[(e + 1) % 4][d] - Y[e][d]));
+    pts.push(Gm(z.map((v, r) => v + K[r][0] * y[0] + K[r][1] * y[1])));
+  }
+  const m = Math.max(c, ...pts.map(g => Math.max(Math.abs(g[0]), Math.abs(g[1])))) * 1.15, k = 190 / m, X = x => 200 + k * x, Yp = y => 200 - k * y;
+  ctx.fillStyle = 'rgba(140,140,150,0.25)'; ctx.fillRect(X(-cert.Teff), Yp(cert.Teff), 2 * k * cert.Teff, 2 * k * cert.Teff);
   ctx.strokeStyle = '#1e1e2a'; ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(400, 200); ctx.moveTo(200, 0); ctx.lineTo(200, 400); ctx.stroke();
-  ctx.beginPath(); pts.forEach((g, i) => (i ? ctx.lineTo(X(g[0]), Y(g[1])) : ctx.moveTo(X(g[0]), Y(g[1])))); ctx.closePath(); ctx.strokeStyle = '#4a9'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(200,200,210,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(X(-c), Yp(c), 2 * k * c, 2 * k * c); ctx.setLineDash([]);
+  ctx.beginPath(); pts.forEach((g, i) => (i ? ctx.lineTo(X(g[0]), Yp(g[1])) : ctx.moveTo(X(g[0]), Yp(g[1])))); ctx.closePath(); ctx.strokeStyle = '#4a9'; ctx.lineWidth = 2; ctx.stroke();
   ctx.beginPath(); ctx.arc(200, 200, 3.5, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
 }
+let prob = null;
 function run() {
-  cert = Certify.certify({ r: rE, rmax: a, rmin: b, d1: (a ** 3 * q) / 2, d2: 3 * a ** 5 * q * q + a ** 3 * q, T, u0: 0.125, v0: 0.625, c: 0.5, polygon: 1 << 19 });
-  $('status').textContent = cert.ok ? `Certificate valid for T = ${T}` : 'Certificate failed'; $('status').className = 'status' + (cert.ok ? ' ok' : '');
+  const t0 = performance.now();
+  prob = CertifyRigorous.squareProblem([14, 100], 0.5, 20000); cert = CertifyRigorous.certify(prob);
+  const diag = CertifyRigorous.squareDiagonal(prob, cert, 200), ok = cert.ok && diag.guaranteed > 0, secs = ((performance.now() - t0) / 1000).toFixed(1);
+  $('status').textContent = ok ? `Certificate valid for T = ${T}, proved in interval arithmetic` : 'Certificate failed'; $('status').className = 'status' + (ok ? ' ok' : '');
   const row = (k, v, ok) => `<tr><td>${k}</td><td class="${ok ? 'ok' : ''}">${v}</td></tr>`;
-  $('tbl').innerHTML = row('Winding number of G around the box', cert.winding, cert.winding !== 0)
-    + row('Smallest max(|g₁|,|g₂|) on the box edge', cert.boundaryMin.toFixed(4), true)
-    + row('Needed: (1+√2)T + polygon error + rounding', cert.threshold.toFixed(4), cert.boundaryMin > cert.threshold)
-    + row('Box parameter ranges disjoint (square cannot collapse)', cert.rangesDisjoint ? 'yes' : 'no', cert.rangesDisjoint)
-    + row('Diagonal of the guaranteed square at least', cert.diagonalLowerBound.toFixed(4), cert.diagonalLowerBound > 0)
-    + row('Largest T this box certifies', cert.maxT.toFixed(4), true)
-    + row("Chambers' allowance 1/(10κ) for this ellipse", (1 / (10 * (a / b ** 2))).toFixed(4), true);
+  $('tbl').innerHTML = row('Degree of the linearised equations (sign of det J)', cert.degree, cert.degree !== 0)
+    + row(`Largest |G − L| on the box edge (${cert.samples.toLocaleString()} samples)`, cert.maxDeviation.toFixed(4), true)
+    + row('+ most it can change between samples', cert.betweenSamples.toExponential(2), true)
+    + row('+ perturbation (1 + √2)T', cert.Teff.toFixed(4), true)
+    + row('must be below the box half-width c', `${(cert.bound + cert.Teff).toFixed(4)} < ${cert.cEff.toFixed(4)}`, cert.ok)
+    + row('Diagonal of the guaranteed square at least', diag.guaranteed.toFixed(4), diag.guaranteed > 0)
+    + row('Largest T this box certifies', (cert.room / (1 + Math.SQRT2)).toFixed(4), true)
+    + row("Chambers' allowance 1/(10κ) for this ellipse", (1 / (10 * (a / b ** 2))).toFixed(4), true)
+    + row('Time to check, in this browser', secs + ' s', true);
   drawLoop(); drawCurve();
 }
 setTimeout(run, 30);

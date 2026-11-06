@@ -1,37 +1,96 @@
 {
- "theorem": "Every surface ρ(ω)·ω with ρ continuous and |ρ(ω) − r_E(ω)| ≤ T for all unit vectors ω, where r_E is the radial function of the ellipsoid x² + y²/0.8² + z²/0.6² = 1, has an inscribed regular tetrahedron with the orientation given by the Euler angles below.",
- "axes": [
-  1,
-  0.8,
-  0.6
- ],
- "euler": [
-  0.3,
-  0.5,
-  0.7
- ],
- "T": 0.04,
- "c": 0.09,
- "n": 120,
+ "theorem": "Every surface ρ(ω)·ω with ρ continuous and |ρ(ω) − r_E(ω)| ≤ T for all unit vectors ω, where r_E is the radial function of the ellipsoid x² + y²/0.8² + z²/0.6² = 1, has an inscribed regular tetrahedron with vertices x + s·w_k, w_k the directions of tetraDirs() in pages/certify-rigorous.js.",
+ "method": "interval arithmetic with outward rounding (pages/interval.js, pages/certify-rigorous.js)",
+ "ellipsoid": {
+  "axes": [
+   1,
+   "4/5",
+   "3/5"
+  ]
+ },
+ "orientation": "Cayley rotation with q = (1/8, 1/4, 3/8)",
+ "T": "3/50",
+ "ok": true,
  "certificate": {
   "ok": true,
-  "T": 0.04,
-  "c": 0.09,
-  "maxDeviation": 0.03414753466132177,
-  "betweenSamples": 0.011020670504428984,
-  "rounding": 1e-9,
-  "samples": 13824000,
-  "maxT": 0.04483179383424925,
-  "zero": [
-   -0.05423741493730592,
-   0.06291839140833723,
-   0.12425788498092483,
-   0.7297585165882704
-  ],
-  "residual": 1.6653345369377348e-16,
-  "detJ": 1.6552403516986998,
   "degree": 1,
-  "circumradiusLowerBound": 0.6315370379615479
+  "det": [
+   1.9345399541921164,
+   1.9345399541921324
+  ],
+  "zero": [
+   -0.285622782677971,
+   0.011965489870214884,
+   0.04657202822655736,
+   0.7158414548323601
+  ],
+  "J": [
+   [
+    -0.028567573533854654,
+    0.6112763265167518,
+    0.7909014778875126,
+    0.8796766693511907
+   ],
+   [
+    0.013019784072687283,
+    0.0012829546446733087,
+    -0.9999144152264596,
+    0.9085283034667897
+   ],
+   [
+    -0.9919370236603198,
+    0.10110975466429846,
+    -0.07640523360684667,
+    0.9992625384140551
+   ],
+   [
+    -0.08775021465266028,
+    -0.6408997190238578,
+    0.7625925839016093,
+    0.8938653231281505
+   ]
+  ],
+  "K": [
+   [
+    0.3903984721365665,
+    0.5483485069466396,
+    -1.0308249114047763,
+    0.21082611254860875
+   ],
+   [
+    0.7769582663907926,
+    -0.008112945790355153,
+    0.049305247588122776,
+    -0.8114982058505757
+   ],
+   [
+    0.3081773859112566,
+    -0.5347831093274573,
+    -0.041227059403622736,
+    0.28635834061381626
+   ],
+   [
+    0.33248419828057285,
+    0.5042591272062139,
+    -0.030671217970768806,
+    0.313286924077166
+   ]
+  ],
+  "c": 0.14,
+  "cEff": 0.1399999999999992,
+  "contraction": 4.8849813083506975e-15,
+  "normJ": 2.38510784070628,
+  "normK": 2.1803980030365935,
+  "samples": 64000000,
+  "gridPoints": 200,
+  "gridSpacing": 0.0014070351758794237,
+  "roundingInSamples": 9.1598564023526e-16,
+  "maxDeviation": 0.06545888587113584,
+  "betweenSamples": 0.00784945703371784,
+  "bound": 0.0733083429048537,
+  "Teff": 0.060000000000000005,
+  "room": 0.06669165709514548
  },
- "seconds": 49.493
+ "circumradiusLowerBound": 0.5505432493774979,
+ "seconds": 46.687
 }

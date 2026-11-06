@@ -7,7 +7,7 @@ This repository also contains some other proposed arguments of mine.
 
 ## Interactive Demonstration
 You can view the **Inscribed Square & Cube Viewfinder** in action here:
-[Run the Live Viewfinder](https://thor110.github.io/InscribedSquareProblem/)
+[Run the Live Viewfinder](https://thor110.github.io/InscribedShapeProblems/)
 
 Note that the viewfinders are simpler demonstrations, while the skeletal finders more accurately showcase the method.
 
@@ -46,7 +46,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | Family | Shape | Dim | Vertices | Expected dim. | Status in the literature | Proved here | Found by the finders |
 |---|---|---|---|---|---|---|---|
 | Triangle | Equilateral / any triangle | 2 | 3 | 1 | **Solved** for all Jordan curves (Meyerson 1980, Nielsen 1992) | — | ✅ every curve tested |
-| **Square** | Square | 2 | 4 | 0 | **Open** for continuous curves. Proved for convex (Emch), smooth (Schnirelmann), locally monotone (Stromquist), small-Lipschitz (Tao), near-smooth (Chambers) | Every curve within 0.13 of one ellipse, fractals included (Theorem 6, computer-assisted) | ✅ every curve tested (16 + 3 in the n-D engine) |
+| **Square** | Square | 2 | 4 | 0 | **Open** for continuous curves. Proved for convex (Emch), smooth (Schnirelmann), locally monotone (Stromquist), small-Lipschitz (Tao), near-smooth (Chambers) | Every curve within 0.14 of one ellipse, fractals included (Theorem 6, computer-assisted, interval arithmetic) | ✅ every curve tested (16 + 3 in the n-D engine) |
 | Square | Rectangle, any aspect ratio | 2 | 4 | 0 | **Open** for continuous curves. Proved for smooth (Greene–Lobb 2021); *some* aspect ratio always exists (Vaughan) | — | ✅ every curve tested |
 | Square | Regular pentagon, hexagon, … | 2 | 5, 6, … | < 0 | Known to fail in general (e.g. ellipses) | Theorem 1 (generic) | ✅ only on curves with matching symmetry |
 | Square | Regular octahedron | 3 | 6 | 1 | **Open.** Proved for smooth convex bodies (Makeev 2001) | — | ✅ every surface tested |
@@ -54,7 +54,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1) | ❌ except on symmetric surfaces |
 | Cube | Hypercube | 4, 5 | 16, 32 | −5, −16 | — | **False in general** (Theorem 1) | ✅ only on the sphere and ellipsoid; ❌ elsewhere (closest misses 0.6–9%) |
 | Cube | Icosahedron, dodecahedron | 3 | 12, 20 | −5, −13 | — | **False in general** (Theorem 1) | not tested |
-| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.04 of one ellipsoid, rough ones included (Theorem 7, computer-assisted) | ✅ every surface tested, at any rotation |
+| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.06 of one ellipsoid, rough ones included (Theorem 7, computer-assisted, interval arithmetic) | ✅ every surface tested, at any rotation |
 | Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorems 2–3 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
 
 **Where the three open problems stand.**
@@ -83,7 +83,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 
 </details>
 
-The [Dimension Explorer](https://thor110.github.io/InscribedSquareProblem/pages/dimension-explorer.html) runs the n-dimensional searches in the browser and fills in this kind of table live; `node tests/run-nd.js 5` does the same from the command line.
+The [Dimension Explorer](https://thor110.github.io/InscribedShapeProblems/pages/dimension-explorer.html) runs the n-dimensional searches in the browser and fills in this kind of table live; `node tests/run-nd.js 5` does the same from the command line.
 
 ## Square shrinkage study and rectangle sweep
 
@@ -126,7 +126,7 @@ A verified rectangle was found in **all 81 cells**: every aspect ratio, on every
 - "Largest" means largest found, so it is a guaranteed lower bound on the true largest.
 - From level 13 on, the Weierstrass polygon is capped at 131,072 points.
 
-Explore it on the [Square Shrinkage & Rectangle Sweep](https://thor110.github.io/InscribedSquareProblem/pages/inscribed-study.html) page: run the studies live, hover for values, and click any point to see the curve and its largest verified shape. Raw results are in `data/study-squares.json`, `data/study-rectangles.json` and `data/study-tetrahedra.json`.
+Explore it on the [Square Shrinkage & Rectangle Sweep](https://thor110.github.io/InscribedShapeProblems/pages/inscribed-study.html) page: run the studies live, hover for values, and click any point to see the curve and its largest verified shape. Raw results are in `data/study-squares.json`, `data/study-rectangles.json` and `data/study-tetrahedra.json`.
 
 ## Counting every square
 
@@ -150,28 +150,28 @@ In the limiting fractal there are infinitely many squares, so "odd" no longer me
 
 The studies above can only observe squares on finite approximations. [PROOFS.md, Theorem 6](PROOFS.md#theorem-6--a-computer-assisted-certificate) is a proof instead.
 
-**Every curve whose radius stays within 0.13 of a 1 × 0.6 ellipse's has an inscribed square.** That includes the ellipse with a Weierstrass ripple of size 0.13 added: a curve that is nowhere differentiable, has no symmetry, and is not locally monotone, so the classical theorems do not apply to it.
+**Every curve whose radius stays within 0.14 of a 1 × 0.6 ellipse's has an inscribed square.** That includes the ellipse with a Weierstrass ripple of size 0.14 added: a curve that is nowhere differentiable, has no symmetry, and is not locally monotone, so the classical theorems do not apply to it.
 
 The argument:
-1. Write the square conditions as two equations $G(u, v) = 0$ in the parameters of two opposite corners.
+1. Write the square conditions as two equations $G = 0$ in the parameters of two opposite corners.
 2. Show that a perturbation of size $T$ moves $G$ by at most $(1+\sqrt2)T$.
-3. Compute, on a box around the ellipse's square, that $G$ stays further than that from zero on the box's edge and winds once around zero.
+3. Compute, on the edge of a box around the ellipse's square, that $G$ stays closer to its linearisation than the linearisation is to zero, with room left for that perturbation.
 4. By degree theory, no perturbation that small can remove the square.
 
-The computation takes about 8 seconds and checks every inequality with an explicit Lipschitz bound between samples:
+The computation is done in **interval arithmetic**: every operation is rounded outward, so every inequality is proved, not just computed. It uses no trigonometric functions (the ellipse has a rational parametrisation) and the exact distance to the ellipse, not an approximating polygon. It takes under a second:
 
 ```bash
 node tools/certify-square.js     # writes data/certificates.json
 ```
 
-The neighbourhood it certifies (0.13) is about 3.6 times the one given by Chambers' perturbation theorem for the same ellipse. The [Square Certificate](pages/certificate.html) page shows the fractal curve with a square found on it, and the winding loop that proves the square exists. The same method fails on the finders' Weierstrass blob, by a factor of about 5 at every level of detail. PROOFS.md explains why: the blob's roughness is a fixed fraction of its size at every scale.
+The neighbourhood it certifies (0.14) is about 3.9 times the one given by Chambers' perturbation theorem for the same ellipse. The [Square Certificate](pages/certificate.html) page runs the proof live in the browser and shows the fractal curve with a square found on it, alongside the loop that proves the square exists. The same method fails on the finders' Weierstrass blob, by a factor of about 5 at every level of detail. PROOFS.md explains why: the blob's roughness is a fixed fraction of its size at every scale.
 
 ![Square certificate: the square survives a growing fractal ripple](images/certificate_demo.gif)
 
-**The same for tetrahedra.** [PROOFS.md, Theorem 7](PROOFS.md#theorem-7--the-same-for-tetrahedra-on-rough-surfaces) applies the same method in 3D. Every surface whose radius stays within 0.04 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, with circumradius at least 0.63. That includes rough surfaces that are not $C^1$, where Gromov's theorem does not apply. It uses a simpler test that works in any dimension: on the boundary of a box around the ellipsoid's tetrahedron, the four "vertex on surface" equations stay closer to their linearisation than the linearisation is to zero, with room left for any perturbation of size 0.04. That forces a solution inside the box.
+**The same for tetrahedra.** [PROOFS.md, Theorem 7](PROOFS.md#theorem-7--the-same-for-tetrahedra-on-rough-surfaces) applies the same method in 3D. Every surface whose radius stays within 0.06 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, with circumradius at least 0.55. That includes rough surfaces that are not $C^1$, where Gromov's theorem does not apply. It uses a simpler test that works in any dimension: on the boundary of a box around the ellipsoid's tetrahedron, the four "vertex on surface" equations stay closer to their linearisation than the linearisation is to zero, with room left for any perturbation of size 0.06. That forces a solution inside the box. The square certificate uses the same test, and both run in the same interval arithmetic.
 
 ```bash
-node tools/certify-tetra.js      # about a minute; writes data/certificate-tetrahedron.json
+node tools/certify-tetra.js      # under a minute on 4 cores; writes data/certificate-tetrahedron.json
 ```
 
 ## Preprint
@@ -182,7 +182,7 @@ node tools/certify-tetra.js      # about a minute; writes data/certificate-tetra
 - the numerical studies;
 - an appendix containing the complete proofs from [PROOFS.md](PROOFS.md).
 
-It is also available as a [web page](https://thor110.github.io/InscribedSquareProblem/pages/paper.html) and as [PAPER.pdf](PAPER.pdf). Both are generated from the two markdown files, with the maths pre-rendered, so they need no internet access to display:
+It is also available as a [web page](https://thor110.github.io/InscribedShapeProblems/pages/paper.html) and as [PAPER.pdf](PAPER.pdf). Both are generated from the two markdown files, with the maths pre-rendered, so they need no internet access to display:
 
 ```bash
 node tools/build-paper.js     # rebuilds pages/paper.html and PAPER.pdf
@@ -190,7 +190,7 @@ node tools/build-paper.js     # rebuilds pages/paper.html and PAPER.pdf
 
 ## Submitting results
 
-The finders can contribute to a shared registry of verified results ([`data/registry.json`](data/registry.json), one file per result in [`results/`](results/), browsable on the [Verified Results](https://thor110.github.io/InscribedSquareProblem/pages/registry.html) page).
+The finders can contribute to a shared registry of verified results ([`data/registry.json`](data/registry.json), one file per result in [`results/`](results/), browsable on the [Verified Results](https://thor110.github.io/InscribedShapeProblems/pages/registry.html) page).
 
 **How it works.**
 1. When the Skeletal Shape Finder, Skeletal Space Finder or Inscribed Cube Viewfinder verifies a shape, a *Registry* line under the status checks it against the registry.
@@ -230,7 +230,7 @@ A summary of where each part of the project stands, combining the literature wit
 | **Cube** | Verified only on surfaces with central or mirror symmetry; elsewhere the closest cube misses by 5e-5 to 5e-2 | **Disproved** for generic surfaces ([PROOFS.md](PROOFS.md), Theorem 1); true for centrally symmetric convex bodies (Hausel–Makai–Szűcs) |
 | **Regular pentagon / hexagon** (controls) | Verified only on the circle and on curves with 5-fold (pentagon) or 3- or 6-fold (hexagon) symmetry | Known to fail in general: a non-circular ellipse has no inscribed regular pentagon, because five points determine a conic |
 | Expansion paradox | — | Does not hold as stated (see caveat in that section) |
-| Odd perfect number heuristic | — | Refuted as stated: odd abundant numbers such as 945 exist |
+| Odd perfect number heuristic | — | Refuted as stated (odd abundant numbers such as 945 exist), and no argument from divisor sizes can work. Replaced by provable results: at least 3 distinct primes, Euler's form ([Odd Perfect Numbers](#odd-perfect-numbers)) |
 
 **Shape coverage.** The finders now cover the inscribed shapes studied in the literature for planar Jordan curves: squares, rectangles of any aspect ratio, and triangles of any shape. Regular pentagons and hexagons are included as controls. In 3D they cover the regular tetrahedron, octahedron and cube. Not included, by design:
 - **Icosahedron and dodecahedron:** with 7 DoF against 12 or 20 vertex conditions they fail even more decisively than the cube.
@@ -247,7 +247,7 @@ In the jig the three rays are 120° apart. If $I$ is the centroid of the three h
 
 ![Inscribed Triangle Shapefinder Demo](images/triangle_demonstration.gif)
 
-[Run the Skeletal Shape Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html?shape=triangle)
+[Run the Skeletal Shape Finder](https://thor110.github.io/InscribedShapeProblems/pages/skeletal-shapefinder.html?shape=triangle)
 
 ## Inscribed Square Problem
 **Conjecture and proposed argument.** The general continuous-Jordan-curve case (the Toeplitz conjecture) is open; this section presents the conjecture, an informal argument, and a simulation illustrating it. Known cases:
@@ -280,7 +280,7 @@ Define a 'Skeletal Jig' consisting of two perpendicular lines intersecting at a 
 
 ![Inscribed Square Shapefinder Demo](images/square_demonstration.gif)
 
-[Run the Skeletal Shape Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html)
+[Run the Skeletal Shape Finder](https://thor110.github.io/InscribedShapeProblems/pages/skeletal-shapefinder.html)
 
 ## Inscribed Rectangle Problem (Rectangular Peg)
 
@@ -292,7 +292,7 @@ Define a 'Skeletal Jig' consisting of two perpendicular lines intersecting at a 
 
 ![Inscribed Rectangle Shapefinder Demo](images/rectangle_demonstration.gif)
 
-[Run the Skeletal Shape Finder (rectangle, aspect 2)](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html?shape=rectangle&p=2)
+[Run the Skeletal Shape Finder (rectangle, aspect 2)](https://thor110.github.io/InscribedShapeProblems/pages/skeletal-shapefinder.html?shape=rectangle&p=2)
 
 ## Inscribed Cube Problem
 > **Update: disproved in general.** [PROOFS.md](PROOFS.md) (Theorem 1) shows that generic smooth surfaces, including strictly convex ones, contain no inscribed cube, so the conjecture below is false as stated. It is true for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000). The original argument is kept for reference.
@@ -337,7 +337,7 @@ The Inscribed Cube Viewfinder on the lopsided egg (strictly convex, no symmetry)
 
 ![Inscribed Cube Viewfinder Demo](images/cube_viewfinder_demo.gif)
 
-[Run the Skeletal Space Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-spacefinder.html)
+[Run the Skeletal Space Finder](https://thor110.github.io/InscribedShapeProblems/pages/skeletal-spacefinder.html)
 
 ## Inscribed Tetrahedron Problem
 > **Update.** Gromov (1969) proved that every $C^1$-smooth sphere in $\mathbb{R}^n$ contains an inscribed simplex similar to any given simplex, in every orientation; this includes the regular tetrahedron. [PROOFS.md](PROOFS.md) (Theorem 2) turns the centring argument below into an elementary proof for smooth strictly convex bodies. The case of general continuous surfaces remains open.
@@ -368,7 +368,7 @@ The Skeletal Space Finder also has an octahedron mode: six rays along $\pm x, \p
 
 ![Inscribed Tetrahedron Spacefinder Demo](images/tetrahedron_demonstration.gif)
 
-[Run the Skeletal Space Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-spacefinder.html?shape=tetrahedron)
+[Run the Skeletal Space Finder](https://thor110.github.io/InscribedShapeProblems/pages/skeletal-spacefinder.html?shape=tetrahedron)
 
 ## Degrees Of Freedom (Heuristic)
 
@@ -406,9 +406,43 @@ Because the Jordan boundary forbids self-intersection, this intersection cannot 
 
 > **Caveat.** With the centre and rotation held fixed, the vertices reach the boundary at *different* scales, not simultaneously. Making them arrive together means adjusting the centre and rotation, which is the original problem. Ruling out the zero-scale limit is also the known hard part of the Toeplitz problem.
 
-## Perfect Odd Numbers... (Heuristic / Sketch)
+## Odd Perfect Numbers
 
-**Not a proof.** This section is an informal heuristic and a visual motivation only. The non-existence of odd perfect numbers is a long-standing open problem; the argument below sketches an intuition but does not constitute a proof. Heuristic arguments based on divisor densities cannot, by themselves, rule out odd perfect numbers, since divisors of an odd integer $N$ form a sparse but unconstrained set in principle.
+A number is **perfect** if its proper divisors add up to it, e.g. $6 = 1 + 2 + 3$ and $28 = 1 + 2 + 4 + 7 + 14$. Euclid and Euler showed that the even perfect numbers are exactly $2^{p-1}(2^p - 1)$ with $2^p - 1$ prime. **No odd perfect number has ever been found, and nobody has proved that none exists.** It is one of the oldest open problems in mathematics.
+
+Write $\sigma(N)$ for the sum of *all* divisors of $N$, so $N$ is perfect exactly when $\sigma(N) = 2N$. The ratio $\sigma(N)/N$ (the *abundancy*) is the quantity to watch. The original intuition here, that an odd number "lacks the $N/2$ anchor", is right in spirit, and the results below make it precise. But it cannot become a proof on its own, for reasons the [Number Stability viewer](https://thor110.github.io/InscribedShapeProblems/pages/number-stability.html) demonstrates.
+
+**What can be proved, elementarily.**
+
+1. **An odd perfect number has at least 3 distinct prime factors.** For $N = \prod p_i^{a_i}$,
+   $$\frac{\sigma(N)}{N} = \prod_i \Big(1 + \frac1{p_i} + \dots + \frac1{p_i^{a_i}}\Big) < \prod_i \frac{p_i}{p_i - 1},$$
+   and $p/(p-1)$ is largest for the smallest primes. With one or two odd primes the bound is at most $\tfrac32 \cdot \tfrac54 = \tfrac{15}{8} < 2$. This is the "missing anchor" made exact: the prime 2 alone contributes a factor of up to 2, while odd primes contribute at most $\tfrac32, \tfrac54, \tfrac76, \dots$, so an odd number needs many of them.
+2. **Euler's form.** An odd perfect number is $N = p^a m^2$ with $p$ prime, $p \nmid m$ and $p \equiv a \equiv 1 \pmod 4$.
+
+   *Proof.* $\sigma$ is multiplicative and $\sigma(N) = 2N \equiv 2 \pmod 4$, so exactly one factor $\sigma(p^a)$ is even, and it is $\equiv 2 \pmod 4$. For an odd prime $q$, $\sigma(q^b) = 1 + q + \dots + q^b$ is a sum of $b + 1$ odd numbers, so it is odd exactly when $b$ is even. That makes every other exponent even. For the special prime, $a$ is odd and $\sigma(p^a) = (1 + p)(1 + p^2 + \dots + p^{a-1})$. If $p \equiv 3 \pmod 4$, then $4 \mid 1 + p$, which is impossible. So $p \equiv 1 \pmod 4$, each $p^i \equiv 1$, and $\sigma(p^a) \equiv a + 1 \equiv 2 \pmod 4$ gives $a \equiv 1 \pmod 4$. $\blacksquare$
+
+**Why the size argument cannot work.** Three facts rule out any proof that uses only how large the divisors are:
+
+- **Odd numbers can overshoot.** Odd *abundant* numbers exist: $\sigma(945) - 945 = 975 > 945$. So "the smaller divisors cannot reach $N$" is false.
+- **Odd numbers come arbitrarily close.** Up to 4,000,000 the nearest misses are $\sigma(N) - 2N = \pm 6$, for example $N = 442{,}365 = 3 \cdot 5 \cdot 7 \cdot 11 \cdot 383$ with $\sigma(N)/N = 2.000014$. A simple construction gets as close as you like: multiply distinct odd primes, each time taking the smallest one that keeps $\sigma(N)/N$ below 2 (3, 5, 7, 11, 389, 29959, 128194589, …). The gap to 2 roughly squares at each step, reaching $7 \times 10^{-29}$ after 8 primes. So there is no gap that odd numbers must leave.
+- **Descartes' spoof.** $D = 3^2 \cdot 7^2 \cdot 11^2 \cdot 13^2 \cdot 22021$ has "$\sigma(D) = 2D$" exactly if 22021 is treated as a prime. It is not ($22021 = 19^2 \cdot 61$). So a proof must use the fact that the factors are actually prime, not just the shape of the divisor sum.
+
+**What is known.** Computer-assisted work has pushed the constraints very far:
+- $N > 10^{1500}$, with at least 101 prime factors counted with multiplicity (Ochem–Rao 2012);
+- at least 10 distinct prime factors (Nielsen 2015);
+- largest prime factor above $10^8$ (Goto–Ohno 2008);
+- $N \equiv 1 \pmod{12}$ or $N \equiv 9 \pmod{36}$ (Touchard 1953);
+- only finitely many with $k$ distinct prime factors, and all are below $2^{4^k}$ (Dickson 1913; Nielsen 2003).
+
+Pomerance has given a probabilistic heuristic suggesting that none exist. It is the careful version of the "too light" intuition, and it is still not a proof.
+
+**The viewer.** The [Number Stability viewer](https://thor110.github.io/InscribedShapeProblems/pages/number-stability.html):
+- shows each odd number's divisors against $N$, with its abundancy and whether it has Euler's form;
+- has panels for the prime-count bound, the closest odd numbers and the construction above, and Descartes' spoof.
+
+<details><summary>The original heuristic (kept for reference)</summary>
+
+This was the starting intuition for the section above. It is not a proof: its central claim, that the smaller divisors "cannot bridge the gap", is false (see 945 above), and Descartes' spoof shows that no argument of this kind can succeed.
 
 While modern number theory attempts to find a "Monster" odd perfect number through computational brute force, this heuristic argues the structure of an odd number's divisor set makes perfection implausible.
 
@@ -440,7 +474,7 @@ Process Repeat $\rightarrow 1$
 
 $\sum X = N$
 
-## The Bridge Analogy
+**The Bridge Analogy**
 Attempting to construct an odd perfect number is like trying to build a bridge across a void where the laws of physics forbid the existence of the primary support beam.
 
 In an even perfect number, the $N/2$ divisor acts as the massive central pylon that spans half the distance instantly.
@@ -451,7 +485,7 @@ No matter how many millions of these smaller pieces you pile up, they are mechan
 
 The structure is doomed to be "too light" to reach equilibrium.
 
-## Further Explanation
+**Further Explanation**
 If a number can be divided by something, the result is ultimately smaller if all odd numbers are smaller, they simply can not sum up to the whole number they were divided from.
 
 1. The Even Model (Density)
@@ -470,15 +504,10 @@ Mechanical Inevitability: As $N$ gets larger, these divisors become more "Sparse
 
 In a perfect even number, the $N/2$ anchor does half the work. In an odd number, you're starting with a 66% deficit. Because divisors must be integers derived from $N$, you simply don't have enough 'Large Bricks' to fill that hole. The more you divide, the smaller the pieces get, and the farther away the whole becomes.
 
-## Another explanation
+**Another explanation**
 For any odd number N, the sum of its proper divisors is structurally bounded below N because without N/2 in the divisor set, the largest available divisor is at most N/p where p is the smallest odd prime factor of N, which is at minimum 3. The remaining divisors are all smaller fractions of N derived from combinations of its prime factors, and their collective sum cannot bridge the gap to N.
 
-> **Correction.** The claim that the divisors of an odd number "cannot bridge the gap" is false in general: odd **abundant** numbers exist. The smallest is $945$, whose proper divisors sum to $975 > 945$, and there are infinitely many. The Number Stability viewer's $N = 945$ button shows this. So the sum can overshoot $N$, and the open question is whether it can ever land **exactly** on $N$. Separately, even perfect numbers $2^{p-1}(2^p-1)$ have only the binary chain $N/2, N/4, \dots, N/2^{p-1}$; for example $28/8$ is not an integer.
-
-## Visualisation of Structural Instability for Odd Numbers (Heuristic)
-This is another visualisation I have added to the interactive demonstrations. The visual is illustrative of the heuristic in the previous sections; it is not a proof.
-
-[Run the Number Stability Viewer](https://thor110.github.io/InscribedSquareProblem/pages/number-stability.html)
+</details>
 
 ## Regenerating the demo GIFs
 
@@ -524,6 +553,10 @@ node tools/certify-tetra.js      # the computer-assisted proof of Theorem 7 (add
 - J. E. Greene and A. Lobb, "The rectangular peg problem", *Annals of Math.* 194 (2021).
 - B. Matschke, "A survey on the square peg problem", *Notices AMS* 61(4) (2014).
 - M. D. Meyerson, "Equilateral triangles and continuous curves", *Fund. Math.* 110 (1980).
+- P. Ochem, M. Rao, "Odd perfect numbers are greater than 10^1500", *Math. Comp.* 81 (2012).
+- P. P. Nielsen, "Odd perfect numbers, Diophantine equations, and upper bounds", *Math. Comp.* 84 (2015); "An upper bound for odd perfect numbers", *Integers* 3 (2003).
+- T. Goto, Y. Ohno, "Odd perfect numbers have a prime factor exceeding 10^8", *Math. Comp.* 77 (2008).
+- J. Touchard, "On prime numbers and perfect numbers", *Scripta Math.* 19 (1953).
 - M. J. Nielsen, "Triangles inscribed in simple closed curves", *Geom. Dedicata* 43 (1992).
 - A. Gupta and S. Rubinstein-Salzedo, "Inscribed triangles of Jordan curves in $\mathbb{R}^n$" — [arXiv:2102.03953](https://arxiv.org/abs/2102.03953).
 - M. L. Gromov, "Simplexes inscribed on a hypersurface", *Mat. Zametki* 5 (1969); see also J. Cantarella, E. Denne, J. McCleary, *Forum Math. Sigma* (2022) — [arXiv:2106.12063](https://arxiv.org/abs/2106.12063).

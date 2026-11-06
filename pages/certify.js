@@ -1,4 +1,7 @@
-// Computer-assisted certificates that a fractal curve has an inscribed square.
+// Floating-point, exploratory version of the square certificate. It was used to
+// explore which curves can be certified (the negative Weierstrass-blob result in
+// PROOFS.md). The rigorous, interval-arithmetic certificate of Theorem 6 is
+// pages/certify-rigorous.js.
 //
 // Setting. ρ(θ) = r_K(θ) + (tail), a radial curve ρ(θ)(cos θ, sin θ), where r_K is
 // an explicit smooth trigonometric polynomial (the first K octaves of a
@@ -10,7 +13,7 @@
 // and G(u, v) = (sd(B), sd(D)) vanishes exactly at inscribed squares (sd = signed
 // distance to the curve).
 //
-// Certificate for a box Q in (u, v) (PROOFS.md, Theorem 6):
+// Certificate for a box Q in (u, v):
 //   (1) on ∂Q, max(|g₁|, |g₂|) > (1 + √2)·T + 2e + (rounding margin), where G is
 //       computed for r_K, e bounds the error of the polygon used for sd;
 //   (2) the winding number of G around ∂Q is non-zero;

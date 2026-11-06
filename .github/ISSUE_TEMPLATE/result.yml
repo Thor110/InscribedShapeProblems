@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for submitting. The finders fill this form in for you when they find a result that is not in the [registry](https://github.com/Thor110/InscribedSquareProblem/blob/main/data/registry.json) yet.
+        Thank you for submitting. The finders fill this form in for you when they find a result that is not in the [registry](https://github.com/Thor110/InscribedShapeProblems/blob/main/data/registry.json) yet.
         An automated check rebuilds the curve or surface from its seed, verifies the shape independently (every pairwise distance and every vertex's distance from the curve or surface, to a relative error of 1e-9), and checks it is new. If it passes, a pull request adding it to the registry is opened automatically.
   - type: textarea
     id: result

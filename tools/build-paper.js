@@ -15,7 +15,7 @@ const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
 const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
 const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
 
-const ROOT = path.join(__dirname, '..'), REPO = 'https://github.com/Thor110/InscribedSquareProblem/blob/main/';
+const ROOT = path.join(__dirname, '..'), REPO = 'https://github.com/Thor110/InscribedShapeProblems/blob/main/';
 const adaptor = liteAdaptor(); RegisterHTMLHandler(adaptor);
 const doc = mathjax.document('', { InputJax: new TeX({ packages: AllPackages }), OutputJax: new SVG({ fontCache: 'local' }) });
 const tex2svg = (tex, display) => adaptor.outerHTML(doc.convert(tex.replace(/\\\*/g, '*'), { display }));

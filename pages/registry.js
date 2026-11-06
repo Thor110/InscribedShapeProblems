@@ -14,7 +14,7 @@
 // tools/build-registry.js (the GitHub Action). Browser: window.Registry. Node: require().
 (function (global) {
   'use strict';
-  const REPO = 'https://github.com/Thor110/InscribedSquareProblem';
+  const REPO = 'https://github.com/Thor110/InscribedShapeProblems';
   const TOL = 1e-9, SEEDS = [1, 10];
   const isNode = typeof module !== 'undefined' && module.exports;
   const S2 = () => global.Shapes2D || (require('./shapes2d.js'), globalThis.Shapes2D);
