@@ -205,7 +205,7 @@ It is also available as a [web page](https://thor110.github.io/InscribedShapePro
 node tools/build-paper.js     # rebuilds pages/paper.html and PAPER.pdf
 ```
 
-[REVIEW.md](REVIEW.md) is a kit for getting it checked: what kind of claim each result is and how to verify it, specific questions to ask, the researchers whose work is closest, and a short message to send.
+[ROADMAP.md](ROADMAP.md) lists what is planned next. [REVIEW.md](REVIEW.md) is a kit for getting it checked: what kind of claim each result is and how to verify it, specific questions to ask, the researchers whose work is closest, and a short message to send.
 
 ## Submitting results
 
