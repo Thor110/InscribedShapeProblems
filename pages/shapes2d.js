@@ -147,23 +147,34 @@
       const end = cap(T, Math.atan2(nE.y, nE.x)), start = cap(0, Math.atan2(-n0.y, -n0.x));
       return left.concat(end, right.reverse(), start);
     },
-    koch(R) { return koch(regular(3, R() * TAU), 6, -1); },
-    antikoch(R) { return koch(regular(6, R() * TAU), 5, 1); },
-    minkowski(R) { return minkowski(regular(4, Math.PI / 4), 4); },
-    weierstrass(R) {
-      // Radial Weierstrass-type function: continuous, and nowhere differentiable in the limit.
-      const K = 11, m = 2 + Math.floor(R() * 2), ph = Array.from({ length: K }, () => R() * TAU);
-      return polar(16384, t => { let s = 1; for (let k = 0; k < K; k++) s += 0.085 * Math.pow(2, -k / 2) * Math.cos(m * (1 << k) * t + ph[k]); return s; });
+    // Fractals take an optional `level` (roughness). Each level refines the previous
+    // one with the same seed, so a family of levels is a sequence of ever-rougher
+    // approximations of one limiting fractal curve.
+    koch(R, level = 6) { return koch(regular(3, R() * TAU), level, -1); },
+    antikoch(R, level = 5) { return koch(regular(6, R() * TAU), level, 1); },
+    minkowski(R, level = 4) { return minkowski(regular(4, Math.PI / 4), level); },
+    weierstrass(R, level = 11) {
+      // Radial Weierstrass-type function with `level` octaves: continuous, and
+      // nowhere differentiable in the limit. Phases are drawn for all octaves so
+      // lower levels are truncations of higher ones.
+      const MAXK = 16, m = 2 + Math.floor(R() * 2), ph = Array.from({ length: MAXK }, () => R() * TAU), K = Math.min(level, MAXK);
+      const N = Math.min(1 << 17, Math.max(2400, 8 * m * (1 << K)));
+      return polar(N, t => { let s = 1; for (let k = 0; k < K; k++) s += 0.085 * Math.pow(2, -k / 2) * Math.cos(m * (1 << k) * t + ph[k]); return s; });
     },
-    coastline(R) {
-      // Periodic midpoint displacement of log-radius (Hurst 0.35): a rough random fractal.
-      const L = 14, N = 1 << L, v = new Float64Array(N + 1);
+    coastline(R, level = 14) {
+      // Periodic midpoint displacement of log-radius (Hurst 0.35): a rough random
+      // fractal. `level` = number of refinement levels (2^level points); coarse
+      // values are identical across levels.
+      const MAXL = 16, N = 1 << MAXL, v = new Float64Array(N + 1), L = Math.max(2, Math.min(level, MAXL));
       for (let k = 0; k < 4; k++) v[(k * N) / 4] = (R() - 0.5) * 0.4;
       v[N] = v[0];
-      for (let step = N / 4, amp = 0.2; step > 1; step /= 2, amp *= Math.pow(2, -0.35)) {
+      const last = N >> L;
+      for (let step = N / 4, amp = 0.2; step > last; step /= 2, amp *= Math.pow(2, -0.35)) {
         for (let i = step / 2; i < N; i += step) v[i] = (v[i - step / 2] + v[i + step / 2]) / 2 + (R() - 0.5) * 2 * amp;
       }
-      return polar(N, (t, i) => Math.exp(v[i]));
+      const out = [];
+      for (let i = 0; i < N; i += last) { const t = (i / N) * TAU, r = Math.exp(v[i]); out.push({ x: r * Math.cos(t), y: r * Math.sin(t) }); }
+      return out;
     },
   };
 
@@ -183,10 +194,12 @@
     return out;
   }
 
-  function generate(type, seed) {
+  function generate(type, seed, level) {
     const g = GEN[type] || GEN.random;
-    return dedupe(g(rng(seed)));
+    return dedupe(level === undefined ? g(rng(seed)) : g(rng(seed), level));
   }
+  // Roughness levels available for each fractal family: [min, max].
+  const LEVELS = { koch: [0, 7], antikoch: [0, 6], minkowski: [0, 5], weierstrass: [0, 14], coastline: [2, 16] };
 
   function fit(pts, W, H, margin) {
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -308,5 +321,5 @@
     return ROUGH.has(type) ? '~1–3 s' : '< 1 s';
   }
 
-  global.Shapes2D = { list: LIST, generate, fit, populateSelect, rng, accel, newton, estimate };
+  global.Shapes2D = { list: LIST, generate, fit, populateSelect, rng, accel, newton, estimate, LEVELS };
 })(typeof window !== 'undefined' ? window : globalThis);

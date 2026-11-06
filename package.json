@@ -4,6 +4,7 @@
   "description": "Interactive demonstrations for inscribed shape problems",
   "scripts": {
     "gifs": "node tools/record-gifs.js",
+    "study": "node tests/run-study.js both",
     "test": "node tests/jordan-check.js && node tests/run-2d.js 1 && node tests/run-3d.js 1 && node tests/run-cube-viewfinder.js 1 && node tests/run-nd.js 3"
   },
   "devDependencies": {

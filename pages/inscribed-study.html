@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inscribed Shape Study</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px;}
+  h1{font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#666;margin-bottom:6px;}
+  h2{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#888;margin:26px 0 8px;}
+  .sub{font-size:11px;color:#555;margin-bottom:10px;letter-spacing:0.06em;text-align:center;max-width:780px;line-height:1.6;}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin:6px 0 10px;font-size:11px;color:#777;}
+  button{background:transparent;border:1px solid #2a2a3a;color:#888;padding:6px 14px;font-family:inherit;font-size:11px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;}
+  button:hover{border-color:#555;color:#ccc;background:#111;}
+  button.active{border-color:#4a9;color:#4a9;}
+  select,input{background:#0d0d14;border:1px solid #2a2a3a;color:#aaa;padding:5px 8px;font-family:inherit;font-size:11px;}
+  .chart{width:100%;max-width:800px;overflow-x:auto;}
+  .chart svg{max-width:100%;height:auto;display:block;margin:0 auto;}
+  /* charts follow the site's dark theme regardless of OS setting */
+  body .viz{--surface:#0d0d14;--text1:#e0ddd8;--text2:#8a8983;--grid:#1e1e2a;--axis:#3a3a4a;--none:#15151d;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;}
+  .status{margin-top:6px;font-size:10px;color:#777;letter-spacing:0.08em;text-transform:uppercase;text-align:center;min-height:14px;}
+  .viewer{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:flex-start;margin-top:12px;}
+  canvas{background:#0d0d14;border:1px solid #1e1e2a;max-width:100%;}
+  .caption{font-size:11px;color:#999;max-width:300px;line-height:1.6;}
+  details{margin-top:10px;max-width:800px;width:100%;font-size:11px;color:#888;}
+  summary{cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;font-size:10px;}
+  table{border-collapse:collapse;width:100%;margin-top:6px;}
+  th,td{border:1px solid #1e1e2a;padding:4px 6px;text-align:center;}
+  th{color:#666;font-weight:normal;}
+  #tip{position:fixed;pointer-events:none;background:#15151d;border:1px solid #2a2a3a;color:#e0ddd8;padding:6px 9px;font-size:11px;max-width:320px;line-height:1.5;display:none;z-index:10;}
+  .note{margin-top:14px;font-size:10px;color:#555;max-width:780px;line-height:1.6;text-align:center;}
+  .nav{margin-top:20px;font-size:10px;}
+  .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
+</style>
+</head>
+<body>
+<h1>Inscribed Shape Study</h1>
+<div class="sub">The open part of the square problem is rough, merely continuous curves: could inscribed squares shrink to a point as a curve gets rougher? This page follows squares through ever-rougher fractal curves, and rectangles across aspect ratios (the rectangular peg problem). Every square and rectangle counted here passed the 1e-9 verification. Click any point to see its curve and largest shape.</div>
+
+<h2>Square shrinkage</h2>
+<div class="controls">
+  <label><input type="radio" name="sqmode" value="quick" checked> Quick (≈ 30 s)</label>
+  <label><input type="radio" name="sqmode" value="full"> Full depth (several minutes)</label>
+  <label>Seed <input id="sqSeed" type="number" value="1" style="width:64px"></label>
+  <button id="sqBtn" onclick="toggleSquares()">Run</button>
+</div>
+<div class="chart" id="sqChart"></div>
+<div class="status" id="sqStatus"></div>
+<details><summary>Table view</summary><div id="sqTable"></div></details>
+
+<h2>Rectangle sweep</h2>
+<div class="controls">
+  <label><input type="radio" name="rcmode" value="quick" checked> Quick</label>
+  <label><input type="radio" name="rcmode" value="full"> Full</label>
+  <label>Seed <input id="rcSeed" type="number" value="1" style="width:64px"></label>
+  <button id="rcBtn" onclick="toggleRects()">Run</button>
+</div>
+<div class="chart" id="rcChart"></div>
+<div class="status" id="rcStatus"></div>
+<details><summary>Table view</summary><div id="rcTable"></div></details>
+
+<div class="viewer">
+  <canvas id="view" width="420" height="420"></canvas>
+  <div class="caption" id="caption">Click a point in either chart to draw that curve and its largest verified square or rectangle.</div>
+</div>
+
+<div class="note">“Largest” is the largest found, so it is a guaranteed lower bound on the true largest. At each roughness level the search starts from the previous level's squares, so the same squares can be followed as detail is added. Results from the full run are loaded when available; press Run to recompute them live.</div>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
+<div id="tip"></div>
+
+<script src="shapes2d.js"></script>
+<script src="inscribed-2d.js"></script>
+<script src="study.js"></script>
+<script src="study-charts.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+let sqData = null, rcData = null, sqRun = null, rcRun = null;
+
+// ---------- rendering ----------
+function renderSquares(families, note) {
+  $('sqChart').innerHTML = families.length ? StudyCharts.shrinkageChart(families, { dark: true }) : '';
+  let h = '<table><tr><th>Family</th><th>Level</th><th>Edges</th><th>Squares verified</th><th>Largest (diag ÷ width)</th><th>Continued</th><th>Smallest size ratio</th></tr>';
+  for (const f of families) for (const l of f.levels) h += `<tr><td>${f.label}</td><td>${l.level}</td><td>${l.vertices.toLocaleString()}</td><td>${l.count}</td><td>${l.largest ? l.largest.toFixed(4) : '—'}</td><td>${l.seeds ? `${l.continued}/${l.seeds}` : '—'}</td><td>${Number.isFinite(l.minRatio) ? l.minRatio.toFixed(3) : '—'}</td></tr>`;
+  $('sqTable').innerHTML = h + '</table>';
+  if (note) $('sqStatus').textContent = note;
+}
+function renderRects(sweep, note) {
+  const rows = sweep.curves.filter(r => r.cells.length);
+  if (!rows.length) { $('rcChart').innerHTML = ''; return; }
+  const padded = { aspects: sweep.aspects, curves: rows.map(r => ({ ...r, cells: sweep.aspects.map(a => r.cells.find(c => c.aspect === a) || { aspect: a, count: 0, largest: 0, pending: true }) })) };
+  $('rcChart').innerHTML = StudyCharts.sweepChart(padded, { dark: true });
+  let h = `<table><tr><th>Curve</th>${sweep.aspects.map(a => `<th>${a}:1</th>`).join('')}</tr>`;
+  for (const r of rows) h += `<tr><td style="text-align:left">${r.label}</td>${sweep.aspects.map(a => { const c = r.cells.find(c2 => c2.aspect === a); return `<td>${!c ? '…' : c.largest ? `${c.largest.toFixed(3)} (${c.count})` : '✗'}</td>`; }).join('')}</tr>`;
+  $('rcTable').innerHTML = h + '</table>';
+  if (note) $('rcStatus').textContent = note;
+}
+
+// ---------- runners (generators stepped in animation frames) ----------
+function stepper(gen, onProgress, onDone, isRunning) {
+  function frame() {
+    if (!isRunning()) return;
+    const t = performance.now();
+    while (performance.now() - t < 30) { const x = gen.next(); if (x.done) { onDone(x.value); return; } onProgress(x.value); }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function toggleSquares() {
+  if (sqRun) { sqRun = null; $('sqBtn').textContent = 'Run'; $('sqBtn').classList.remove('active'); $('sqStatus').textContent = 'Stopped'; return; }
+  const quick = document.querySelector('input[name=sqmode]:checked').value === 'quick', t0 = performance.now();
+  const run = sqRun = {}; $('sqBtn').textContent = 'Stop'; $('sqBtn').classList.add('active');
+  sqData = { families: [], seed: +$('sqSeed').value };
+  let lastDraw = 0;
+  stepper(Study.squareStudy({ quick, seed: sqData.seed }), p => {
+    sqData.families = p.data;
+    const el = ((performance.now() - t0) / 1000).toFixed(0);
+    $('sqStatus').textContent = `${p.family}, level ${p.level} of ${p.maxLevel}${p.inner ? ` · ${p.inner.found} squares so far` : ''} · ${el} s`;
+    if (p.levelDone || performance.now() - lastDraw > 1500) { renderSquares(sqData.families); lastDraw = performance.now(); }
+  }, res => { sqRun = null; sqData.families = res.families; renderSquares(res.families, `Done in ${((performance.now() - t0) / 1000).toFixed(0)} s`); $('sqBtn').textContent = 'Run'; $('sqBtn').classList.remove('active'); }, () => sqRun === run);
+}
+function toggleRects() {
+  if (rcRun) { rcRun = null; $('rcBtn').textContent = 'Run'; $('rcBtn').classList.remove('active'); $('rcStatus').textContent = 'Stopped'; return; }
+  const quick = document.querySelector('input[name=rcmode]:checked').value === 'quick', t0 = performance.now();
+  const run = rcRun = {}; $('rcBtn').textContent = 'Stop'; $('rcBtn').classList.add('active');
+  rcData = { aspects: Study.ASPECTS, curves: [], seed: +$('rcSeed').value };
+  stepper(Study.rectangleSweep({ quick, seed: rcData.seed }), p => {
+    rcData.curves = p.data.curves;
+    $('rcStatus').textContent = `${p.curve}, aspect ${p.aspect}:1 · ${((performance.now() - t0) / 1000).toFixed(0)} s`;
+    if (p.cellDone) renderRects(rcData);
+  }, res => { rcRun = null; rcData = Object.assign(res, { seed: rcData.seed }); renderRects(rcData, `Done in ${((performance.now() - t0) / 1000).toFixed(0)} s`); $('rcBtn').textContent = 'Run'; $('rcBtn').classList.remove('active'); }, () => rcRun === run);
+}
+
+// ---------- viewer ----------
+function drawShape(pts, shape, caption) {
+  const cv = $('view'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height, pad = 20;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of pts) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
+  const s = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0)), ox = W / 2 - (s * (x0 + x1)) / 2, oy = H / 2 - (s * (y0 + y1)) / 2;
+  const X = x => ox + s * x, Y = y => oy + s * y;
+  ctx.clearRect(0, 0, W, H);
+  ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y)))); ctx.closePath();
+  ctx.fillStyle = 'rgba(20,30,50,0.6)'; ctx.fill('evenodd'); ctx.strokeStyle = '#2a4a7a'; ctx.lineWidth = 1; ctx.stroke();
+  if (shape) {
+    ctx.beginPath(); shape.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); ctx.closePath();
+    ctx.fillStyle = 'rgba(74,153,120,0.15)'; ctx.fill(); ctx.strokeStyle = '#4a9'; ctx.lineWidth = 2.5; ctx.stroke();
+    shape.forEach(p => { ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 4, 0, 7); ctx.fillStyle = '#4a9'; ctx.fill(); });
+  }
+  $('caption').textContent = caption;
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-key]'); if (!el) return;
+  const [kind, a, b] = el.dataset.key.split('|');
+  if (kind === 'sq' && sqData) {
+    const f = sqData.families[+a], l = f.levels.find(v => v.level === +b);
+    drawShape(Shapes2D.generate(f.family, sqData.seed || 1, l.level), l.best, `${f.label}, level ${l.level} (${l.vertices.toLocaleString()} edges): largest verified square, diagonal ${l.largest.toFixed(4)} of the curve's width; ${l.count} distinct squares verified at this level.`);
+  } else if (kind === 'rc' && rcData) {
+    const r = rcData.curves.filter(c => c.cells.length)[+a], c = r.cells[+b];
+    const pts = r.level === undefined ? Shapes2D.generate(r.type, rcData.seed || 1) : Shapes2D.generate(r.type, rcData.seed || 1, r.level);
+    drawShape(pts, c.best, `${r.label}, aspect ${c.aspect}:1: largest verified rectangle, diagonal ${c.largest.toFixed(4)} of the curve's width; ${c.count} verified.`);
+  }
+});
+// hover tooltips for chart marks
+document.addEventListener('mousemove', e => {
+  const el = e.target.closest && e.target.closest('[data-tip]'), tip = $('tip');
+  if (!el) { tip.style.display = 'none'; return; }
+  tip.textContent = el.dataset.tip; tip.style.display = 'block';
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - 330) + 'px'; tip.style.top = (e.clientY + 14) + 'px';
+});
+
+// ---------- saved results from the full run (when served over http) ----------
+fetch('../data/study-squares.json').then(r => r.json()).then(d => { if (!sqRun) { sqData = Object.assign(d, { seed: d.families[0]?.seed || 1 }); renderSquares(d.families, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('sqStatus').textContent = 'Press Run to start'; });
+fetch('../data/study-rectangles.json').then(r => r.json()).then(d => { if (!rcRun) { rcData = Object.assign({ seed: 1 }, d); renderRects(d, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('rcStatus').textContent = 'Press Run to start'; });
+</script>
+</body>
+</html>

@@ -34,5 +34,10 @@ for (const [type, label] of S.list) for (const seed of [1, 2, 3, 4, 5]) {
   if (e) { bad++; console.log(`FAIL ${label} seed ${seed}: ${e}`); }
   else if (seed === 1) console.log(`ok   ${label.padEnd(32)} ${P.length} vertices`);
 }
+for (const [type, [lo, hi]] of Object.entries(S.LEVELS)) for (let level = lo; level <= hi; level++) {
+  const P = S.generate(type, 1, level), e = simple(P);
+  if (e) { bad++; console.log(`FAIL ${type} level ${level}: ${e}`); }
+}
+console.log('Checked every roughness level of the fractal families.');
 console.log(bad ? `${bad} failures` : 'All curves are simple closed polygons (5 seeds each).');
 process.exit(bad ? 1 : 0);

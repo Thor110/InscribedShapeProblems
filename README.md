@@ -58,7 +58,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorem 2 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
 
 **Where the three open problems stand.**
-1. **Square:** open. Every test agrees with the conjecture. The jig argument is a proof for convex curves (Emch's); for non-convex curves the step "the bisecting centre moves continuously as the jig rotates" fails, and that gap is the open problem.
+1. **Square:** open. Every test agrees with the conjecture, including the [shrinkage study](#square-shrinkage-study-and-rectangle-sweep): on ever-rougher fractals the largest square converges rather than shrinking. The jig argument is a proof for convex curves (Emch's); for non-convex curves the step "the bisecting centre moves continuously as the jig rotates" fails, and that gap is the open problem.
 2. **Tetrahedron:** solved for smooth surfaces (Gromov), so what remains open is non-smooth (merely continuous) surfaces. Your centring jig gives an elementary proof in the smooth strictly convex case, in every dimension ([PROOFS.md](PROOFS.md), Theorem 2).
 3. **Cube:** settled in the negative for general surfaces ([PROOFS.md](PROOFS.md), Theorem 1): a cube has 7 degrees of freedom but 8 vertex conditions, so generic surfaces have none. The same holds for every hypercube in dimension ≥ 3.
 
@@ -81,6 +81,37 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 </details>
 
 The [Dimension Explorer](https://thor110.github.io/InscribedSquareProblem/pages/dimension-explorer.html) runs the n-dimensional searches in the browser and fills in this kind of table live; `node tests/run-nd.js 5` does the same from the command line.
+
+## Square shrinkage study and rectangle sweep
+
+The open part of the square problem is rough, merely continuous curves. For smooth curves, squares are guaranteed. The worry with rough curves is that as a curve gets rougher, its inscribed squares might shrink and collapse to a point in the limit. This study measures that directly.
+
+**Method.** Each fractal family is generated at increasing roughness levels. Each level refines the previous one with the same seed, so the levels approximate one limiting fractal. At each level the search starts from the previous level's squares (to follow the same squares as detail is added) and also runs a fresh search. Every square counted passed the 1e-9 verification.
+
+![Largest inscribed square as the curves get rougher](images/square-shrinkage.svg)
+
+| Family, roughest level | Edges | Largest square (diagonal ÷ curve width) | Size change of tracked squares, last level |
+|---|---|---|---|
+| Koch snowflake, level 7 | 49,152 | 0.910, unchanged since level 4 | 1.000 |
+| Minkowski island, level 5 | 131,072 | 1.017 (tilted 45° inside a square-ish island) | 0.999 |
+| Weierstrass blob, level 14 | 131,072 | 0.829, steady from level 11 | 0.999 |
+| Random coastline, level 16 | 65,536 | 0.832, between 0.83 and 0.85 since level 10 | 0.996 |
+
+**Result.** The squares do not shrink. In every family the largest square levels off at a fixed size. The squares followed from one level to the next change size by less than 1% at the highest levels, so they settle onto limiting squares instead of collapsing. Some smaller squares appear and disappear in pairs between levels, as expected, but the large ones persist.
+
+**Rectangle sweep.** The same search for rectangles, across aspect ratios from 1:1 to 16:1 on smooth, non-convex and fractal curves. The search sweeps the aspect ratio upward and back down, continuing rectangles from one ratio to the next.
+
+![Inscribed rectangles across aspect ratios](images/rectangle-sweep.svg)
+
+A verified rectangle was found in **all 81 cells**: every aspect ratio, on every curve, including the rough fractals. As sanity checks, the ellipse has exactly one inscribed square and two rectangles of each other aspect ratio (one per axis), and the search finds exactly those.
+
+**What this does and does not show.**
+- Every curve here is a polygon, however fine, and polygons are already covered by known theorems (Stromquist for squares; rectangles for rectifiable curves). The study cannot prove anything about the limiting fractal itself.
+- What it measures is the trend as the limit is approached. If squares collapsed in the limit, the largest one would keep falling with each level; instead it converges. That is evidence for the Toeplitz conjecture aimed at exactly the open case, and the same holds for rectangles of every aspect ratio tested.
+- "Largest" means largest found, so it is a guaranteed lower bound on the true largest.
+- From level 13 on, the Weierstrass polygon is capped at 131,072 points.
+
+Explore it on the [Square Shrinkage & Rectangle Sweep](https://thor110.github.io/InscribedSquareProblem/pages/inscribed-study.html) page: run the studies live, hover for values, and click any point to see the curve and its largest verified shape. Raw results are in `data/study-squares.json` and `data/study-rectangles.json`.
 
 ## What holds weight
 
@@ -365,6 +396,8 @@ node tests/run-2d.js 1 rectangle,trianglex,pentagon,hexagon   # the other 2D tar
 node tests/run-3d.js 2           # cube, tetrahedron and octahedron search on every surface
 node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every surface
 node tests/run-nd.js 5           # n-dimensional table (dimensions 2–5)
+node tests/run-study.js both     # square shrinkage study + rectangle sweep (writes data/ and the two SVG charts)
+node tests/run-study.js charts   # rebuild the two charts from data/ only
 node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
 ```
 
