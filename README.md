@@ -13,12 +13,12 @@ Note that the viewfinders are simpler demonstrations, while the skeletal finders
 
 ### What the finders do
 
-- **Skeletal Shape Finder (2D).** A jig of rays from a common centre $I$, at 90° for the square and 120° for the triangle, grips the curve. The centre is "rattled" toward the chord midpoints, then Newton's method solves the equilibrium to machine precision. For the square the jig sweeps its rotation looking for the sign change in the diagonal difference (the IVT step). If that sweep fails, it tries a nearest-hit jig, then random restarts, then a *tracking* jig whose arms follow a chosen crossing. The tracking jig is needed on curves that are not star-shaped, where a square's vertex can be a middle crossing of a ray.
+- **Skeletal Shape Finder (2D).** A jig of rays from a common centre $I$ grips the curve. The rays point at the target shape's vertices as seen from its circumcentre, so the hit points form the target exactly when every ray has the same length. Targets: square, rectangle of any aspect ratio, equilateral triangle, triangle of any shape, regular pentagon and regular hexagon. The centre is "rattled" toward the chord midpoints, then Newton's method solves the equilibrium to machine precision. For the square the jig sweeps its rotation looking for the sign change in the diagonal difference (the IVT step). If that sweep fails, it tries a nearest-hit jig, then random restarts, then a *tracking* jig whose arms follow a chosen crossing. The tracking jig is needed on curves that are not star-shaped, where a square's vertex can be a middle crossing of a ray.
 - **Skeletal Space Finder (3D).** The same idea with rays along the cube diagonals, the tetrahedral directions or the octahedral axes. A Levenberg–Marquardt solver adjusts the centre (3 DoF) and rotation (3 DoF) to make every ray length equal. On fractal surfaces it solves a smoothed surface first and adds detail one octave at a time.
 - **Pivot only.** Both skeletal finders have a *Pivot only* checkbox. It keeps the skeleton's rotation fixed and only jiggles the central pivot, which isolates the bisection step. An equilateral triangle (2D) or regular tetrahedron (3D) is still found at any rotation, because centring alone forces equal ray lengths. A square, cube or octahedron generally is not, because it needs the rotation as well.
 - **Inscribed Cube Viewfinder.** Searches directly for a cube with all eight vertices on the surface, adjusting centre, rotation and size (7 parameters for 8 vertex conditions). Moving the sliders shows the closest cube at that orientation. (Earlier versions grew the largest cube that fits *inside* the surface, which is a different problem.)
 - **Search time estimates.** Each finder shows an estimated search time for the chosen shape and curve or surface, plus elapsed time and remaining time while it runs. Where no exact solution is expected, such as a cube on a surface without symmetry or a square with its rotation held fixed, the estimate is **∞**. The search still runs through its set number of starting points and then reports the closest candidate.
-- **Curves:** smooth blobs, star, ellipse, polygons, a true crescent, a comb, a spiral (not star-shaped from any point), and the fractals: Koch snowflake (12,288 edges), hexagonal anti-snowflake, Minkowski island (16,384 edges), Weierstrass blob and a random fractal coastline. `tests/jordan-check.js` confirms each is a simple closed curve.
+- **Curves:** smooth blobs, star, circle (a control on which every target exists), ellipse, polygons, a true crescent, a comb, a spiral (not star-shaped from any point), and the fractals: Koch snowflake (12,288 edges), hexagonal anti-snowflake, Minkowski island (16,384 edges), Weierstrass blob and a random fractal coastline. `tests/jordan-check.js` confirms each is a simple closed curve.
 - **Surfaces:** sphere, ellipsoid, a lopsided egg (strictly convex, no symmetry), random blob, bumpy sphere, 3D star, heart-like, ring-like, cube-like, and two fractal surfaces. All are seam-free.
 
 ### Verification and precision
@@ -34,11 +34,33 @@ The pairwise-distance check rules out both. Every curve and surface is generated
 
 ![Inscribed Square Viewfinder Demo](images/viewfinder_demo.gif)
 
+## What holds weight
+
+A summary of where each part of the project stands, combining the literature with this repository's numerical results (228 automated runs; see [Running the checks](#running-the-checks)).
+
+| Claim or argument | Numerical result | Standing |
+|---|---|---|
+| **Degrees-of-freedom count** (corrected table below) | Predicted the outcome of every run: shapes with enough freedom were always found; over-determined shapes were found only on curves or surfaces with a matching symmetry | Strongest general principle here. Standard transversality reasoning; predicts *where* to expect solutions, not a proof that they exist |
+| **Centring forces regularity** for the triangle and tetrahedron jigs (rays whose directions sum to zero, one more ray than the dimension) | Verified on every curve and surface, at every rotation, including pivot-only mode | Exact algebra. For convex bodies this gives a short fixed-point proof sketch (the centring field points inward at the boundary). The triangle results are classical (Meyerson, Nielsen) |
+| **Square: bisect, then rotate 90° (IVT)** | Verified on all 16 curves, including fractals; jumps observed on non-convex curves | Rigorous for convex curves (this is Emch's argument). For non-convex curves the continuity step fails; the general case is the open Toeplitz problem |
+| **Rectangles of a given aspect ratio** | Verified on all 16 curves at aspect 2 and on 6 curves at aspect 4 | The 90° swap does not apply (the chords never trade places), so the IVT step gives nothing. Proved for smooth curves (Greene–Lobb 2021); open for continuous curves |
+| **Triangles of any shape** | Verified on all 16 curves, including an obtuse 20°/30°/130° triangle | Known theorem (Nielsen 1992) |
+| **Regular octahedron** | Verified on all 11 surfaces | 1-parameter family expected; related results by Makeev |
+| **Cube** | Verified only on surfaces with central or mirror symmetry; elsewhere the closest cube misses by 5e-5 to 5e-2 | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs). Evidence suggests it fails in general |
+| **Regular pentagon / hexagon** (controls) | Verified only on the circle and on curves with 5-fold (pentagon) or 3- or 6-fold (hexagon) symmetry | Known to fail in general: a non-circular ellipse has no inscribed regular pentagon, because five points determine a conic |
+| Expansion paradox | — | Does not hold as stated (see caveat in that section) |
+| Odd perfect number heuristic | — | Refuted as stated: odd abundant numbers such as 945 exist |
+
+**Shape coverage.** The finders now cover the inscribed shapes studied in the literature for planar Jordan curves: squares, rectangles of any aspect ratio, and triangles of any shape. Regular pentagons and hexagons are included as controls. In 3D they cover the regular tetrahedron, octahedron and cube. Not included, by design:
+- **Icosahedron and dodecahedron:** with 7 DoF against 12 or 20 vertex conditions they fail even more decisively than the cube.
+- **Irregular tetrahedra of a given shape:** the 3D analogue of Nielsen's theorem, a 3-parameter family like the regular tetrahedron. A natural next addition.
+- **Curves in $\mathbb{R}^n$ and higher-dimensional simplices:** for example Gupta–Rubinstein-Salzedo. Outside the 2D/3D scope of these pages.
+
 ## Inscribed Triangle Problem
 
 This problem is already solved. Every Jordan curve inscribes equilateral triangles (Meyerson 1980), and in fact triangles similar to any given triangle (Nielsen 1992). Gupta and Rubinstein-Salzedo extend Nielsen's result to Jordan curves in $\mathbb{R}^n$ for a restricted set of triangles ([arXiv:2102.03953](https://arxiv.org/abs/2102.03953)).
 
-I have presented a demonstration using my method anyway which can be seen here.
+I have presented a demonstration using my method anyway which can be seen here. The Skeletal Shape Finder also handles triangles of any given shape (*Inscribed Triangle (any shape)*, angles entered as `A,B`), which is Nielsen's theorem.
 
 In the jig the three rays are 120° apart. If $I$ is the centroid of the three hit points, the three ray lengths must be equal, so the triangle is equilateral **at every rotation**. Inscribed equilateral triangles therefore come in a 1-parameter family. This matches the degrees-of-freedom count below and the literature above.
 
@@ -77,6 +99,18 @@ Define a 'Skeletal Jig' consisting of two perpendicular lines intersecting at a 
 ![Inscribed Square Shapefinder Demo](images/square_demonstration.gif)
 
 [Run the Skeletal Shape Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html)
+
+## Inscribed Rectangle Problem (Rectangular Peg)
+
+**Status.** Every smooth Jordan curve inscribes rectangles of every aspect ratio (Greene–Lobb 2021). For general continuous curves, rectangles of *some* aspect ratio always exist (Vaughan's argument, published by Meyerson 1981), but *every* aspect ratio is open.
+
+**The jig.** Two chords through $I$ crossing at angle $2\alpha$, where $\tan\alpha$ is the rectangle's height-to-width ratio. If both chords are bisected at $I$ and have equal lengths, the four hit points form the rectangle.
+
+**Why the square argument does not carry over.** For the square, rotating the jig by 90° swaps the two chords, so the diagonal difference must change sign. For any other aspect ratio no rotation swaps the chords: after half a turn the jig returns to itself with the same sign. That is why the rectangle problem needed new ideas (symplectic geometry, in Greene–Lobb's proof). The Skeletal Shape Finder still finds rectangles on every test curve, using its random-restart and tracking phases.
+
+![Inscribed Rectangle Shapefinder Demo](images/rectangle_demonstration.gif)
+
+[Run the Skeletal Shape Finder (rectangle, aspect 2)](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-shapefinder.html?shape=rectangle&p=2)
 
 ## Inscribed Cube Problem
 **Conjecture and proposed argument.** The case of **centrally symmetric** convex bodies in $\mathbb{R}^3$ is established (Hausel–Makai–Szűcs 2000). The general case is not, and the numerical evidence below suggests it fails for surfaces without symmetry. This section presents the conjecture together with an informal extension of the 2D skeletal-jig construction to 3D, which should be read as heuristic.
@@ -156,8 +190,10 @@ A regular shape in the plane has 4 DoF (centre 2, rotation 1, size 1); in space 
 
 | Shape | DoF | Conditions | Expected solutions |
 |---|---|---|---|
-| Square (2D) | 4 | 4 vertices | isolated squares (dimension 0) |
-| Equilateral triangle (2D) | 4 | 3 vertices | 1-parameter family |
+| Square, or rectangle of a given aspect ratio (2D) | 4 | 4 vertices | isolated solutions (dimension 0) |
+| Equilateral triangle, or any given triangle (2D) | 4 | 3 vertices | 1-parameter family |
+| Regular pentagon (2D) | 4 | 5 vertices | **none for a generic curve** (dimension −1) |
+| Regular hexagon (2D) | 4 | 6 vertices | **none for a generic curve** (dimension −2) |
 | Cube (3D) | 7 | 8 vertices | **none for a generic surface** (dimension −1) |
 | Regular tetrahedron (3D) | 7 | 4 vertices | 3-parameter family |
 | Regular octahedron (3D) | 7 | 6 vertices | 1-parameter family |
@@ -254,6 +290,18 @@ This is another visualisation I have added to the interactive demonstrations. Th
 
 [Run the Number Stability Viewer](https://thor110.github.io/InscribedSquareProblem/pages/number-stability.html)
 
+## Regenerating the demo GIFs
+
+The GIFs in `images/` are recorded automatically from the live pages:
+
+```bash
+npm install
+npm run gifs                       # all demos
+node tools/record-gifs.js cube     # only demos whose name contains "cube"
+```
+
+The recorder drives each page with a fixed seed and advances the search one step per frame, so the output is identical from run to run. The demos are listed at the top of `tools/record-gifs.js`. On GitHub, the **Update demo GIFs** workflow (`.github/workflows/update-gifs.yml`) does the same whenever `pages/` changes on `main`, or on demand from the Actions tab, and commits the new GIFs. The pages also accept `?pace=N` to watch a search in slow motion, and the Space Finder accepts `?rot=pitch,roll,yaw` to set the starting rotation.
+
 ## Running the checks
 
 The pages are plain HTML and need no build step. The scripts in `tests/` use Node.js and Playwright:
@@ -261,6 +309,7 @@ The pages are plain HTML and need no build step. The scripts in `tests/` use Nod
 ```bash
 node tests/jordan-check.js       # every 2D curve is a simple closed polygon
 node tests/run-2d.js 3           # square and triangle search on every curve, 3 seeds
+node tests/run-2d.js 1 rectangle,trianglex,pentagon,hexagon   # the other 2D targets
 node tests/run-3d.js 2           # cube, tetrahedron and octahedron search on every surface
 node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every surface
 ```
@@ -271,6 +320,7 @@ node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every su
 - L. G. Schnirelmann, "On certain geometrical properties of closed curves" (1929; expanded version in *Uspekhi Mat. Nauk* 10, 1944).
 - W. Stromquist, "Inscribed squares and square-like quadrilaterals in closed curves", *Mathematika* 36 (1989).
 - T. Tao, "An integration approach to the Toeplitz square peg problem", *Forum Math. Sigma* 5 (2017) — [arXiv:1611.07441](https://arxiv.org/abs/1611.07441).
+- M. D. Meyerson, "Balancing acts", *Topology Proceedings* 6 (1981) — includes H. Vaughan's proof that every Jordan curve inscribes a rectangle.
 - J. E. Greene and A. Lobb, "The rectangular peg problem", *Annals of Math.* 194 (2021).
 - B. Matschke, "A survey on the square peg problem", *Notices AMS* 61(4) (2014).
 - M. D. Meyerson, "Equilateral triangles and continuous curves", *Fund. Math.* 110 (1980).

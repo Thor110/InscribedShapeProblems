@@ -38,13 +38,18 @@
 </head>
 <body>
 <h1>Skeletal Shape Finder</h1>
-<div class="sub">Edward James Gordon — Inscribed Square &amp; Triangle Problem</div>
+<div class="sub">Edward James Gordon — Inscribed Polygon Problems</div>
 <canvas id="canvas"></canvas>
 <div class="controls">
-  <select id="insType" onchange="newCurve(false)">
+  <select id="insType" onchange="onShapeChange()">
     <option value="square">Inscribed Square</option>
-    <option value="triangle">Inscribed Triangle</option>
+    <option value="rectangle">Inscribed Rectangle</option>
+    <option value="triangle">Inscribed Equilateral Triangle</option>
+    <option value="trianglex">Inscribed Triangle (any shape)</option>
+    <option value="pentagon">Inscribed Regular Pentagon</option>
+    <option value="hexagon">Inscribed Regular Hexagon</option>
   </select>
+  <label class="chk" id="paramBox" style="display:none"><span id="paramLabel"></span><input id="param" type="text" size="7" onchange="newCurve(false)" style="background:#0d0d14;border:1px solid #2a2a3a;color:#aaa;font-family:inherit;font-size:11px;padding:4px 6px;"></label>
   <select id="shapeType" onchange="newCurve(false)"></select>
   <button onclick="newCurve(true)">New curve</button>
   <button onclick="toggleScan()" id="scanBtn">Auto-find Equilibrium</button>
@@ -77,7 +82,48 @@ let hitMode = 'far', trackTargets = null;
 
 const $ = id => document.getElementById(id);
 const insType = () => $('insType').value;
-const nRays = () => (insType() === 'square' ? 4 : 3);
+
+// ---------- target shapes ----------
+// Each jig is a set of ray directions from the pivot, chosen so that when every
+// ray has the same length the hit points form the target shape (they lie on a
+// circle around the pivot at those angles). The jig has 3 DoF (x, y, rotation).
+//  'chords': two chords through the pivot (square, rectangle). 3 equalities:
+//            bisect both chords, then equal diagonals. Found by the IVT sweep.
+//  'family': 2 equalities (triangles), so found at any rotation.
+//  'over':   more equalities than DoF (regular pentagon 4, hexagon 5), so not
+//            expected on a general curve; the search reports the closest candidate.
+let SPEC = null;
+const PARAM_DEFAULTS = { rectangle: '2', trianglex: '50,70' };
+function buildSpec() {
+  const t = insType(), p = $('param').value, deg = Math.PI / 180;
+  const reg = (n, kind) => ({ dirs: Array.from({ length: n }, (_, k) => (2 * Math.PI * k) / n), kind, period: (2 * Math.PI) / n, balanced: true });
+  switch (t) {
+    case 'rectangle': {
+      const a = Math.max(1, +p || 2), al = Math.atan(1 / a);
+      return { name: `rectangle (aspect ${+a.toFixed(4)})`, short: 'rectangle', dirs: [al, Math.PI - al, Math.PI + al, 2 * Math.PI - al], kind: 'chords', period: Math.PI, balanced: true };
+    }
+    case 'triangle': return Object.assign(reg(3, 'family'), { name: 'equilateral triangle', short: 'triangle' });
+    case 'trianglex': {
+      let [A, B] = p.split(',').map(Number);
+      if (!(A > 0 && B > 0 && A + B < 180)) { A = 50; B = 70; }
+      const C = 180 - A - B;
+      // Vertices on a circle about the pivot: consecutive central angles 2C, 2A, 2B.
+      return { name: `triangle (${+A.toFixed(2)}°, ${+B.toFixed(2)}°, ${+C.toFixed(2)}°)`, short: 'triangle', dirs: [0, 2 * C * deg, 2 * (C + A) * deg], kind: 'family', period: 2 * Math.PI, balanced: false };
+    }
+    case 'pentagon': return Object.assign(reg(5, 'over'), { name: 'regular pentagon', short: 'pentagon' });
+    case 'hexagon': return Object.assign(reg(6, 'over'), { name: 'regular hexagon', short: 'hexagon' });
+    default: return Object.assign(reg(4, 'chords'), { name: 'square', short: 'square' });
+  }
+}
+const nRays = () => SPEC.dirs.length;
+function onShapeChange() {
+  const t = insType();
+  $('paramBox').style.display = PARAM_DEFAULTS[t] ? '' : 'none';
+  $('paramLabel').textContent = t === 'rectangle' ? 'Aspect' : t === 'trianglex' ? 'Angles A,B' : '';
+  if (PARAM_DEFAULTS[t] && !$('param').value) $('param').value = PARAM_DEFAULTS[t];
+  if (!PARAM_DEFAULTS[t]) $('param').value = '';
+  newCurve(false);
+}
 
 function resize() {
   const mw = Math.min(window.innerWidth - 40, 700), dpr = window.devicePixelRatio || 1;
@@ -171,11 +217,11 @@ function rayHitsAll(ox, oy, dx, dy) {
 }
 
 // ---------- the skeletal jig ----------
-// n rays from (x,y) at angles ang + 2πk/n; returns the ray lengths or null.
-function rays(x, y, ang, n) {
-  const r = [];
-  for (let k = 0; k < n; k++) {
-    const a = ang + (2 * Math.PI * k) / n;
+// One ray per jig direction from (x,y), rotated by ang; returns the ray lengths or null.
+function rays(x, y, ang) {
+  const r = [], D = SPEC.dirs;
+  for (let k = 0; k < D.length; k++) {
+    const a = ang + D[k];
     let t;
     if (hitMode === 'track') {
       const all = rayHitsAll(x, y, Math.cos(a), Math.sin(a)); if (!all.length) return null;
@@ -187,18 +233,23 @@ function rays(x, y, ang, n) {
   return r;
 }
 function hits(x, y, ang, r) {
-  return r.map((t, k) => { const a = ang + (2 * Math.PI * k) / r.length; return { x: x + t * Math.cos(a), y: y + t * Math.sin(a) }; });
+  return r.map((t, k) => { const a = ang + SPEC.dirs[k]; return { x: x + t * Math.cos(a), y: y + t * Math.sin(a) }; });
 }
-// Centering (bisection) equations at a fixed angle. Square: both chords bisected
-// (gives a rhombus). Triangle: all three rays equal (already forces equilateral).
+// Spread of the ray lengths around their mean (zero <=> the target shape).
+const spreadRes = r => { const m = r.reduce((a, b) => a + b, 0) / r.length; return r.map(v => (v - m) / S); };
+// Centering equations at a fixed angle. Chords: both chords bisected (rhombus or
+// parallelogram). Family: all rays equal. Over: least-squares equal rays.
 function centerRes(x, y, ang) {
-  const n = nRays(), r = rays(x, y, ang, n); if (!r) return null;
-  return n === 4 ? [(r[0] - r[2]) / S, (r[1] - r[3]) / S] : [(r[0] - r[1]) / S, (r[1] - r[2]) / S];
+  const r = rays(x, y, ang); if (!r) return null;
+  if (SPEC.kind === 'chords') return [(r[0] - r[2]) / S, (r[1] - r[3]) / S];
+  if (SPEC.kind === 'family') return [(r[0] - r[1]) / S, (r[1] - r[2]) / S];
+  return spreadRes(r);
 }
-// Full square equations in (x, y, angle): bisected chords + equal diagonals.
+// Full equations in (x, y, angle). Chords: bisected chords + equal diagonals.
 function squareRes(p) {
-  const r = rays(p[0], p[1], p[2], 4); if (!r) return null;
-  return [(r[0] - r[2]) / S, (r[1] - r[3]) / S, (r[0] + r[2] - r[1] - r[3]) / S];
+  const r = rays(p[0], p[1], p[2]); if (!r) return null;
+  if (SPEC.kind === 'chords') return [(r[0] - r[2]) / S, (r[1] - r[3]) / S, (r[0] + r[2] - r[1] - r[3]) / S];
+  return spreadRes(r);
 }
 
 // ---------- Newton solver (finite-difference Jacobian, backtracking) ----------
@@ -224,7 +275,15 @@ function newton(F, x0, h, maxIt) {
       const fp = F(xp), fm = F(xm); if (!fp || !fm) return { x, f, nf };
       for (let i = 0; i < f.length; i++) J[i][j] = (fp[i] - fm[i]) / (2 * h[j]);
     }
-    const d = solveLinear(J, f.map(v => -v)); if (!d) break;
+    let d;
+    if (f.length === x.length) d = solveLinear(J, f.map(v => -v));
+    else { // more equations than unknowns: Gauss–Newton step on the normal equations
+      const n = x.length, A = [], g = [];
+      for (let a = 0; a < n; a++) { A.push([]); g.push(-J.reduce((s, row, i) => s + row[a] * f[i], 0)); for (let b = 0; b < n; b++) A[a].push(J.reduce((s, row) => s + row[a] * row[b], 0)); }
+      const tr = A.reduce((s, r, i) => s + r[i], 0) / n; for (let a = 0; a < n; a++) A[a][a] += 1e-12 * tr;
+      d = solveLinear(A, g);
+    }
+    if (!d) break;
     let ok = false;
     for (let a = 1; a > 1e-4; a /= 2) {
       const xn = x.map((v, i) => v + a * d[i]), fn = F(xn);
@@ -240,8 +299,9 @@ const H2 = () => [1e-7 * S, 1e-7 * S], H3 = () => [1e-7 * S, 1e-7 * S, 1e-8];
 // (square) or the centroid of the hits (triangle). Gets close; Newton finishes.
 function rattle(x, y, ang, iters) {
   const n = nRays();
+  if (!SPEC.balanced) return rays(x, y, ang) ? { x, y } : null;   // centroid target only suits symmetric jigs
   for (let i = 0; i < iters; i++) {
-    const r = rays(x, y, ang, n); if (!r) return null;
+    const r = rays(x, y, ang); if (!r) return null;
     const P = hits(x, y, ang, r); let tx = 0, ty = 0;
     for (const p of P) { tx += p.x / n; ty += p.y / n; }
     const nx = x + 0.6 * (tx - x), ny = y + 0.6 * (ty - y);
@@ -257,16 +317,17 @@ function solveCenter(x, y, ang, rattleIters = 0) {
 }
 
 // ---------- independent verification ----------
-// Compares all pairwise vertex distances against a regular n-gon with the same
-// mean side length, and checks each vertex lies on the curve.
+// Compares all pairwise vertex distances with the target shape at its best-fit
+// scale, and checks each vertex lies on the curve. Errors are relative to the
+// target's shortest edge.
 function verify(P) {
   const n = P.length, d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-  let s = 0; for (let i = 0; i < n; i++) s += d(P[i], P[(i + 1) % n]); s /= n;
+  const U = SPEC.dirs.map(t => ({ x: Math.cos(t), y: Math.sin(t) }));
+  let num = 0, den = 0, minU = Infinity;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const u = d(U[i], U[j]); num += d(P[i], P[j]) * u; den += u * u; minU = Math.min(minU, u); }
+  const rho = num / den, s = rho * minU;
   let shapeErr = 0;
-  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
-    const k = j - i, tmpl = (s * Math.sin((Math.PI * k) / n)) / Math.sin(Math.PI / n);
-    shapeErr = Math.max(shapeErr, Math.abs(d(P[i], P[j]) - tmpl) / s);
-  }
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) shapeErr = Math.max(shapeErr, Math.abs(d(P[i], P[j]) - rho * d(U[i], U[j])) / s);
   let curveErr = 0; for (const p of P) curveErr = Math.max(curveErr, distToCurve(p.x, p.y) / s);
   const err = Math.max(shapeErr, curveErr), big = s > 1e-3 * S;
   return { shapeErr, curveErr, err, size: s, ok: err < TOL && big };
@@ -274,7 +335,7 @@ function verify(P) {
 
 // ---------- state + drawing ----------
 function computeView() {
-  const n = nRays(), r = rays(jig.x, jig.y, jig.ang, n);
+  const r = rays(jig.x, jig.y, jig.ang);
   view = r ? { r, P: hits(jig.x, jig.y, jig.ang, r) } : null;
 }
 
@@ -285,7 +346,7 @@ function updateMeters() {
   const add = (label, val, cls) => { const m = document.createElement('div'); m.className = 'meter'; m.innerHTML = `<div class="mlabel">${label}</div><div class="mval ${cls || ''}">${val}</div>`; grid.appendChild(m); };
   const P = locked ? locked.P : view && view.P; if (!P) return null;
   const v = verify(P), cls = v.ok ? 'match' : '';
-  const L = 'ABCD', d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const L = 'ABCDEF', d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   for (let i = 0; i < P.length; i++) add(`Side ${L[i]}${L[(i + 1) % P.length]}`, d(P[i], P[(i + 1) % P.length]).toFixed(6), cls);
   if (P.length === 4) { add('Diag A-C', d(P[0], P[2]).toFixed(6), cls); add('Diag B-D', d(P[1], P[3]).toFixed(6), cls); }
   add('Shape error (rel.)', fmt(v.shapeErr), v.shapeErr < TOL ? 'match' : 'warn');
@@ -307,7 +368,7 @@ function draw() {
   const n = src.P.length;
   ctx.setLineDash([2, 2]); ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
   for (let k = 0; k < n; k++) {
-    const a = src.ang + (2 * Math.PI * k) / n;
+    const a = src.ang + SPEC.dirs[k];
     ctx.beginPath(); ctx.moveTo(src.x, src.y); ctx.lineTo(src.x + Math.cos(a) * W * 2, src.y + Math.sin(a) * W * 2); ctx.stroke();
   }
   ctx.setLineDash([]);
@@ -324,11 +385,12 @@ function refresh() {
   draw();
   const v = updateMeters();
   if (search) return;
-  const name = insType() === 'square' ? 'square' : 'equilateral triangle';
+  const name = SPEC.name;
   if (locked) setStatus(`Inscribed ${name} verified — max relative error ${fmt(locked.v.err)}`, 'found');
   else if (!view) setStatus('Jig centre has no valid hits here — click inside the curve', '');
   else if (v && v.ok) setStatus(`Inscribed ${name} verified — max relative error ${fmt(v.err)}`, 'found');
-  else if (insType() === 'square' && view.centered) setStatus(`Rhombus (both chords bisected) — diagonals differ by ${fmt(Math.abs(view.r[0] + view.r[2] - view.r[1] - view.r[3]) / S)} of curve size`, '');
+  else if (SPEC.kind === 'chords' && view.centered) setStatus(`${insType() === 'square' ? 'Rhombus' : 'Parallelogram'} (both chords bisected) — diagonals differ by ${fmt(Math.abs(view.r[0] + view.r[2] - view.r[1] - view.r[3]) / S)} of curve size`, '');
+  else if (SPEC.kind === 'over' && view.centered) setStatus(`Closest centring at this rotation — ray lengths spread by ${fmt(v ? v.shapeErr : NaN)}`, '');
   else setStatus(view.centered === false ? 'Centering did not converge from here — try another point' : 'Rattling toward equilibrium…', '');
 }
 
@@ -376,6 +438,7 @@ function resetJig() {
 function newCurve(fresh) {
   stopScan();
   if (fresh) seed = (Math.random() * 2 ** 31) | 0;
+  SPEC = buildSpec();
   buildCurve(Shapes2D.fit(Shapes2D.generate($('shapeType').value, seed), W, H, 24));
   $('rtSl').value = 0; resetJig(); updateURL();
 }
@@ -383,6 +446,7 @@ function onPivotToggle() { stopScan(); locked = null; hitMode = 'far'; refresh()
 function updateURL() {
   const url = new URL(location.href);
   url.searchParams.set('shape', insType()); url.searchParams.set('curve', $('shapeType').value); url.searchParams.set('seed', seed);
+  if ($('param').value) url.searchParams.set('p', $('param').value); else url.searchParams.delete('p');
   if (pivotOnly()) url.searchParams.set('pivot', '1'); else url.searchParams.delete('pivot');
   history.replaceState(null, '', url);
   showEstimate();
@@ -393,6 +457,8 @@ function updateURL() {
 // pivot (2 DoF). An equilateral triangle needs only 2 equalities, so it is found
 // at any rotation; a square needs 3, so it generally needs the rotation as well.
 const pivotOnly = () => $('pivotOnly').checked;
+// ?pace=N limits the search to N steps per animation frame, to watch it in slow motion.
+const PACE = +new URLSearchParams(location.search).get('pace') || 0;
 const est = () => Shapes2D.estimate(insType(), $('shapeType').value, pivotOnly());
 function showEstimate() { $('timing').textContent = `Estimated search time: ${est()}${est() === '∞' ? ' (no exact solution expected here)' : ''}`; }
 function showTiming(s) {
@@ -427,7 +493,7 @@ function* pivotGen(s) {
     const x = x0 + R() * (x1 - x0), y = y0 + R() * (y1 - y0);
     trackTargets = [];
     for (let k = 0; k < n; k++) {
-      const a = ang + (2 * Math.PI * k) / n, all = rayHitsAll(x, y, Math.cos(a), Math.sin(a));
+      const a = ang + SPEC.dirs[k], all = rayHitsAll(x, y, Math.cos(a), Math.sin(a));
       if (!all.length) break;
       trackTargets.push(all[Math.floor(R() * all.length)]);
     }
@@ -435,7 +501,7 @@ function* pivotGen(s) {
       let z = [x, y];
       for (let outer = 0; outer < 25; outer++) {
         const nr = newton(q => centerRes(q[0], q[1], ang), z, H2(), 3); if (!nr) break;
-        z = nr.x; const r = rays(z[0], z[1], ang, n); if (!r) break; trackTargets = r;
+        z = nr.x; const r = rays(z[0], z[1], ang); if (!r) break; trackTargets = r;
         if (nr.nf < 1e-15) break;
       }
       s.tries++;
@@ -458,14 +524,14 @@ function* pivotGen(s) {
 // Only results that pass verify() are ever accepted.
 const STEP = (0.25 * Math.PI) / 180, RANDOM_TRIES = 600, TRACK_TRIES = 1500;
 function* searchGen(s) {
-  const tri = insType() === 'triangle';
-  for (const mode of ['far', 'near']) {
+  const tri = SPEC.kind === 'family', P0 = SPEC.period;
+  for (const mode of SPEC.kind === 'over' ? [] : ['far', 'near']) {
     hitMode = s.mode = mode;
     for (s.si = 0; s.si < s.starts.length; s.si++) {
       const st = s.starts[s.si];
       if (tri) {
         for (let k = 0; k < 8; k++) {
-          s.ang = jig.ang0 + (k * 2 * Math.PI) / 3 / 8;
+          s.ang = jig.ang0 + (k * P0) / 8;
           const c = solveCenter(st.x, st.y, s.ang, 60); s.tries++;
           if (c && accept(c.x, c.y, s.ang)) return true;
           yield;
@@ -473,11 +539,11 @@ function* searchGen(s) {
         continue;
       }
       let x = st.x, y = st.y, prev = null;
-      for (s.ang = 0; s.ang <= Math.PI / 2 + STEP; s.ang += STEP) {
+      for (s.ang = 0; s.ang <= P0 + STEP; s.ang += STEP) {
         const c = solveCenter(x, y, s.ang, prev ? 0 : 60);
         if (c) {
           x = c.x; y = c.y; Object.assign(jig, { x, y, ang: s.ang });
-          const r = rays(x, y, s.ang, 4);
+          const r = rays(x, y, s.ang);
           if (r) {
             const delta = (r[0] + r[2] - r[1] - r[3]) / S;
             if (prev && prev.delta * delta <= 0) {
@@ -501,7 +567,7 @@ function* searchGen(s) {
   for (const p of curve) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
   for (s.k = 0; s.k < RANDOM_TRIES; s.k++) {
     hitMode = s.mode = s.k % 2 ? 'near' : 'far';
-    const x = x0 + R() * (x1 - x0), y = y0 + R() * (y1 - y0), ang = R() * (tri ? 2 * Math.PI / 3 : Math.PI / 2);
+    const x = x0 + R() * (x1 - x0), y = y0 + R() * (y1 - y0), ang = R() * P0;
     const q = rattle(x, y, ang, 40); if (!q) { yield; continue; }
     s.tries++;
     if (tri) { const c = solveCenter(q.x, q.y, ang); if (c && accept(c.x, c.y, ang)) return true; }
@@ -514,10 +580,10 @@ function* searchGen(s) {
   s.phase = 3; hitMode = s.mode = 'track';
   for (s.k = 0; s.k < TRACK_TRIES; s.k++) {
     const x = x0 + R() * (x1 - x0), y = y0 + R() * (y1 - y0), n = nRays();
-    let ang = R() * (tri ? 2 * Math.PI / 3 : Math.PI / 2);
+    let ang = R() * P0;
     trackTargets = [];
     for (let k = 0; k < n; k++) {
-      const a = ang + (2 * Math.PI * k) / n, all = rayHitsAll(x, y, Math.cos(a), Math.sin(a));
+      const a = ang + SPEC.dirs[k], all = rayHitsAll(x, y, Math.cos(a), Math.sin(a));
       if (!all.length) break;
       trackTargets.push(all[Math.floor(R() * all.length)]);
     }
@@ -528,7 +594,7 @@ function* searchGen(s) {
     for (let outer = 0; outer < 25; outer++) {
       const F = tri ? (q => centerRes(q[0], q[1], ang)) : squareRes;
       const sol = newton(F, p, tri ? H2() : H3(), 3); if (!sol) break;
-      p = sol.x; const r = rays(p[0], p[1], tri ? ang : p[2], n); if (!r) break;
+      p = sol.x; const r = rays(p[0], p[1], tri ? ang : p[2]); if (!r) break;
       trackTargets = r;
       if (sol.nf < 1e-15) break;
     }
@@ -545,7 +611,8 @@ function startScan() {
   search = { starts: interiorStarts(), si: 0, ang: 0, jumps: 0, tries: 0, best: null, phase: 1, k: 0, mode: 'far', t0: performance.now(), y: 0 };
   jig.ang0 = jig.ang;
   const n = search.starts.length;
-  search.total = pivotOnly() ? 2 * (n + PIVOT_TRIES) + 4 * PIVOT_TRIES : 2 * n * (insType() === 'triangle' ? 8 : Math.ceil(Math.PI / 2 / STEP) + 2) + RANDOM_TRIES + TRACK_TRIES;
+  const per = SPEC.kind === 'family' ? 8 : SPEC.kind === 'chords' ? Math.ceil(SPEC.period / STEP) + 2 : 0;
+  search.total = pivotOnly() ? 2 * (n + PIVOT_TRIES) + 4 * PIVOT_TRIES : 2 * n * per + RANDOM_TRIES + TRACK_TRIES;
   search.gen = pivotOnly() ? pivotGen(search) : searchGen(search);
   $('scanBtn').textContent = 'Stop Scan'; $('scanBtn').classList.add('active');
   scanId = requestAnimationFrame(scanStep);
@@ -557,7 +624,7 @@ function stopScan() {
 function toggleScan() { search ? (stopScan(), hitMode = 'far', refresh()) : startScan(); }
 
 function accept(x, y, ang) {
-  const r = rays(x, y, ang, nRays()); if (!r) return false;
+  const r = rays(x, y, ang); if (!r) return false;
   const P = hits(x, y, ang, r), v = verify(P);
   if (!search.best || v.err < search.best.v.err) search.best = { x, y, ang, P, v, mode: hitMode };
   if (!v.ok) return false;
@@ -572,8 +639,8 @@ function finishScan(found) {
   if (found && locked.mode !== 'far') $('status').textContent += locked.mode === 'near' ? ' (nearest-hit jig)' : ' (tracking jig)';
   if (found && locked.mode === 'track') trackTargets = locked.P.map(p => Math.hypot(p.x - locked.x, p.y - locked.y));
   if (!found) setStatus(pivotOnly()
-    ? `No verified ${insType()} at this fixed rotation (${s.tries} pivot positions). Best error ${s.best ? fmt(s.best.v.err) : 'n/a'}${insType() === 'square' ? ' — a square also needs the rotation' : ''}`
-    : `No verified shape found (${s.tries} candidates, ${s.jumps} rejected at discontinuities). Best error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
+    ? `No verified ${SPEC.short} at this fixed rotation (${s.tries} pivot positions). Best error ${s.best ? fmt(s.best.v.err) : 'n/a'}${SPEC.kind !== 'family' ? ` — a ${SPEC.short} also needs the rotation` : ''}`
+    : `No verified ${SPEC.short} found (${s.tries} candidates, ${s.jumps} rejected at discontinuities). Closest candidate error ${s.best ? fmt(s.best.v.err) : 'n/a'}`, 'active');
   $('timing').textContent = `Search took ${((performance.now() - s.t0) / 1000).toFixed(1)} s (estimate ${est()})`;
   hitMode = 'far';
 }
@@ -581,7 +648,7 @@ function finishScan(found) {
 function scanStep() {
   if (!search) return;
   const t0 = performance.now(), s = search;
-  while (performance.now() - t0 < 14) {
+  for (let n = 0; performance.now() - t0 < 14 && !(PACE && n >= PACE); n++) {
     const r = s.gen.next(); s.y++;
     if (r.done) { finishScan(r.value); return; }
   }
@@ -603,7 +670,11 @@ cv.addEventListener('pointerdown', e => {
 // ---------- start-up ----------
 Shapes2D.populateSelect($('shapeType'));
 const params = new URLSearchParams(location.search);
-if (params.get('shape') === 'triangle' || params.get('shape') === 'square') $('insType').value = params.get('shape');
+if ([...$('insType').options].some(o => o.value === params.get('shape'))) $('insType').value = params.get('shape');
+if (params.get('p')) $('param').value = params.get('p');
+$('paramBox').style.display = PARAM_DEFAULTS[insType()] ? '' : 'none';
+$('paramLabel').textContent = insType() === 'rectangle' ? 'Aspect' : insType() === 'trianglex' ? 'Angles A,B' : '';
+if (PARAM_DEFAULTS[insType()] && !$('param').value) $('param').value = PARAM_DEFAULTS[insType()];
 $('pivotOnly').checked = params.get('pivot') === '1';
 if (params.get('curve') && Shapes2D.list.some(([v]) => v === params.get('curve'))) $('shapeType').value = params.get('curve');
 seed = params.has('seed') ? (+params.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;

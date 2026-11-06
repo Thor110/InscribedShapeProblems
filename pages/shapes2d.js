@@ -79,6 +79,7 @@
       const n = 4 + Math.floor(R() * 3), inner = 0.42 + R() * 0.2, rot = R() * Math.PI;
       return polar(2400, t => inner + (1 - inner) * (Math.sin(n * (t + rot)) + 1) / 2);
     },
+    circle() { return polar(2400, () => 1); },
     ellipse(R) {
       const rx = 0.55 + R() * 0.5, ry = 0.4 + R() * 0.5;
       return polar(2400, () => 1).map(p => ({ x: p.x * rx, y: p.y * ry }));
@@ -167,7 +168,7 @@
   };
 
   const LIST = [
-    ['random', 'Random blob'], ['star', 'Star'], ['ellipse', 'Ellipse'], ['triangle', 'Triangle'],
+    ['random', 'Random blob'], ['star', 'Star'], ['circle', 'Circle (control)'], ['ellipse', 'Ellipse'], ['triangle', 'Triangle'],
     ['crescent', 'Crescent'], ['polygon', 'Polygon'], ['teardrop', 'Teardrop'], ['heart', 'Heart-like'],
     ['comb', 'Comb (non-convex)'], ['spiral', 'Spiral (not star-shaped)'],
     ['koch', 'Koch snowflake (fractal)'], ['antikoch', 'Hexagonal anti-snowflake (fractal)'],
@@ -295,9 +296,16 @@
   // Expected search times (rough, measured on a laptop). '∞' means no exact
   // solution is expected, e.g. a square with the rotation held fixed.
   const SQUARE_EST = { comb: '~1 s', crescent: '~2 s', spiral: '~2 s', weierstrass: '~2–20 s', coastline: '~10–60 s' };
+  const RECT_EST = { comb: '~1–5 s', crescent: '~2–5 s', spiral: '~2–5 s', weierstrass: '~5–30 s', coastline: '~10–60 s' };
+  const ROUGH = new Set(['coastline', 'weierstrass']);
   function estimate(shape, type, pivotOnly) {
-    if (pivotOnly) return shape !== 'triangle' ? '∞' : type === 'coastline' || type === 'weierstrass' ? '~1–3 s' : '< 1 s';
-    return shape === 'square' ? SQUARE_EST[type] || '< 1 s' : '< 1 s';
+    const family = shape === 'triangle' || shape === 'trianglex';
+    if (type === 'circle') return '< 1 s';   // every inscribed polygon target fits a circle
+    if (pivotOnly) return !family ? '∞' : ROUGH.has(type) ? '~1–3 s' : '< 1 s';
+    if (shape === 'pentagon' || shape === 'hexagon') return '∞';
+    if (shape === 'square') return SQUARE_EST[type] || '< 1 s';
+    if (shape === 'rectangle') return RECT_EST[type] || '< 2 s';
+    return ROUGH.has(type) ? '~1–3 s' : '< 1 s';
   }
 
   global.Shapes2D = { list: LIST, generate, fit, populateSelect, rng, accel, newton, estimate };

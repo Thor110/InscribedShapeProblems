@@ -1,0 +1,52 @@
+# Re-records the README demonstration GIFs whenever the pages or the recorder
+# change on main (or on demand from the Actions tab), and commits them if they
+# differ. The commit only touches images/, so it does not re-trigger this workflow.
+name: Update demo GIFs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'pages/**'
+      - 'tools/record-gifs.js'
+      - 'package.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-gifs
+  cancel-in-progress: true
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Record GIFs
+        run: npm run gifs
+
+      - name: Commit updated GIFs
+        run: |
+          if git diff --quiet -- images; then
+            echo "GIFs unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add images
+          git commit -m "Update demo GIFs"
+          git push

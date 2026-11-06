@@ -1,0 +1,14 @@
+{
+  "name": "inscribed-square-problem",
+  "private": true,
+  "description": "Interactive demonstrations for inscribed shape problems",
+  "scripts": {
+    "gifs": "node tools/record-gifs.js",
+    "test": "node tests/jordan-check.js && node tests/run-2d.js 1 && node tests/run-3d.js 1 && node tests/run-cube-viewfinder.js 1"
+  },
+  "devDependencies": {
+    "gifenc": "1.0.3",
+    "playwright": "1.63.0",
+    "pngjs": "7.0.0"
+  }
+}

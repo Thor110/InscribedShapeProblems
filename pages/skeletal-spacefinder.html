@@ -333,6 +333,8 @@ function updateURL() {
 // any rotation; a cube (7) or octahedron (5) generally needs the rotation too.
 const ATTEMPTS = { cube: 120, tetrahedron: 30, octahedron: 30 };
 const pivotOnly = () => $('pivotOnly').checked;
+// ?pace=N limits the search to N steps per animation frame, to watch it in slow motion.
+const PACE = +new URLSearchParams(location.search).get('pace') || 0;
 // Fractal surfaces are slow to solve on, so the cube search uses fewer starts there.
 const attempts = () => pivotOnly() ? 30 : Math.min(ATTEMPTS[$('insType').value], FRACTAL.has(surfType) ? 40 : Infinity);
 const est = () => Surfaces3D.estimate($('insType').value, surfType, pivotOnly());
@@ -373,7 +375,7 @@ function toggleScan() { search ? (stopScan(), refresh()) : startScan(); }
 function scanStep() {
   if (!search) return;
   const s = search, t0 = performance.now();
-  while (performance.now() - t0 < 16) {
+  for (let n = 0; performance.now() - t0 < 16 && !(PACE && n >= PACE); n++) {
     const r = s.gen.next();
     if (r.done) {
       stopScan();
@@ -405,6 +407,8 @@ c3d.addEventListener('pointermove', e => { if (!dragging) return; vY += (e.clien
   const q = new URLSearchParams(location.search);
   if (SHAPES[q.get('shape')]) $('insType').value = q.get('shape');
   $('pivotOnly').checked = q.get('pivot') === '1';
+  // ?rot=pitch,roll,yaw (degrees) sets the starting rotation of the jig.
+  if (q.get('rot')) q.get('rot').split(',').slice(0, 3).forEach((v, i) => { if (isFinite(+v)) $(['pSl', 'rSl', 'ySl'][i]).value = ((+v % 360) + 360) % 360; });
   if (SURFACES.some(([v]) => v === q.get('surface'))) $('surfType').value = q.get('surface');
   seed = q.has('seed') ? (+q.get('seed') | 0) : (Math.random() * 2 ** 31) | 0;
   newSurface(false);
