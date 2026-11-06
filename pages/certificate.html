@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Square Certificate</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0a0a0f;color:#e0ddd8;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px;}
+  h1{font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#666;margin-bottom:6px;}
+  .sub{font-size:11px;color:#666;margin-bottom:14px;letter-spacing:0.04em;text-align:center;max-width:820px;line-height:1.7;}
+  .sub a{color:#6a8;text-decoration:none;}
+  .panels{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;}
+  .panel{display:flex;flex-direction:column;align-items:center;gap:6px;max-width:400px;}
+  canvas{background:#0d0d14;border:1px solid #1e1e2a;max-width:100%;}
+  .cap{font-size:10px;color:#777;line-height:1.6;text-align:center;}
+  .controls{display:flex;gap:10px;align-items:center;justify-content:center;margin:12px 0;font-size:11px;color:#888;flex-wrap:wrap;}
+  input[type=range]{width:160px;accent-color:#4a9;}
+  table{border-collapse:collapse;font-size:11px;margin-top:12px;max-width:820px;}
+  td{border:1px solid #1e1e2a;padding:5px 10px;}
+  td:first-child{color:#888;}
+  td.ok{color:#4a9;}
+  .status{margin-top:8px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#ca6;text-align:center;}
+  .status.ok{color:#4a9;}
+  .nav{margin-top:20px;font-size:10px;}
+  .nav a{color:#444;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;}
+</style>
+</head>
+<body>
+<h1>Square Certificate</h1>
+<div class="sub">A computer-assisted proof (<a href="https://github.com/Thor110/InscribedSquareProblem/blob/main/PROOFS.md#theorem-6--a-computer-assisted-certificate">PROOFS.md, Theorem 6</a>) that every curve whose radius stays within T = 0.13 of a 1 × 0.6 ellipse's has an inscribed square, including nowhere-differentiable, non-symmetric fractal curves such as the one drawn here. Left: the curve, the ellipse (dashed), and a square found numerically on the fractal. Right: the proof. Each point of the box's edge in (u, v) is mapped to the square equations G = (g₁, g₂); the image loop winds once around the origin and never enters the grey square, which is everything a perturbation of size T could reach. So no perturbation that small can remove the square.</div>
+<div class="controls">Ripple size<input type="range" id="amp" min="0" max="0.13" step="0.005" value="0.13" oninput="drawCurve(false)" onchange="drawCurve(true)"><span id="ampV">0.130</span></div>
+<div class="panels">
+  <div class="panel"><canvas id="curve" width="400" height="400"></canvas><div class="cap" id="capCurve"></div></div>
+  <div class="panel"><canvas id="loop" width="400" height="400"></canvas><div class="cap">The image of the box edge under G (green), the origin (white), and the grey square max(|g₁|,|g₂|) ≤ (1+√2)T + e, which a perturbation of size T could reach.</div></div>
+</div>
+<div class="status" id="status">Computing the certificate…</div>
+<table id="tbl"></table>
+<div class="nav"><a href="../index.html">← Back to suite</a></div>
+
+<script src="shapes2d.js"></script>
+<script src="certify.js"></script>
+<script src="inscribed-2d.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id), a = 1, b = 0.6, T = 0.13, q = 1 / b ** 2 - 1 / a ** 2;
+const rE = th => 1 / Math.sqrt((Math.cos(th) / a) ** 2 + (Math.sin(th) / b) ** 2);
+// Weierstrass ripple W(θ) = Σ 2^(−k/2) cos(2^k(θ − θ0)) / Σ 2^(−k/2): |W| ≤ 1, nowhere differentiable (Hardy).
+const W0 = 1 / (1 - Math.SQRT1_2), th0 = 0.3, W = (th, K = 14) => { let s = 0; for (let k = 0; k < K; k++) s += 2 ** (-k / 2) * Math.cos(2 ** k * (th - th0)); return s / W0; };
+let cert = null;
+
+function view(ctx, W_, H_) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W_, H_); }
+function drawCurve(search = true) {
+  const amp = +$('amp').value; $('ampV').textContent = amp.toFixed(3);
+  const cv = $('curve'), ctx = cv.getContext('2d'), k = 150, X = x => 200 + k * x, Y = y => 200 - k * y;
+  view(ctx, 400, 400);
+  const N = 8192, pts = [];
+  for (let i = 0; i < N; i++) { const th = (i / N) * 2 * Math.PI, r = rE(th) + amp * W(th, 12); pts.push({ x: r * Math.cos(th), y: r * Math.sin(th) }); }
+  ctx.beginPath(); for (let i = 0; i <= 360; i++) { const th = (i / 360) * 2 * Math.PI, r = rE(th); i ? ctx.lineTo(X(r * Math.cos(th)), Y(r * Math.sin(th))) : ctx.moveTo(X(r * Math.cos(th)), Y(r * Math.sin(th))); }
+  ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(160,160,170,0.5)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y)))); ctx.closePath();
+  ctx.fillStyle = 'rgba(20,30,50,0.6)'; ctx.fill(); ctx.strokeStyle = '#2a4a7a'; ctx.lineWidth = 1; ctx.stroke();
+  // numerically found square on this curve, started from the ellipse's square
+  const sq = search ? Inscribed2D.find(pts, { aspect: 1, starts: 2, random: 60, track: 60, seeds: [{ x: 0, y: 0, ang: 0 }] }).found[0] : null;
+  if (sq) {
+    ctx.beginPath(); sq.P.forEach((p, i) => (i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y)))); ctx.closePath();
+    ctx.strokeStyle = '#4a9'; ctx.lineWidth = 2.5; ctx.stroke(); sq.P.forEach(p => { ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 4, 0, 7); ctx.fillStyle = '#4a9'; ctx.fill(); });
+  }
+  $('capCurve').textContent = `Radius = ellipse + ${amp.toFixed(3)}·W(θ), W a Weierstrass function (12 of its infinitely many octaves drawn). Dashed: the ellipse. Green: ${sq ? `a square found and verified on this curve, diagonal ${sq.diag.toFixed(3)}` : search ? 'no square found by the quick search (the theorem still guarantees one)' : 'release the slider to search'}.`;
+}
+function drawLoop() {
+  const cv = $('loop'), ctx = cv.getContext('2d'); view(ctx, 400, 400);
+  const C = Certify.radialCurve(rE, 1 << 19, (a ** 3 * q) / 2, 3 * a ** 5 * q * q + a ** 3 * q, a), G = Certify.makeG(C);
+  const pts = [], P = cert.box;
+  for (let e = 0; e < 4; e++) { const p = P[e], r = P[(e + 1) % 4]; for (let i = 0; i < 300; i++) { const t = i / 300; pts.push(G(p[0] + t * (r[0] - p[0]), p[1] + t * (r[1] - p[1]))); } }
+  const m = Math.max(...pts.map(g => Math.max(Math.abs(g[0]), Math.abs(g[1])))) * 1.15, k = 190 / m, X = x => 200 + k * x, Y = y => 200 - k * y;
+  ctx.fillStyle = 'rgba(140,140,150,0.25)'; ctx.fillRect(X(-cert.threshold), Y(cert.threshold), 2 * k * cert.threshold, 2 * k * cert.threshold);
+  ctx.strokeStyle = '#1e1e2a'; ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(400, 200); ctx.moveTo(200, 0); ctx.lineTo(200, 400); ctx.stroke();
+  ctx.beginPath(); pts.forEach((g, i) => (i ? ctx.lineTo(X(g[0]), Y(g[1])) : ctx.moveTo(X(g[0]), Y(g[1])))); ctx.closePath(); ctx.strokeStyle = '#4a9'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(200, 200, 3.5, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+}
+function run() {
+  cert = Certify.certify({ r: rE, rmax: a, rmin: b, d1: (a ** 3 * q) / 2, d2: 3 * a ** 5 * q * q + a ** 3 * q, T, u0: 0.125, v0: 0.625, c: 0.5, polygon: 1 << 19 });
+  $('status').textContent = cert.ok ? `Certificate valid for T = ${T}` : 'Certificate failed'; $('status').className = 'status' + (cert.ok ? ' ok' : '');
+  const row = (k, v, ok) => `<tr><td>${k}</td><td class="${ok ? 'ok' : ''}">${v}</td></tr>`;
+  $('tbl').innerHTML = row('Winding number of G around the box', cert.winding, cert.winding !== 0)
+    + row('Smallest max(|g₁|,|g₂|) on the box edge', cert.boundaryMin.toFixed(4), true)
+    + row('Needed: (1+√2)T + polygon error + rounding', cert.threshold.toFixed(4), cert.boundaryMin > cert.threshold)
+    + row('Box parameter ranges disjoint (square cannot collapse)', cert.rangesDisjoint ? 'yes' : 'no', cert.rangesDisjoint)
+    + row('Diagonal of the guaranteed square at least', cert.diagonalLowerBound.toFixed(4), cert.diagonalLowerBound > 0)
+    + row('Largest T this box certifies', cert.maxT.toFixed(4), true)
+    + row("Chambers' allowance 1/(10κ) for this ellipse", (1 / (10 * (a / b ** 2))).toFixed(4), true);
+  drawLoop(); drawCurve();
+}
+setTimeout(run, 30);
+</script>
+</body>
+</html>

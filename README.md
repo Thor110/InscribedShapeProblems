@@ -46,7 +46,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | Family | Shape | Dim | Vertices | Expected dim. | Status in the literature | Proved here | Found by the finders |
 |---|---|---|---|---|---|---|---|
 | Triangle | Equilateral / any triangle | 2 | 3 | 1 | **Solved** for all Jordan curves (Meyerson 1980, Nielsen 1992) | — | ✅ every curve tested |
-| **Square** | Square | 2 | 4 | 0 | **Open** for continuous curves. Proved for convex (Emch), smooth (Schnirelmann), locally monotone (Stromquist), small-Lipschitz (Tao) | — | ✅ every curve tested (16 + 3 in the n-D engine) |
+| **Square** | Square | 2 | 4 | 0 | **Open** for continuous curves. Proved for convex (Emch), smooth (Schnirelmann), locally monotone (Stromquist), small-Lipschitz (Tao), near-smooth (Chambers) | Every curve within 0.13 of one ellipse, fractals included (Theorem 6, computer-assisted) | ✅ every curve tested (16 + 3 in the n-D engine) |
 | Square | Rectangle, any aspect ratio | 2 | 4 | 0 | **Open** for continuous curves. Proved for smooth (Greene–Lobb 2021); *some* aspect ratio always exists (Vaughan) | — | ✅ every curve tested |
 | Square | Regular pentagon, hexagon, … | 2 | 5, 6, … | < 0 | Known to fail in general (e.g. ellipses) | Theorem 1 (generic) | ✅ only on curves with matching symmetry |
 | Square | Regular octahedron | 3 | 6 | 1 | **Open.** Proved for smooth convex bodies (Makeev 2001) | — | ✅ every surface tested |
@@ -54,7 +54,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1) | ❌ except on symmetric surfaces |
 | Cube | Hypercube | 4, 5 | 16, 32 | −5, −16 | — | **False in general** (Theorem 1) | ✅ only on the sphere and ellipsoid; ❌ elsewhere (closest misses 0.6–9%) |
 | Cube | Icosahedron, dodecahedron | 3 | 12, 20 | −5, −13 | — | **False in general** (Theorem 1) | not tested |
-| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5) | ✅ every surface tested, at any rotation |
+| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.04 of one ellipsoid, rough ones included (Theorem 7, computer-assisted) | ✅ every surface tested, at any rotation |
 | Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorems 2–3 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
 
 **Where the three open problems stand.**
@@ -146,6 +146,48 @@ Why should a square exist at all? For smooth curves, the classical proof (Schnir
 
 In the limiting fractal there are infinitely many squares, so "odd" no longer means anything. That is exactly why the counting proof does not reach the continuous case, and why a proof has to control the *sizes* of squares instead. [PROOFS.md](PROOFS.md) (Lemma 4) states precisely what is needed: if, along ever-finer approximations, there is always an inscribed square that cannot be arbitrarily small, the limit curve has one. The shrinkage study above observes exactly that, for every level it reaches.
 
+## Computer-assisted proofs for fractal curves and surfaces
+
+The studies above can only observe squares on finite approximations. [PROOFS.md, Theorem 6](PROOFS.md#theorem-6--a-computer-assisted-certificate) is a proof instead.
+
+**Every curve whose radius stays within 0.13 of a 1 × 0.6 ellipse's has an inscribed square.** That includes the ellipse with a Weierstrass ripple of size 0.13 added: a curve that is nowhere differentiable, has no symmetry, and is not locally monotone, so the classical theorems do not apply to it.
+
+The argument:
+1. Write the square conditions as two equations $G(u, v) = 0$ in the parameters of two opposite corners.
+2. Show that a perturbation of size $T$ moves $G$ by at most $(1+\sqrt2)T$.
+3. Compute, on a box around the ellipse's square, that $G$ stays further than that from zero on the box's edge and winds once around zero.
+4. By degree theory, no perturbation that small can remove the square.
+
+The computation takes about 8 seconds and checks every inequality with an explicit Lipschitz bound between samples:
+
+```bash
+node tools/certify-square.js     # writes data/certificates.json
+```
+
+The neighbourhood it certifies (0.13) is about 3.6 times the one given by Chambers' perturbation theorem for the same ellipse. The [Square Certificate](pages/certificate.html) page shows the fractal curve with a square found on it, and the winding loop that proves the square exists. The same method fails on the finders' Weierstrass blob, by a factor of about 5 at every level of detail. PROOFS.md explains why: the blob's roughness is a fixed fraction of its size at every scale.
+
+![Square certificate: the square survives a growing fractal ripple](images/certificate_demo.gif)
+
+**The same for tetrahedra.** [PROOFS.md, Theorem 7](PROOFS.md#theorem-7--the-same-for-tetrahedra-on-rough-surfaces) applies the same method in 3D. Every surface whose radius stays within 0.04 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, with circumradius at least 0.63. That includes rough surfaces that are not $C^1$, where Gromov's theorem does not apply. It uses a simpler test that works in any dimension: on the boundary of a box around the ellipsoid's tetrahedron, the four "vertex on surface" equations stay closer to their linearisation than the linearisation is to zero, with room left for any perturbation of size 0.04. That forces a solution inside the box.
+
+```bash
+node tools/certify-tetra.js      # about a minute; writes data/certificate-tetrahedron.json
+```
+
+## Preprint
+
+[PAPER.md](PAPER.md) collects everything above into a paper-style write-up for expert review:
+- the problem map;
+- Theorems 1–3, Lemma 4, Proposition 5, Theorem 6 and Theorem 7, with their key steps;
+- the numerical studies;
+- an appendix containing the complete proofs from [PROOFS.md](PROOFS.md).
+
+It is also available as a [web page](https://thor110.github.io/InscribedSquareProblem/pages/paper.html) and as [PAPER.pdf](PAPER.pdf). Both are generated from the two markdown files, with the maths pre-rendered, so they need no internet access to display:
+
+```bash
+node tools/build-paper.js     # rebuilds pages/paper.html and PAPER.pdf
+```
+
 ## Submitting results
 
 The finders can contribute to a shared registry of verified results ([`data/registry.json`](data/registry.json), one file per result in [`results/`](results/), browsable on the [Verified Results](https://thor110.github.io/InscribedSquareProblem/pages/registry.html) page).
@@ -214,6 +256,7 @@ In the jig the three rays are 120° apart. If $I$ is the centroid of the three h
 - smooth curves: Schnirelmann 1929/1944;
 - locally monotone curves, including every polygon: Stromquist 1989;
 - curves made of two Lipschitz graphs with constant below 1: Tao 2017.
+- curves close to a smooth curve, relative to its curvature: Chambers 2022. In this repository, Theorem 6 gives a computer-assisted proof for a wider neighbourhood of one ellipse, which includes nowhere-differentiable fractal curves.
 
 Greene and Lobb (2021) proved the stronger statement that smooth Jordan curves inscribe rectangles of **every** aspect ratio. Matschke's 2014 survey covers the history.
 
@@ -289,6 +332,10 @@ Define a 3D "Skeletal Jig" representing the four internal diagonals of a cube. T
 > The Inscribed Cube Viewfinder searches cubes directly and gives the same split: cubes are verified on every symmetric surface, and on the others the closest cube found has error 5e-5 to 4e-2. On the same surfaces, regular tetrahedra and octahedra verify to about 1e-16 every time. The lopsided egg was cross-checked with an independent optimiser: 400 random starts over all cubes in space found no vertex closer than 2.8% (relative to the cube's size) to the surface. As the egg's asymmetry parameter $\varepsilon$ shrinks, the best cube's error shrinks in proportion (about $0.16\,\varepsilon$). Failing to find a cube numerically is not a proof that none exists, but these results are consistent with the dimension count.
 
 ![Inscribed Cube Spacefinder Demo](images/cube_demonstration.gif)
+
+The Inscribed Cube Viewfinder on the lopsided egg (strictly convex, no symmetry): 120 starts, and the closest cube still misses the surface by 1.5% of its size, as Theorem 1 predicts.
+
+![Inscribed Cube Viewfinder Demo](images/cube_viewfinder_demo.gif)
 
 [Run the Skeletal Space Finder](https://thor110.github.io/InscribedSquareProblem/pages/skeletal-spacefinder.html)
 
@@ -462,6 +509,8 @@ node tests/run-study.js parity   # count every square and 2:1 rectangle (parity 
 node tests/check-orientations.js # which orientations of an inscribed equilateral triangle exist in sharp polygons
 node tests/run-study.js charts   # rebuild the charts from data/ only
 node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
+node tools/certify-square.js     # the computer-assisted proof of Theorem 6 (exit code 0 = valid)
+node tools/certify-tetra.js      # the computer-assisted proof of Theorem 7 (add --quick for a fast, smaller T)
 ```
 
 ## References
@@ -469,6 +518,7 @@ node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2
 - A. Emch, "Some properties of closed convex curves in a plane", *Amer. J. Math.* 35 (1913); "On some properties of the medians of closed continuous curves formed by analytic arcs", *Amer. J. Math.* 38 (1916).
 - L. G. Schnirelmann, "On certain geometrical properties of closed curves" (1929; expanded version in *Uspekhi Mat. Nauk* 10, 1944).
 - W. Stromquist, "Inscribed squares and square-like quadrilaterals in closed curves", *Mathematika* 36 (1989).
+- G. R. Chambers, "On the square peg problem" (2022) — [arXiv:2203.02613](https://arxiv.org/abs/2203.02613).
 - T. Tao, "An integration approach to the Toeplitz square peg problem", *Forum Math. Sigma* 5 (2017) — [arXiv:1611.07441](https://arxiv.org/abs/1611.07441).
 - M. D. Meyerson, "Balancing acts", *Topology Proceedings* 6 (1981) — includes H. Vaughan's proof that every Jordan curve inscribes a rectangle.
 - J. E. Greene and A. Lobb, "The rectangular peg problem", *Annals of Math.* 194 (2021).

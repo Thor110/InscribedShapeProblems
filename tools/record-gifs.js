@@ -3,7 +3,8 @@
 // auto-search, but the recorder advances the search itself (one step per
 // captured frame) so recordings are identical on every run and machine. After
 // the search ends a closing sequence (rotation sweep or spin) is added and the
-// result is written to images/<name>.gif.
+// result is written to images/<name>.gif. Pages without a search (the
+// certificate) instead get a scripted sequence of frames.
 //
 // Usage:  npm install && npm run gifs            (all demos)
 //         node tools/record-gifs.js square cube  (only demos whose name matches)
@@ -26,12 +27,18 @@ const triangleSweep = {
   step: i => { $('pivotOnly').checked = true; const a = (jig.ang * 180) / Math.PI + 3; $('rtSl').value = a % 360; onRt(String(a % 360)); },
 };
 
+const spinCube = { frames: 32, step: i => { viewYaw += (2 * Math.PI) / 32; draw3D(); } };
+// Pages without a search: wait for `ready`, then call `step(i)` once per frame.
+const rippleGrow = { frames: 27, step: i => { $('amp').value = (0.005 * i).toFixed(3); drawCurve(true); } };
+
 const DEMOS = [
   { name: 'viewfinder_demo', page: 'pages/inscribed-square-viewfinder.html?curve=random&seed=7', width: 560, running: 'scanning' },
   { name: 'square_demonstration', page: 'pages/skeletal-shapefinder.html?shape=square&curve=random&seed=4&pace=1', width: 560, running: 'search' },
   { name: 'rectangle_demonstration', page: 'pages/skeletal-shapefinder.html?shape=rectangle&p=2&curve=crescent&seed=1&pace=1', width: 560, running: 'search' },
   { name: 'triangle_demonstration', page: 'pages/skeletal-shapefinder.html?shape=triangle&curve=weierstrass&seed=2', width: 560, running: 'search', after: triangleSweep },
   { name: 'cube_demonstration', page: 'pages/skeletal-spacefinder.html?shape=cube&surface=ellipsoid&seed=5&pace=1&rot=35,25,15', width: 520, running: 'search', after: spin3D },
+  { name: 'cube_viewfinder_demo', page: 'pages/inscribed-cube-viewfinder.html?surface=egg&seed=3&pace=1', width: 520, running: 'search', after: spinCube },
+  { name: 'certificate_demo', page: 'pages/certificate.html', width: 860, ready: "!$('status').textContent.includes('Computing')", frames: rippleGrow },
   { name: 'tetrahedron_demonstration', page: 'pages/skeletal-spacefinder.html?shape=tetrahedron&surface=fractal&seed=2&pace=1&rot=20,40,10', width: 520, running: 'search', after: spin3D },
 ];
 
@@ -58,6 +65,19 @@ async function record(browser, demo) {
   // Let any pending paint finish before each capture so recordings are reproducible.
   const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const shot = async () => { await settle(); return page.screenshot({ clip }); };
+  if (demo.frames) {
+    await page.waitForFunction(demo.ready, null, { timeout: 120000 });
+    const out = [];
+    for (let i = 0; i < demo.frames.frames; i++) {
+      await page.evaluate(`(${demo.frames.step.toString()})(${i})`);
+      out.push({ png: await shot(), delay: 220 });
+    }
+    out[out.length - 1].delay = HOLD_MS;
+    const status = await page.textContent('#status');
+    await page.close();
+    if (errors.length) throw new Error(`${demo.name}: page errors: ${errors.join('; ')}`);
+    return { out, status };
+  }
   const frames = [];
   // Start the search, then stop the page's own animation loop and step it by hand.
   await page.evaluate(() => { startScan(); cancelAnimationFrame(scanId); });

@@ -1,0 +1,61 @@
+{
+ "theorem": "Every Jordan curve ρ(θ)(cos θ, sin θ) with ρ continuous and |ρ(θ) − r_E(θ)| ≤ T for all θ, where r_E is the polar radius of the ellipse x² + y²/0.6² = 1, has an inscribed square.",
+ "ellipse": {
+  "a": 1,
+  "b": 0.6
+ },
+ "T": 0.13,
+ "chambersAllowance": 0.036,
+ "ratioToChambers": 3.6111111111111116,
+ "certificate": {
+  "ok": true,
+  "T": 0.13,
+  "threshold": 0.31387983281464715,
+  "boundaryMin": 0.34079903157413255,
+  "winding": 1,
+  "windingRaw": 1.0000000000000007,
+  "samples": 1144,
+  "spacing": 0.0009929959369379847,
+  "lip": 16.784224433042716,
+  "eRad": 0.00003206870614474873,
+  "rounding": 1e-9,
+  "polygon": 524288,
+  "zero": {
+   "u": 0.12499999999999997,
+   "v": 0.625,
+   "residual": 0
+  },
+  "box": [
+   [
+    0.2534282953573577,
+    0.7534282995230417
+   ],
+   [
+    -0.030255539918521833,
+    0.7802555440842058
+   ],
+   [
+    -0.0034282953573577576,
+    0.4965717004769583
+   ],
+   [
+    0.28025553991852176,
+    0.46974445591579417
+   ]
+  ],
+  "boxSize": 0.5,
+  "uRange": [
+   -0.030255539918521833,
+   0.28025553991852176
+  ],
+  "vRange": [
+   0.46974445591579417,
+   0.7802555440842058
+  ],
+  "rangesDisjoint": true,
+  "diagonalAtZero": 1.4552137502179976,
+  "diagonalLowerBound": 0.636890845718199,
+  "maxT": 0.14115029721439587
+ },
+ "seconds": 8.085
+}

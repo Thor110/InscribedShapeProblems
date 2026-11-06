@@ -1,0 +1,37 @@
+{
+ "theorem": "Every surface ρ(ω)·ω with ρ continuous and |ρ(ω) − r_E(ω)| ≤ T for all unit vectors ω, where r_E is the radial function of the ellipsoid x² + y²/0.8² + z²/0.6² = 1, has an inscribed regular tetrahedron with the orientation given by the Euler angles below.",
+ "axes": [
+  1,
+  0.8,
+  0.6
+ ],
+ "euler": [
+  0.3,
+  0.5,
+  0.7
+ ],
+ "T": 0.04,
+ "c": 0.09,
+ "n": 120,
+ "certificate": {
+  "ok": true,
+  "T": 0.04,
+  "c": 0.09,
+  "maxDeviation": 0.03414753466132177,
+  "betweenSamples": 0.011020670504428984,
+  "rounding": 1e-9,
+  "samples": 13824000,
+  "maxT": 0.04483179383424925,
+  "zero": [
+   -0.05423741493730592,
+   0.06291839140833723,
+   0.12425788498092483,
+   0.7297585165882704
+  ],
+  "residual": 1.6653345369377348e-16,
+  "detJ": 1.6552403516986998,
+  "degree": 1,
+  "circumradiusLowerBound": 0.6315370379615479
+ },
+ "seconds": 49.493
+}

@@ -6,6 +6,8 @@ This document contains the following results, written to be checked line by line
 2. **Theorem 2 (the centring jig, made rigorous).** Every smooth, strictly convex body in $\mathbb{R}^n$ contains an inscribed regular simplex in **every** orientation (more generally, any simplex whose circumcentre lies inside it). The proof is the skeletal-jig argument: the "rattle" is a vector field, and its zero is the inscribed simplex.
 3. **Theorem 3 (every convex body).** The same holds for *any* convex body, in every orientation that is **admissible** for it. Every orientation is admissible for a body with a $C^1$ boundary, so Theorem 2 holds without strict convexity. **Proposition 5** shows admissibility cannot be dropped: a thin enough triangle has no inscribed equilateral triangle in some orientations.
 4. **Lemma 4 (a route to the open case).** If ever-finer approximations of a curve each contain an inscribed square that cannot be arbitrarily small, the limiting curve contains one. This is the hypothesis that the shrinkage studies test.
+5. **Theorem 6 (a computer-assisted certificate).** Every curve whose radius stays within 0.13 of a 1 × 0.6 ellipse's has an inscribed square. This includes nowhere-differentiable, non-symmetric fractal curves that are not locally monotone.
+6. **Theorem 7 (the same in 3D).** Every surface whose radius stays within 0.04 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, including rough surfaces that are not $C^1$, where Gromov's theorem does not apply.
 
 Neither result settles the open problems. The square (Toeplitz), regular tetrahedron and cross-polytope problems remain open for general *continuous* Jordan curves and surfaces; see [What remains open](#what-remains-open).
 
@@ -192,18 +194,106 @@ Substituting, $\rho\sqrt3/2 \le \tfrac32 h\rho$, i.e. $h \ge 1/\sqrt3$, a contra
 
 ---
 
+## Theorem 6 — a computer-assisted certificate
+
+Theorems 2 and 3 need smoothness or convexity. Lemma 4 needs control at *every* level of a fractal. This section takes a third route, which handles genuinely rough curves: prove that a square cannot be removed by any perturbation of a given size. Then compute that the size is large enough to cover a fractal.
+
+Let $E$ be the ellipse $x^2 + y^2/b^2 = 1$ with $b = 0.6$, with polar radius $r_E(\theta) = (\cos^2\theta + \sin^2\theta / b^2)^{-1/2}$. For a continuous $\rho : S^1 \to (0, \infty)$ write $\gamma_\rho(\theta) = \rho(\theta)(\cos\theta, \sin\theta)$. This is a Jordan curve: every ray from the origin crosses it once.
+
+> **Theorem 6.** If $\rho$ is continuous and $|\rho(\theta) - r_E(\theta)| \le T = 0.13$ for all $\theta$, then $\gamma_\rho$ has an inscribed square, with diagonal at least $0.6369$.
+
+The proof has a short analytic part, which holds for any base curve, and a finite computation (`node tools/certify-square.js`, about 8 s), which checks three inequalities.
+
+**Square equations.** Parametrise by $u \in \mathbb{R}/\mathbb{Z}$, $\theta = 2\pi u$. For opposite corners $A = \gamma(u)$ and $C = \gamma(v)$, the other two corners of the square with diagonal $AC$ are
+$$B = \tfrac12\big((I - R)A + (I + R)C\big), \qquad D = \tfrac12\big((I + R)A + (I - R)C\big),$$
+where $R$ is the rotation by $90°$. Let $\mathrm{sd}_\rho$ be the signed distance to $\gamma_\rho$ (negative inside), and
+$$G_\rho(u, v) = \big(\mathrm{sd}_\rho(B),\ \mathrm{sd}_\rho(D)\big) \in \mathbb{R}^2 .$$
+$G_\rho$ is continuous, and $G_\rho(u, v) = 0$ with $A \ne C$ is exactly an inscribed square.
+
+**Step 1 (perturbations move $G$ by at most $(1+\sqrt2)T$).** Let $|\rho - \sigma| \le T$ pointwise.
+- *Corners.* $|\gamma_\rho(u) - \gamma_\sigma(u)| = |\rho - \sigma| \le T$. The operators $\tfrac12(I \pm R)$ have norm $1/\sqrt2$, so $B$ and $D$ move by at most $\sqrt2\,T$.
+- *Signed distance.* For every point $x$, $|\mathrm{sd}_\rho(x) - \mathrm{sd}_\sigma(x)| \le T$. If $x$ is on the same side of both curves, this holds because their Hausdorff distance is at most $T$. Otherwise write $x = s(\cos\theta, \sin\theta)$ with, say, $\sigma(\theta) \le s \le \rho(\theta)$. Then $|\mathrm{sd}_\rho(x)| + |\mathrm{sd}_\sigma(x)| \le (\rho(\theta) - s) + (s - \sigma(\theta)) \le T$, using the radial segment to each curve.
+- *Together.* Since $\mathrm{sd}$ is 1-Lipschitz, $\|G_\rho - G_\sigma\|_\infty \le \sqrt2\,T + T$.
+
+**Step 2 (degree).** Let $Q$ be a closed region in the $(u, v)$-torus bounded by a simple loop $\partial Q$, with $\|G_E\|_\infty > (1+\sqrt2)T$ on $\partial Q$ and winding number $w \ne 0$ of $G_E$ around $0$ along $\partial Q$. The homotopy $G_E + t(G_\rho - G_E)$, $t \in [0, 1]$, has no zero on $\partial Q$ by Step 1. So $\deg(G_\rho, Q, 0) = w \ne 0$, and $G_\rho$ vanishes somewhere in $Q$.
+
+**Step 3 (non-degeneracy).** If the $u$-range and $v$-range of $Q$ are disjoint arcs of $\mathbb{R}/\mathbb{Z}$, then $A \ne C$ at every point of $Q$, so the square in Step 2 is non-degenerate. Its diagonal is at least $\min_Q |\gamma_E(u) - \gamma_E(v)| - 2T$.
+
+**The computation.** It only evaluates $G_E$ (a smooth function) and checks three inequalities on one box.
+- *The box.* Newton's method finds the ellipse's square $(u, v) = (\tfrac18, \tfrac58)$, with diagonal $1.4552$. $Q$ is the parallelogram $z + J^{-1}([-c, c]^2)$ around it, $c = 0.5$, where $J$ is the Jacobian there. Its $u$-range is $[-0.0303, 0.2803]$ and its $v$-range is $[0.4697, 0.7803]$, which are disjoint.
+- *Polygon error.* $\mathrm{sd}_E$ is computed from a polygon $P$ with $2^{19}$ vertices on $E$. $P$ is convex and contains the origin, so it is also a radial curve. Its radial distance from $E$ is at most $e = 2h\sup|\gamma_E'| = 3.2\times10^{-5}$, with $h = 2\pi/2^{19}$. By the second bullet of Step 1, $|\mathrm{sd}_P - \mathrm{sd}_E| \le e$.
+- *Lipschitz bound.* $|r_E'| \le q/2$ with $q = 1/b^2 - 1$, so $|\partial_u \gamma_E| \le 2\pi(1 + q/2)$. With the norm bound on $B$ and $D$ from Step 1, the computed $G_P$ is $L$-Lipschitz in the max-norm on $(u, v)$, with $L = \sqrt2 \cdot 2\pi(1 + q/2) = 16.78$.
+- *Sampling.* $\partial Q$ is sampled at 1144 points with max-norm spacing $s \le 9.93 \times 10^{-4}$, so $Ls \le 0.0167$. The smallest sampled $\|G_P\|_\infty$ is $0.35746$. Hence on all of $\partial Q$,
+$$\|G_E\|_\infty \ \ge\ 0.35746 - Ls - e - 10^{-9} \ \ge\ 0.3408 - e - 10^{-9} \ >\ (1+\sqrt2)\cdot 0.13 = 0.3138 .$$
+- *Winding.* Consecutive samples differ by at most $0.0167$, while $\|G_P\| \ge 0.34$. So each step turns by less than $\pi/2$, and the summed angle, $2\pi \cdot 1.000000$, is the exact winding number $w = 1$ of $G_P$. Since $|G_P - G_E| \le e < |G_P|$ on $\partial Q$, $G_E$ has the same winding number.
+- *Diagonal.* On a $200 \times 200$ grid over $Q$, $|\gamma_E(u) - \gamma_E(v)|$ is at least $0.6369 + 2T$ once the most it can change within a grid cell is subtracted. Steps 2 and 3 then give Theorem 6. $\blacksquare$
+
+The box certifies every $T < 0.1412$. The `10⁻⁹` term absorbs floating-point rounding. Every computed margin exceeds it by many orders of magnitude, but the code does not use interval arithmetic, so a fully formal version would redo these few thousand evaluations with outward rounding.
+
+**Corollary 6.1 (fractal curves).** Let $W(\theta) = (1 - 2^{-1/2}) \sum_{k \ge 0} 2^{-k/2}\cos\big(2^k(\theta - \theta_0)\big)$, so $|W| \le 1$. Then the curve $\rho = r_E + 0.13\,W$ has an inscribed square, and so does $\rho = r_E + 0.13\,f$ for every continuous $f$ with $|f| \le 1$: random phases, Brownian-like noise, and so on.
+
+For $\theta_0 = 0.3$ (the curve on the [Square Certificate](pages/certificate.html) page), this curve is outside the classical cases:
+- *Not smooth or Lipschitz.* $W$ is nowhere differentiable, by Hardy's theorem, since $2 \cdot 2^{-1/2} \ge 1$.
+- *Not locally monotone.* The curve is not locally a graph in any direction anywhere, so Stromquist's theorem does not apply. If a coordinate of $\gamma_\rho$ were monotone on some interval of $\theta$, it would be differentiable almost everywhere there (Lebesgue). Dividing by the smooth, non-vanishing factor $\cos(\theta - \varphi)$ away from one point would then make $\rho$, and so $W$, differentiable almost everywhere.
+- *Not symmetric.* $W$ is symmetric about $\theta_0$ but not under $\theta \mapsto \theta + \pi$, and $r_E$ is symmetric about $0$ and $\pi/2$. So the curve has no reflection or point symmetry, and the symmetric-curve results of Nielsen and Wright do not apply.
+
+Chambers (2022) proves that a Jordan curve close enough to a $C^2$ curve $\beta$ has an inscribed square, with closeness measured against $1/\kappa$ for $\kappa$ the maximum curvature of $\beta$. For $\beta = E$, $\kappa = 1/b^2 = 2.78$ and $1/(10\kappa) = 0.036$, so Theorem 6 covers a neighbourhood about $3.6$ times wider. We have not ruled out that some other smooth $\beta$, with smaller curvature, lies within Chambers' bound of every curve in Corollary 6.1. So we claim only a computer-assisted proof of a quantitative statement, not a new class of curves.
+
+**What did not work: the Weierstrass blob.** The same method was tried on the `Weierstrass` fractal of the finders, $\rho = 1 + \sum_k 0.085 \cdot 2^{-k/2}\cos(m 2^k\theta + \phi_k)$. The base curve is the $K$-octave truncation, and $T$ is the size of the remaining tail, $\sum_{k \ge K} 0.085 \cdot 2^{-k/2}$:
+
+| $K$ | tail to cover | best certifiable $T$ | ratio |
+|---|---|---|---|
+| 2 | 0.1451 | 0.0256 | 5.7 |
+| 3 | 0.1026 | 0.0230 | 4.5 |
+| 4 | 0.0726 | 0.0139 | 5.2 |
+
+The ratio does not improve with $K$. Each added octave shrinks the tail by $2^{-1/2}$, but it also makes the base curve rougher at a finer scale, and the certifiable margin shrinks at the same rate. So the blob cannot be certified this way. The ellipse works because a large, smooth base square survives a fixed-size perturbation; a curve whose roughness carries a constant fraction of its size at every scale does not offer one. This is the quantitative form of the difficulty in the open problem.
+
+---
+
+## Theorem 7 — the same for tetrahedra on rough surfaces
+
+The inscribed-tetrahedron problem is open exactly for non-smooth surfaces: Gromov's theorem needs $C^1$. Theorem 6's method extends to 3D, and becomes simpler, if the tetrahedron's orientation is fixed.
+
+Let $E$ be the ellipsoid $x^2 + y^2/0.8^2 + z^2/0.6^2 = 1$ with radial function $r_E$. For continuous $\rho : S^2 \to (0, \infty)$ let $S_\rho = \{\rho(\omega)\,\omega : \omega \in S^2\}$, a Jordan surface. Let $w_0, \dots, w_3$ be the unit vectors $(\pm1, \pm1, \pm1)/\sqrt3$ with an even number of minus signs, rotated by the Euler angles $(0.3, 0.5, 0.7)$ as in `pages/certify3d.js`.
+
+> **Theorem 7.** If $|\rho(\omega) - r_E(\omega)| \le T = 0.04$ for all $\omega$, then $S_\rho$ has an inscribed regular tetrahedron with vertices $x + s\,w_k$, so in that orientation, with circumradius $s \ge 0.6315$.
+
+*Proof.*
+- **Equations.** The unknowns are $p = (x, s) \in \mathbb{R}^4$. Let $G_\rho(p) = \big(\mathrm{sd}_\rho(x + s w_k)\big)_{k=0..3}$. A zero with $s > 0$ is an inscribed tetrahedron. The vertices depend only on $p$, not on the surface, so by the radial argument of Theorem 6, Step 1 (which works verbatim in 3D), $\|G_\rho - G_E\|_\infty \le T$.
+- **Box.** Newton's method gives the tetrahedron on $E$, with centre $(-0.0542, 0.0629, 0.1243)$ and circumradius $0.7298$. Let $J$ be (an approximation to) the Jacobian there and $L(p) = J(p - z)$. Take $Q = z + J^{-1}([-c, c]^4)$ with $c = 0.09$, so $\|L\|_\infty = c$ on $\partial Q$, and $\deg(L, Q, 0) = \operatorname{sign}\det J = +1$ ($\det J = 1.655$).
+- **Rouché-type bound.** Suppose $\|G_E - L\|_\infty + T < c$ on $\partial Q$. Then the homotopy $L + t(G_\rho - L)$ has no zero on $\partial Q$, so $\deg(G_\rho, Q, 0) = 1$ and $G_\rho$ vanishes in $Q$.
+- **The computation** (`node tools/certify-tetra.js`, about a minute):
+  - $\mathrm{sd}_E$ is evaluated exactly, up to rounding, by the standard reduction to one monotone equation solved by bisection.
+  - Each of the 8 faces of $[-c, c]^4$ is sampled on a $120^3$ grid, with spacing $h = 2c/119$. The largest value of $\|G_E - L\|_\infty$ at the 13,824,000 samples is $0.0341$.
+  - $G$ is $(1 + \sqrt3)$-Lipschitz in the max-norm on $p$, since $|\Delta(x + s w_k)| \le \sqrt3\,|\Delta x|_\infty + |\Delta s|$. $L$ is $\|J\|_\infty$-Lipschitz, and every boundary point is within $\|J^{-1}\|_\infty h/2$ of a sample. So between samples $G_E - L$ changes by at most $0.0110$.
+  - Hence $\|G_E - L\|_\infty \le 0.0341 + 0.0110 + 10^{-9} = 0.0452 < c - T = 0.05$ on all of $\partial Q$. The certified room for a perturbation is $0.0448$.
+- **Non-degeneracy.** $s$ is affine on $Q$, so its minimum, $0.6315$, is attained at a corner. $\blacksquare$
+
+**Corollary 7.1 (rough surfaces).** Let $F : S^2 \to [-1, 1]$ be any continuous function. For example, take $F(\omega) = (1 - 2^{-1/2})\sum_{k \ge 0} 2^{-k/2}\cos(2^k\langle \omega, e\rangle)$ for a fixed unit vector $e$, which is nowhere differentiable along every meridian through $e$ (Hardy). Then the surface $\rho = r_E + 0.04\,F$ has an inscribed regular tetrahedron. Such surfaces are not $C^1$, or even Lipschitz, so Gromov's theorem does not apply. We know of no published result that covers them, but, as for Theorem 6, the claim is a quantitative computer-assisted one and not a new structural class.
+
+**Remarks.**
+- The same Rouché-type test proves Theorem 6 too, and works for any number of unknowns: it only needs $\|G - L\|$ to be small on the boundary of a box, compared with the box's size. That is a degree argument with no winding numbers to compute.
+- The certified neighbourhood is smaller than in 2D (0.04 against 0.13) because a 4D box boundary needs many more samples for the same Lipschitz margin. Bounding the second derivative of $\mathrm{sd}_E$ instead of its first would shrink the margin between samples and enlarge $T$.
+- Certifying several orientations at once would give a whole open set of orientations for every such surface; one suffices for existence.
+
+---
+
 ## What remains open
 
 | Problem | Status |
 |---|---|
 | Square in every continuous Jordan curve (Toeplitz) | **Open.** Proved for convex (Emch), smooth (Schnirelmann), locally monotone (Stromquist) and small-Lipschitz (Tao) curves |
 | Rectangle of every aspect ratio in every continuous Jordan curve | **Open.** Proved for smooth curves (Greene–Lobb) and extended to rectifiable curves; *some* rectangle always exists (Vaughan) |
-| Regular tetrahedron / simplex in every continuous Jordan sphere | **Open.** Proved for $C^1$ spheres in every pose (Gromov 1969); Theorems 2–3 give elementary proofs for every $C^1$ convex body and, in admissible orientations, every convex body. "Every pose" fails for non-smooth bodies (Proposition 5) |
+| Regular tetrahedron / simplex in every continuous Jordan sphere | **Open.** Proved for $C^1$ spheres in every pose (Gromov 1969); Theorems 2–3 give elementary proofs for every $C^1$ convex body and, in admissible orientations, every convex body. Theorem 7 certifies every surface within 0.04 of one ellipsoid. "Every pose" fails for non-smooth bodies (Proposition 5) |
 | Regular octahedron / cross-polytope | **Open.** Proved for smooth convex bodies in $\mathbb{R}^3$ (Makeev 2001) and in $\mathbb{R}^n$ for $n$ an odd prime power (Karasev 2009) |
 | Cube / hypercube ($n \ge 3$) | **False in general** (Theorem 1). True for centrally symmetric convex bodies in $\mathbb{R}^3$ (Hausel–Makai–Szűcs 2000) |
 
 ## References
 
+- G. R. Chambers, "On the square peg problem" (2022) — [arXiv:2203.02613](https://arxiv.org/abs/2203.02613).
+- G. H. Hardy, "Weierstrass's non-differentiable function", *Trans. Amer. Math. Soc.* 17 (1916) 301–325.
+- M. J. Nielsen, S. E. Wright, "Rectangles inscribed in symmetric continua", *Geom. Dedicata* 58 (1995) 151–158.
 - M. L. Gromov, "Simplexes inscribed on a hypersurface", *Mat. Zametki* 5 (1969) 81–89.
 - J. Cantarella, E. Denne, J. McCleary, "Families of similar simplices inscribed in most smoothly embedded spheres", *Forum Math. Sigma* 10 (2022) e95 — [arXiv:2106.12063](https://arxiv.org/abs/2106.12063).
 - J. Cantarella, E. Denne, J. McCleary, "Transversality for configuration spaces and the 'square-peg' theorem" — [arXiv:1402.6174](https://arxiv.org/abs/1402.6174).

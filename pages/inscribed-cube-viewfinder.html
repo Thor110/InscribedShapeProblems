@@ -288,10 +288,12 @@ function startScan() {
 }
 function stopScan() { Surfaces3D.setOctaves(Infinity); search = null; cancelAnimationFrame(scanId); $('scanBtn').textContent = 'Auto-find Cube'; $('scanBtn').classList.remove('active'); }
 function toggleScan() { search ? (stopScan(), refresh()) : startScan(); }
+// ?pace=N limits the search to N steps per animation frame, to watch it in slow motion.
+const PACE = +new URLSearchParams(location.search).get('pace') || 0;
 function scanStep() {
   if (!search) return;
   const s = search, t0 = performance.now();
-  while (performance.now() - t0 < 16) {
+  for (let n = 0; PACE ? n < PACE : performance.now() - t0 < 16; n++) {
     const r = s.gen.next();
     if (r.done) {
       stopScan();
