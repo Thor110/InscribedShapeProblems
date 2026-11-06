@@ -1,6 +1,6 @@
 {
  "theorem": "Every surface ρ(ω)·ω with ρ continuous and |ρ(ω) − r_E(ω)| ≤ T for all unit vectors ω, where r_E is the radial function of the ellipsoid x² + y²/0.8² + z²/0.6² = 1, has an inscribed regular tetrahedron with vertices x + s·w_k, w_k the directions of tetraDirs() in pages/certify-rigorous.js.",
- "method": "interval arithmetic with outward rounding (pages/interval.js, pages/certify-rigorous.js)",
+ "method": "interval arithmetic with outward rounding, adaptive cells (pages/interval.js, pages/certify-rigorous.js)",
  "ellipsoid": {
   "axes": [
    1,
@@ -9,13 +9,11 @@
   ]
  },
  "orientation": "Cayley rotation with q = (1/8, 1/4, 3/8)",
- "T": "3/25",
+ "T": "13/100",
  "ok": true,
  "certificate": {
   "ok": true,
-  "method": "direct",
-  "rouche": false,
-  "direct": true,
+  "method": "adaptive cells",
   "degree": 1,
   "det": [
    1.9345399541921164,
@@ -79,50 +77,46 @@
     0.313286924077166
    ]
   ],
-  "c": 0.24,
-  "cEff": 0.2399999999999986,
-  "contraction": 4.8849813083506975e-15,
+  "c": 0.26,
+  "cEff": 0.2599999999999985,
   "normJ": 2.38510784070628,
   "normK": 2.1803980030365935,
-  "samples": 64000000,
-  "gridPoints": 200,
-  "gridSpacing": 0.002412060301507591,
-  "roundingInSamples": 1.1115804679533498e-15,
-  "maxDeviation": 0.1943576187972186,
-  "betweenSamples": 0.013456212057799706,
-  "bound": 0.2078138308550184,
-  "Teff": 0.12000000000000001,
-  "room": 0.032186169144980195,
-  "minG": 0.13273045777686085,
-  "gMoveBetweenSamples": 0.007184271105552205,
-  "minGBoundary": 0.1255461866713086,
-  "degMargin": 0.02386985855245873,
-  "degreeHolds": true,
-  "roomDirect": 0.1255461866713086
+  "Teff": 0.13000000000000003,
+  "cellsChecked": 997168,
+  "failedCells": 0,
+  "deepest": 6,
+  "minGBoundary": 0.1324448491281444,
+  "slackOverTeff": 0.002444849128144354,
+  "degreeSlack": 5.778350302756971e-8,
+  "roundingInSamples": 1.1506994334969682e-15
  },
- "circumradiusLowerBound": 0.43247310262402583,
- "circumradiusUpperBound": 0.9992098070406951,
+ "circumradiusLowerBound": 0.4088590732733313,
+ "circumradiusUpperBound": 1.0228238363913895,
  "orientations": [
   {
    "T": 0,
-   "angle": 0.125645470837733
+   "angle": 0.13124999999999998,
+   "degrees": 7.520071061092054
   },
   {
    "T": 0.03,
-   "angle": 0.09562174630199279
+   "angle": 0.10195312499999999,
+   "degrees": 5.841483770669721
   },
   {
    "T": 0.06,
-   "angle": 0.06559802176625257
+   "angle": 0.07265625,
+   "degrees": 4.1628964802473885
   },
   {
    "T": 0.09,
-   "angle": 0.03557429723051234
+   "angle": 0.043359375000000006,
+   "degrees": 2.484309189825054
   },
   {
    "T": 0.12,
-   "angle": 0.005550572694772114
+   "angle": 0.014062499999999999,
+   "degrees": 0.80572189940272
   }
- ],
- "seconds": 96.435
+ ]
 }

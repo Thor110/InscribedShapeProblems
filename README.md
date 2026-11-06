@@ -54,7 +54,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1) | ❌ except on symmetric surfaces |
 | Cube | Hypercube | 4, 5 | 16, 32 | −5, −16 | — | **False in general** (Theorem 1) | ✅ only on the sphere and ellipsoid; ❌ elsewhere (closest misses 0.6–9%) |
 | Cube | Icosahedron, dodecahedron | 3 | 12, 20 | −5, −13 | — | **False in general** (Theorem 1) | not tested |
-| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.12 of one ellipsoid, rough ones included, with an open set of orientations (Theorem 7, computer-assisted, interval arithmetic) | ✅ every surface tested, at any rotation |
+| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.13 of one ellipsoid, rough ones included, with an open set of orientations (Theorem 7, computer-assisted, interval arithmetic) | ✅ every surface tested, at any rotation |
 | Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorems 2–3 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
 
 **Where the three open problems stand.**
@@ -168,21 +168,21 @@ The neighbourhood it certifies (0.15) is about 4.2 times the one given by Chambe
 
 ![Square certificate: the square survives a growing fractal ripple](images/certificate_demo.gif)
 
-**The same for tetrahedra.** [PROOFS.md, Theorem 7](PROOFS.md#theorem-7--the-same-for-tetrahedra-on-rough-surfaces) applies the same method in 3D. Every surface whose radius stays within 0.12 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, with circumradius at least 0.43. That includes rough surfaces that are not $C^1$, where Gromov's theorem does not apply.
+**The same for tetrahedra.** [PROOFS.md, Theorem 7](PROOFS.md#theorem-7--the-same-for-tetrahedra-on-rough-surfaces) applies the same method in 3D. Every surface whose radius stays within 0.13 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, with circumradius at least 0.40. That includes rough surfaces that are not $C^1$, where Gromov's theorem does not apply.
 
-The test works in any dimension. On the boundary of a box around the ellipsoid's tetrahedron, the four "vertex on surface" equations stay further from zero than any perturbation of size 0.12 can move them, and closer to their linearisation than to zero. That forces a solution inside the box.
+The test works in any dimension. On the boundary of a box around the ellipsoid's tetrahedron, the four "vertex on surface" equations stay further from zero than any perturbation of size 0.13 can move them, and closer to their linearisation than to zero. That forces a solution inside the box. The boundary is checked in **adaptive cells**: big cells where there is plenty of margin, split only where it is tight. That needs about a million checks and a few seconds, where a uniform grid needed 64 million.
 
-Turning the tetrahedron by a small angle acts like one more small perturbation, so the same certificate covers a whole range of orientations. For every surface within 0.06 of the ellipsoid there is a tetrahedron in **every** orientation within 3.76° of the given one (7.2° for the ellipsoid itself).
+Turning the tetrahedron by a small angle acts like one more small perturbation, so the same certificate covers a whole range of orientations. For every surface within 0.06 of the ellipsoid there is a tetrahedron in **every** orientation within 4.16° of the given one (7.5° for the ellipsoid itself).
 
 ```bash
-node tools/certify-tetra.js      # under two minutes on 4 cores; writes data/certificate-tetrahedron.json
+node tools/certify-tetra.js      # seconds for the theorem, about a minute with the orientation table
 ```
 
-**Checked twice, independently.** `tools/verify_certificates.py` redoes both certificates from scratch in Python, with the interval arithmetic of the mpmath library instead of this repository's own code. It confirms the square theorem in full, and the tetrahedron theorem with $T = 0.06$ (Python is too slow for the 64-million-sample grid that $T = 0.12$ needs).
+**Checked twice, independently.** `tools/verify_certificates.py` redoes both certificates from scratch in Python, with the interval arithmetic of the mpmath library instead of this repository's own code. It confirms both theorems in full; for the tetrahedron it makes exactly the same 997,168 cell decisions as the JavaScript.
 
 ```bash
 pip install mpmath
-python3 tools/verify_certificates.py   # about 6 minutes on 4 cores
+python3 tools/verify_certificates.py   # about 8 minutes on 4 cores
 ```
 
 ## Preprint
@@ -659,7 +659,7 @@ node tests/check-orientations.js # which orientations of an inscribed equilatera
 node tests/run-study.js charts   # rebuild the charts from data/ only
 node tests/run-nd.js --check-convex   # the lopsided egg is strictly convex in 2–6 dimensions
 node tools/certify-square.js     # the computer-assisted proof of Theorem 6 (exit code 0 = valid)
-node tools/certify-tetra.js      # the computer-assisted proof of Theorem 7 (add --quick for a fast, smaller T)
+node tools/certify-tetra.js      # the computer-assisted proof of Theorem 7 (add --theorem to skip the orientation table)
 python3 tools/verify_certificates.py   # independent check of both certificates in Python/mpmath (pip install mpmath)
 node tools/nearest-misses.js     # every number up to 10^11: nearest misses to perfection, ~20 min (add e.g. 1e9 for a quick run)
 ```

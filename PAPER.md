@@ -11,7 +11,7 @@ We study four inscribed-shape problems: an equilateral triangle or a square in a
 3. **Admissibility is needed.** Bodies with sharp corners can lose orientations: an isosceles triangle with apex below $60°$ has no inscribed equilateral triangle pointing at its apex (Proposition 5).
 4. **A limit criterion for squares.** Non-shrinking squares on approximations give a square on the limit (Lemma 4).
 5. **A computer-assisted proof.** Every Jordan curve whose polar radius stays within $0.15$ of that of the ellipse $x^2 + y^2/0.36 = 1$ has an inscribed square (Theorem 6), proved in interval arithmetic. This class contains nowhere-differentiable curves that are neither locally monotone nor symmetric.
-6. **The same in 3D.** Every surface whose radius stays within $0.12$ of that of a $1 \times 0.8 \times 0.6$ ellipsoid has an inscribed regular tetrahedron (Theorem 7), and within $0.06$ in every orientation within $3.76°$ of a given one. This includes surfaces that are not $C^1$, outside Gromov's theorem.
+6. **The same in 3D.** Every surface whose radius stays within $0.13$ of that of a $1 \times 0.8 \times 0.6$ ellipsoid has an inscribed regular tetrahedron (Theorem 7), and within $0.06$ in every orientation within $4.16°$ of a given one. This includes surfaces that are not $C^1$, outside Gromov's theorem.
 7. **Numerical studies.** Four studies probe the open continuous cases:
    - on fractal curves and surfaces refined level by level, the largest inscribed squares and the tracked regular tetrahedra converge rather than shrink;
    - rectangles of 9 aspect ratios are found on all 9 test curves;
@@ -127,15 +127,13 @@ Theorem 6's neighbourhood is $4.2$ times wider than $1/(10\kappa) = 0.036$ for t
 
 **Tetrahedra on rough surfaces.** In 3D, fix the tetrahedron's orientation, with unit vectors $w_0, \dots, w_3$ from its centre to its vertices; an exactly orthogonal rational rotation (a Cayley transform) keeps them exact. The unknowns are the centre $x$ and circumradius $s$, and the equations are $G(x, s) = (\mathrm{sd}(x + s w_k))_k \in \mathbb{R}^4$. The vertices do not depend on the surface, so a radial perturbation of size $T$ moves $G$ by at most $T$, and the degree lemma applies with $n = 4$.
 
-> **Theorem 7.** Let $E$ be the ellipsoid with semi-axes $1, 0.8, 0.6$. Every surface $\rho(\omega)\omega$ with $|\rho - r_E| \le 0.12$ has an inscribed regular tetrahedron (in a fixed orientation) with circumradius at least $0.4325$. If $|\rho - r_E| \le 0.06$, it has one in every orientation within $3.76°$ of that one.
+> **Theorem 7.** Let $E$ be the ellipsoid with semi-axes $1, 0.8, 0.6$. Every surface $\rho(\omega)\omega$ with $|\rho - r_E| \le 0.13$ has an inscribed regular tetrahedron (in a fixed orientation) with circumradius at least $0.4089$. If $|\rho - r_E| \le 0.06$, it has one in every orientation within $4.16°$ of that one.
 
-The computation (`node tools/certify-tetra.js`, under two minutes on 4 cores) samples the 8 faces of the 4D box ($c = 0.24$) at 64 million points. On $\partial Q$:
-- $\|G_E\|_\infty \ge 0.1255 > T = 0.12$, after subtracting the most $G_E$ can change between samples;
-- $\|G_E\|_\infty - \|G_E - L\|_\infty \ge 0.0239 - 0.0206 > 0$.
+The computation (`node tools/certify-tetra.js`, seconds on 4 cores) checks the 8 faces of the 4D box ($c = 0.26$) in adaptive cells. Each cell is checked at its centre, with an explicit bound for the change across it, and split only if the margin is too small for its size. All 997,168 cells pass both conditions of the degree lemma with $\tau = T = 0.13$. A uniform grid would need 64 million samples for the weaker $T = 0.12$. An independent Python/mpmath implementation reaches the same 997,168 cell decisions.
 
 Turning the tetrahedron by an angle $\theta$ moves $G$ by at most $s_{\max}\theta$, which acts as one more perturbation. That gives the open set of orientations.
 
-With $F(\omega) = (1 - 2^{-1/2})\sum_k 2^{-k/2}\cos(2^k\langle\omega, e\rangle)$, the surface $r_E + 0.12\,F$ is not $C^1$, so Gromov's theorem does not cover it, but Theorem 7 does.
+With $F(\omega) = (1 - 2^{-1/2})\sum_k 2^{-k/2}\cos(2^k\langle\omega, e\rangle)$, the surface $r_E + 0.13\,F$ is not $C^1$, so Gromov's theorem does not cover it, but Theorem 7 does.
 
 **A negative result.** The same method fails on a self-similar Weierstrass blob $\rho = 1 + \sum_k 0.085\cdot 2^{-k/2}\cos(m2^k\theta + \phi_k)$. Taking the $K$-octave truncation as the base curve, the certifiable perturbation is about $1/5$ of the remaining tail at every $K$ tested:
 

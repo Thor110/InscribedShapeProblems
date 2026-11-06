@@ -142,6 +142,77 @@
     };
   }
   const certify = problem => { const S = setup(problem); return finish(problem, S, [scan(problem, S)]); };
+  // ---- adaptive cells ----
+  // The same certificate (direct method) with cells instead of a uniform grid. Each face
+  // of the cube [−c, c]ⁿ starts as start^(n−1) cells. A cell is checked at its centre p_c:
+  // every point of the cell's image in Q lies within r = ‖K‖∞·h + ε of p_c (h the cell's
+  // largest half-width in y, ε the rounding in computing p_c), so on the whole cell
+  //   ‖G_E‖∞ ≥ ‖G_E(p_c)‖∞ − lip_G·r                    must exceed Teff, and
+  //   ‖G_E‖∞ − ‖G_E − L‖∞ ≥ (that difference at p_c) − (2·lip_G + ‖J‖∞)·r   must be > 0.
+  // A cell that fails is split in half along every free direction (halving is exact in
+  // floating point, so the leaves cover the face exactly), down to maxDepth levels.
+  function scanAdaptive(problem, S, faces = allFaces(S.n), opts = {}) {
+    const { n, z, J, K, c } = S, { Gi, lipG, Teff } = problem, start = opts.start || 8, maxDepth = opts.maxDepth || 14;
+    const kG = lipG, kD = up.add(up.mul(2, lipG), S.normJ), y = new Array(n), ps = new Array(n);
+    let cells = 0, failed = 0, deepest = 0, slackG = Infinity, slackD = Infinity, minG = Infinity;
+    for (const [fixed, sign] of faces) {
+      const m = n - 1, stack = [];
+      // initial cells: an even split of [−c, c] into `start` intervals per free direction
+      const edges = Array.from({ length: start + 1 }, (_, i) => (i === start ? c : -c + (2 * c * i) / start));
+      const idx = new Array(m).fill(0);
+      for (;;) {
+        stack.push({ lo: idx.map(i => edges[i]), hi: idx.map(i => edges[i + 1]), depth: 0 });
+        let k = 0; while (k < m && ++idx[k] === start) idx[k++] = 0;
+        if (k === m) break;
+      }
+      while (stack.length) {
+        const cell = stack.pop(); cells++;
+        let hw = 0;
+        for (let d = 0, f = 0; d < n; d++) {
+          if (d === fixed) { y[d] = sign * c; continue; }
+          const mid = (cell.lo[f] + cell.hi[f]) / 2; y[d] = mid;
+          hw = Math.max(hw, ru(cell.hi[f] - mid), ru(mid - cell.lo[f])); f++;
+        }
+        for (let r = 0; r < n; r++) { let s = z[r]; for (let k = 0; k < n; k++) s += K[r][k] * y[k]; ps[r] = s; }
+        const g = Gi(ps);
+        let h = 0, gl = 0;
+        for (let r = 0; r < n; r++) {
+          let lo = 0, hi = 0;
+          for (let k = 0; k < n; k++) {
+            const dl = rd(ps[k] - z[k]), dh = ru(ps[k] - z[k]), j = J[r][k];
+            const a1 = j * dl, a2 = j * dh; lo = rd(lo + rd(Math.min(a1, a2))); hi = ru(hi + ru(Math.max(a1, a2)));
+          }
+          h = Math.max(h, ru(Math.max(g[r].hi - lo, hi - g[r].lo)));
+          gl = Math.max(gl, g[r].lo > 0 ? g[r].lo : g[r].hi < 0 ? -g[r].hi : 0);
+        }
+        const rad = up.add(up.mul(S.normK, hw), S.flerr);
+        const sG = rd(rd(gl - up.mul(kG, rad)) - Teff), sD = rd(rd(gl - h) - up.mul(kD, rad));
+        if (sG > 0 && sD > 0) {
+          slackG = Math.min(slackG, sG); slackD = Math.min(slackD, sD); minG = Math.min(minG, rd(gl - up.mul(kG, rad)));
+          deepest = Math.max(deepest, cell.depth);
+        } else if (cell.depth < maxDepth) {
+          // split along every free direction
+          for (let mask = 0; mask < 1 << m; mask++) {
+            const lo = [], hi = [];
+            for (let f = 0; f < m; f++) { const mid = (cell.lo[f] + cell.hi[f]) / 2; if ((mask >> f) & 1) { lo.push(mid); hi.push(cell.hi[f]); } else { lo.push(cell.lo[f]); hi.push(mid); } }
+            stack.push({ lo, hi, depth: cell.depth + 1 });
+          }
+        } else { failed++; if (opts.failFast) return { cells, failed, deepest, slackG, slackD, minG }; }
+      }
+    }
+    return { cells, failed, deepest, slackG, slackD, minG };
+  }
+  function finishAdaptive(problem, S, scans) {
+    const failed = scans.reduce((t, r) => t + r.failed, 0), cells = scans.reduce((t, r) => t + r.cells, 0);
+    const slackG = Math.min(...scans.map(r => r.slackG)), slackD = Math.min(...scans.map(r => r.slackD)), minG = Math.min(...scans.map(r => r.minG));
+    return {
+      ok: S.degree !== 0 && S.cEff > 0 && failed === 0, method: 'adaptive cells', degree: S.degree, det: S.det, zero: S.z, J: S.J, K: S.K, c: S.c, cEff: S.cEff,
+      normJ: S.normJ, normK: S.normK, Teff: problem.Teff, cellsChecked: cells, failedCells: failed, deepest: Math.max(...scans.map(r => r.deepest)),
+      minGBoundary: minG, slackOverTeff: slackG, degreeSlack: slackD, roundingInSamples: S.flerr,
+    };
+  }
+  const certifyAdaptive = (problem, opts) => { const S = setup(problem); return finishAdaptive(problem, S, [scanAdaptive(problem, S, allFaces(S.n), opts)]); };
+
 
   // ---- Theorem 6: squares near the ellipse x² + y²/0.6² = 1 ----
   // Rational parametrisation γ(t) = ((1 − t²)/(1 + t²), 2bt/(1 + t²)), no trigonometry.
@@ -207,6 +278,8 @@
   // T of the ellipsoid, a tetrahedron in every orientation within angle (m − T)/s_max.
   const orientationAngle = (res, T, sMax) => (res.roomDirect > T ? rd(rd(res.roomDirect - T) / sMax) : 0);
 
-  const api = { certify, setup, scan, finish, allFaces, squareProblem, squareDiagonal, tetraDirs, tetraProblem, tetraRadius, orientationAngle, sdBox };
+  // up(t, s, a): an upper bound for t + s·a (used for the orientation allowance)
+  const upTSA = (t, s, a) => ru(t + up.mul(s, a));
+  const api = { up: upTSA, certify, certifyAdaptive, scanAdaptive, finishAdaptive, setup, scan, finish, allFaces, squareProblem, squareDiagonal, tetraDirs, tetraProblem, tetraRadius, orientationAngle, sdBox };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.CertifyRigorous = api;
 })(typeof window !== 'undefined' ? window : globalThis);

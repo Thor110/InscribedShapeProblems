@@ -9,13 +9,12 @@ data/certificate-tetrahedron.json. Those are only data: the proof is valid for a
 J, K, and their accuracy affects only the margin.
 
     pip install mpmath
-    python3 tools/verify_certificates.py            # square (T = 0.15) and tetrahedron (T = 0.06)
+    python3 tools/verify_certificates.py            # square (T = 0.15) and tetrahedron (T = 0.13)
     python3 tools/verify_certificates.py square     # one of them
 
-The square check is the full Theorem 6 (80,000 boundary samples, a few minutes).
-Python is too slow for Theorem 7's 64 million samples, so the tetrahedron is checked
-on a smaller box with a coarser grid, which proves the theorem with T = 0.06 (the
-JavaScript proves T = 0.12 with the finer grid).
+The square check is the full Theorem 6 (80,000 boundary samples, seconds). The
+tetrahedron check is the full Theorem 7, using adaptive cells as the JavaScript does
+(about a million cells; several minutes on 4 cores).
 """
 import json, math, os, sys, time
 from multiprocessing import Pool
@@ -137,6 +136,69 @@ def scan_face(args):
         if k == n - 1: break
     return dict(minG=minG, degm=degm, maxH=maxH, flerr=flerr, count=count)
 
+# ---- adaptive cells (the tetrahedron) ----
+# Each face of [−c, c]^n starts as start^(n−1) cells. A cell is checked at its centre:
+# every point of its image in Q is within r = ‖K‖∞·h + ε of the centre's sample point,
+# so it passes if  |G| − lip·r > Teff  and  |G| − |G − L| − (2·lip + ‖J‖∞)·r > 0  there.
+# A failing cell is split in half along every free direction (exact in floating point).
+def scan_face_adaptive(args):
+    name, z, J, K, c, Teff, nK, nJ, start, max_depth, fixed, sign = args
+    P = PROBLEMS[name](); n = P['n']; m = n - 1; lip = P['lip']
+    kD = hi(I(2) * I(lip) + I(nJ))
+    edges = [(-c + 2 * c * i / start) if i < start else c for i in range(start + 1)]
+    stack = []
+    def initial(prefix):
+        if len(prefix) == m:
+            stack.append(([edges[i] for i in prefix], [edges[i + 1] for i in prefix], 0)); return
+        for i in range(start): initial(prefix + [i])
+    initial([])
+    cells = failed = deepest = 0; slackG = slackD = math.inf
+    while stack:
+        clo, chi, depth = stack.pop(); cells += 1
+        y = []; hw = 0.0; f = 0
+        for d in range(n):
+            if d == fixed: y.append(sign * c); continue
+            mid = (clo[f] + chi[f]) / 2; y.append(mid)
+            hw = max(hw, hi(I(chi[f]) - I(mid)), hi(I(mid) - I(clo[f]))); f += 1
+        ps = [z[r] + sum(K[r][k] * y[k] for k in range(n)) for r in range(n)]
+        fl = 0.0
+        for r in range(n):
+            ex = I(z[r]) + sum((I(K[r][k]) * I(y[k]) for k in range(n)), I(0))
+            fl = max(fl, max(hi(ex) - ps[r], ps[r] - lo(ex)))
+        g = P['G'](ps); h = 0.0; gl = 0.0
+        for r in range(n):
+            L = sum((I(J[r][k]) * (I(ps[k]) - I(z[k])) for k in range(n)), I(0))
+            h = max(h, mag(g[r] - L)); gl = max(gl, mig(g[r]))
+        rad = hi(I(nK) * I(hw) + I(fl))
+        sG = lo(I(gl) - I(lip) * I(rad) - I(Teff)); sD = lo(I(gl) - I(h) - I(kD) * I(rad))
+        if sG > 0 and sD > 0:
+            slackG = min(slackG, sG); slackD = min(slackD, sD); deepest = max(deepest, depth)
+        elif depth < max_depth:
+            for mask in range(1 << m):
+                lo_, hi_ = [], []
+                for f in range(m):
+                    mid = (clo[f] + chi[f]) / 2
+                    if (mask >> f) & 1: lo_.append(mid); hi_.append(chi[f])
+                    else: lo_.append(clo[f]); hi_.append(mid)
+                stack.append((lo_, hi_, depth + 1))
+        else:
+            failed += 1
+    return dict(cells=cells, failed=failed, deepest=deepest, slackG=slackG, slackD=slackD)
+
+def certify_adaptive(name, z, J, K, c, Teff, start=8, max_depth=12):
+    n = len(z); Ji = [[I(x) for x in row] for row in J]; Ki = [[I(x) for x in row] for row in K]
+    JK = [[sum((Ji[i][k] * Ki[k][j] for k in range(n)), I(0)) for j in range(n)] for i in range(n)]
+    e = norm_inf([[JK[i][j] - I(1 if i == j else 0) for j in range(n)] for i in range(n)])
+    cEff = lo(I(c) * (I(1) - I(e))); dJ = det(Ji); degree = 1 if lo(dJ) > 0 else -1 if hi(dJ) < 0 else 0
+    nK = norm_inf(Ki); nJ = norm_inf(Ji)
+    faces = [(name, z, J, K, c, Teff, nK, nJ, start, max_depth, f, s) for f in range(n) for s in (-1, 1)]
+    t0 = time.time()
+    with Pool(min(len(faces), os.cpu_count() or 1)) as pool: res = pool.map(scan_face_adaptive, faces)
+    failed = sum(r['failed'] for r in res)
+    return dict(ok=degree != 0 and cEff > 0 and failed == 0, degree=degree, cells=sum(r['cells'] for r in res), failed=failed,
+                deepest=max(r['deepest'] for r in res), slackG=min(r['slackG'] for r in res), slackD=min(r['slackD'] for r in res),
+                seconds=time.time() - t0)
+
 def norm_inf(M): return max(sum(mag(x) for x in row) for row in M)
 
 def det(M):
@@ -193,11 +255,14 @@ def main():
         all_ok &= r['ok']
     if 'tetra' in which:
         d = json.load(open(os.path.join(ROOT, 'data', 'certificate-tetrahedron.json')))['certificate']
-        T = 0.06; c = 0.14; N = 50
-        r = certify('tetra', d['zero'], d['J'], d['K'], c, N, hi(iv.mpf(6) / 100))
+        T = 0.13; c = d['c']
+        r = certify_adaptive('tetra', d['zero'], d['J'], d['K'], c, hi(iv.mpf(13) / 100))
         smin = min(lo(I(d['zero'][3]) + sum((I(d['K'][3][k]) * I(c if (m >> k) & 1 else -c) for k in range(4)), I(0))) for m in range(16))
         r['ok'] = r['ok'] and smin > 0
-        report(f'Theorem 7 (tetrahedron, T = {T}, box c = {c}, {N}³ grid per face)', r); print(f'  circumradius ≥ {smin:.4f}')
+        print(f"Theorem 7 (tetrahedron, T = {T}, box c = {c}, adaptive cells): {'VALID' if r['ok'] else 'FAILED'}")
+        print(f"  degree {r['degree']}, {r['cells']:,} cells checked (deepest split level {r['deepest']}), {r['failed']} failed, {r['seconds']:.0f} s")
+        print(f"  on every cell: |G| − (change across the cell) − T ≥ {r['slackG']:.2e}; degree condition slack {r['slackD']:.2e}")
+        print(f'  circumradius ≥ {smin:.4f}')
         all_ok &= r['ok']
     sys.exit(0 if all_ok else 1)
 
