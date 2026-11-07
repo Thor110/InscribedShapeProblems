@@ -6,7 +6,7 @@
 
 We study four inscribed-shape problems: an equilateral triangle or a square in a Jordan curve, and a regular tetrahedron or a cube in a Jordan surface. We place them in families that continue to every dimension, and record seven results.
 
-1. **No cubes in general.** A transversality argument shows that a generic smooth closed hypersurface in $\mathbb{R}^n$ contains no inscribed copy of any polytope with more vertices than the dimension $n(n+1)/2 + 1$ of the similarity group. In particular a generic smooth, strictly convex surface in $\mathbb{R}^3$ contains no inscribed cube (Theorem 1).
+1. **No cubes in general.** A transversality argument shows that a generic smooth closed hypersurface in $\mathbb{R}^n$ contains no inscribed copy of any polytope with more vertices than the dimension $n(n+1)/2 + 1$ of the similarity group. In particular a generic smooth, strictly convex surface in $\mathbb{R}^3$ contains no inscribed cube (Theorem 1). A computer-assisted proof gives an explicit one: a cubic "egg" with rational coefficients and no inscribed cube (Theorem 1.3).
 2. **Simplices in convex bodies.** An elementary "centring jig" argument shows that every convex body in $\mathbb{R}^n$ contains an inscribed regular simplex in every orientation that is *admissible* for it, and in every orientation when its boundary is $C^1$ (Theorems 2 and 3). For smooth bodies this is a special case of Gromov's theorem, but the proof uses only Brouwer's fixed-point theorem.
 3. **Admissibility is needed.** Bodies with sharp corners can lose orientations: an isosceles triangle with apex below $60°$ has no inscribed equilateral triangle pointing at its apex (Proposition 5).
 4. **A limit criterion for squares.** Non-shrinking squares on approximations give a square on the limit (Lemma 4).
@@ -60,7 +60,15 @@ Openness of convexity and of the radial-graph condition near $f_0 = |x|^2 - 1$ t
 
 > **Corollary 1.1.** There are smooth, strictly convex surfaces in $\mathbb{R}^3$, arbitrarily $C^\infty$-close to the round sphere, with no inscribed cube.
 
-Numerically, on a strictly convex "lopsided egg" with no symmetry, two independent solvers find no cube closer than 1.5–2.8% of its size, while symmetric surfaces have cubes, as Hausel–Makai–Szűcs predict. Symmetric surfaces form a meagre set, so this does not conflict with Theorem 1.
+Symmetric surfaces have cubes, as Hausel–Makai–Szűcs predict, but they form a meagre set, so this does not conflict with Theorem 1. Theorem 1 does not name a surface. One can be named and checked:
+
+> **Theorem 1.3.** The surface $x^2 + \tfrac{16}{25}y^2 + \tfrac{400}{289}z^2 + \tfrac{3}{20}(\tfrac12x^3 + xyz + \tfrac{7}{10}y^2z + \tfrac{3}{10}z^3) = 1$ (inside $|p| \le \tfrac32$) is a smooth, strictly convex sphere with no inscribed cube.
+
+The proof is computer-assisted, in interval arithmetic.
+- First, the surface is checked to be a strictly convex sphere, with $|\nabla F| \ge 1.56$ and Hessian norm at most $3.40$.
+- Taylor's theorem then shows that a cube with all its vertices on it would be nearly flat unless its edge is at least $0.153$.
+- A branch-and-bound search over centre, size and orientation, with the orientations reduced by the cube's 24 rotations, excludes every other cube: 63 million boxes, under a minute.
+- An independent re-implementation with Arb's ball arithmetic agrees. In a control run on the ellipsoid (asymmetry 0), the search correctly finds that surface's cube.
 
 ## 3. Simplices in convex bodies: the centring jig
 
@@ -193,7 +201,7 @@ Signed counts vanish, because a square's two diagonals carry opposite signs. Cou
 | Rectangle of every aspect ratio in every Jordan curve | open; smooth case solved |
 | Regular simplex in every Jordan sphere | open; $C^1$ case solved (Gromov); convex case in admissible orientations, and a neighbourhood of one ellipsoid, in every orientation within 0.02 (Thm 7, Cor 7.3), here |
 | Cross-polytope in every (smooth convex) sphere | open in general |
-| Cube in every Jordan surface | false (Theorem 1); true for centrally symmetric convex bodies |
+| Cube in every Jordan surface | false (Theorem 1), with an explicit egg (Thm 1.3); true for centrally symmetric convex bodies |
 
 Two directions follow from this work:
 - **Larger certified neighbourhoods.** Theorems 6–7 could start from other smooth base curves and surfaces, use several boxes, or replace the linearisation by a higher-order model.

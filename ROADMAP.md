@@ -4,34 +4,24 @@ Notes on work planned or considered but not yet done, so it can be picked up lat
 
 ## Where things stand
 
-- **Classical proofs** (PROOFS.md): Theorem 1 (no cube in a generic surface), Theorems 2–3 (regular simplices in convex bodies), Proposition 5, Lemma 4.
+- **Classical proofs** (PROOFS.md): Theorem 1 (no cube in a generic surface; Theorem 1.3, computer-assisted, names an explicit egg with none), Theorems 2–3 (regular simplices in convex bodies), Proposition 5, Lemma 4.
 - **Computer-assisted proofs** in interval arithmetic: Theorem 6 (squares in every curve within 0.15 of an ellipse) and Theorem 7 (tetrahedra in every surface within 0.13 of an ellipsoid, plus a range of orientations). Each is confirmed by three independent implementations: JavaScript, Python/mpmath and C/Arb. Corollary 7.3: every orientation within 0.02, by 10,544 certificates; the covering is re-checked exactly and a sample of 100 in Arb.
 - **Machine-checked proofs** in Lean 4: all nine odd perfect number results (at least three primes, Euler's form, steps of 6, forced steps, the spine rule, odd σ(N), "9 or 12k + 1").
 - **Numerical studies:** shrinkage, rectangle sweep, parity counts, and nearest misses to perfection up to $10^{11}$.
 
 None of this settles an open problem. What it provides is proved constraints, wider proved special cases, and evidence that others can check cheaply.
 
-## Next: an explicit egg with no inscribed cube
+## Done: an explicit egg with no inscribed cube
 
-**Aim.** Prove, by computer, that one explicit smooth strictly convex surface has **no** inscribed cube: the repository's lopsided egg
-$$F(x, y, z) = x^2 + \frac{y^2}{1.25^2} + \frac{z^2}{0.85^2} + 0.15\,(0.5x^3 + xyz + 0.7y^2z + 0.3z^3) - 1 = 0$$
-(`pages/surfaces3d.js`). Its best numerical cube misses the surface by 2.8% of its size.
+**Proved (7 November 2026): PROOFS.md, Theorem 1.3.** The repository's lopsided egg has no inscribed cube.
+- `tools/egg-cube.c` proves it in under a minute. Its three parts are the surface's shape, a small-cube lemma (edge at least 0.153), and a 7-dimensional branch and bound over 63 million boxes.
+- `tools/egg-cube-arb.c` re-checks it independently with Arb's ball arithmetic: 367 million boxes, about 10 minutes.
+- Both pass a control: on the ellipsoid, which has a cube, they find it.
 
-**Why it matters.** Theorem 1 already proves that the cube analogue of the square peg problem is false: a generic smooth strictly convex surface has no inscribed cube. That proof is non-constructive. It uses transversality theory to show that such surfaces exist, and are in fact typical, but it never names one. A named surface with a computer-checked proof would be a concrete counterexample that anyone can check by running a program, without trusting the transversality argument. It would also stand on its own if Theorem 1 turned out to be known, since we have found no explicit counterexample in the literature either. It says nothing about squares or tetrahedra, which are different problems.
-
-**Steps.**
-1. **The surface is what it should be.** Check in interval arithmetic that:
-   - $x \cdot \nabla F > 0$ on the surface, so it is a smooth sphere, star-shaped about the origin;
-   - the Hessian of $F$ is positive definite on the body, so it is strictly convex (the README's check is numerical);
-   - its normal curvature is at most an explicit $k_{\max}$.
-2. **No small cubes (a pen-and-paper lemma).** By Blaschke's rolling theorem, the body contains a ball of radius $1/k_{\max}$ touching each boundary point. So within distance $d$ of a point of the surface, the surface lies within about $k_{\max} d^2/2$ of the tangent plane. All 8 vertices of a cube of edge $a$ lie within $\sqrt3\,a$ of one vertex, so they lie in a slab of thickness about $\tfrac32 k_{\max} a^2$. But a cube is at least $a$ wide in every direction, so $a \ge 2/(3k_{\max})$. Large cubes are excluded because all 8 vertices lie inside the body's bounding box.
-3. **Few orientations.** The cube's 24 rotational symmetries are the 48 units of the binary octahedral group. As in Corollary 7.3, every rotation is equivalent to one whose Cayley vector satisfies $|a|, |b|, |c| \le \sqrt2 - 1$ and $|a| + |b| + |c| \le 1$ (a truncated cube; the cube has twice as many symmetries, so this is half as many rotations as for the tetrahedron).
-4. **Exclusion by branch and bound.** Search over boxes of (centre, edge, orientation), 7 dimensions in all. In each box, enclose $F$ at the 8 vertices, using a first-order (mean-value) form so the enclosures shrink quickly. If some vertex's enclosure excludes 0, the box contains no cube; otherwise split it. The theorem is proved when every box is excluded.
-   - A likely large saving: for a fixed rotation and size, each vertex condition confines the centre to a thin shell, a translate of the surface. A box of (rotation, size) is excluded when the eight shells have no common point. That turns the search into 4 dimensions with a cheap 3D test inside.
-5. **Feasibility first.** Before the full run, measure the exclusion rate on a slice, to estimate the number of boxes and the running time. The 2.8% miss sets how fine the boxes must get, and the count could be anywhere from about $10^6$ to $10^{10}$. If it is too large, use a larger asymmetry $\varepsilon$, since the miss grows in proportion (about $0.16\,\varepsilon$), or a surface designed to miss by more.
-6. **Independent check and write-up.** Re-check in C with Arb (complete, or a large random sample of boxes, as for Corollary 7.3). Write it up in PROOFS.md as an example after Theorem 1, together with the small-cube lemma.
-
-**Size:** medium to large. The mathematics is short. The risk is in step 5: the size of a 7-dimensional search.
+The search turned out far cheaper than feared, because most boxes are ruled out by one vertex almost at once. Possible follow-ups:
+- **A flatter egg.** Asymmetry $\tfrac1{50}$ also passes in about half a minute. How small can the asymmetry go? As it tends to 0 the surface tends to an ellipsoid, which has cubes, so the cost must grow somewhere. Mapping that would show how robust the non-existence is. *Small.*
+- **Other shapes.** The same program works for any polytope with more vertices than the similarity group has dimensions. Candidates are a regular pentagon on an explicit curve (2D, a warm-up), the regular icosahedron or dodecahedron on the egg, and a 4D hypercube on a 4D egg. *Small to medium each.*
+- **Exact arithmetic for the surface checks.** Part 1 could be redone in exact rational arithmetic as a further independent check, for example in Python. *Small.*
 
 ## Next phase (plan of 7 November 2026)
 

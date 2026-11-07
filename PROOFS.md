@@ -2,7 +2,7 @@
 
 This document contains the following results, written to be checked line by line:
 
-1. **Theorem 1 (a disproof).** If a polytope has more vertices than the dimension of the similarity group, a *generic* smooth closed hypersurface contains no inscribed copy of it. In particular the inscribed-cube conjecture is false, even for smooth strictly convex surfaces.
+1. **Theorem 1 (a disproof).** If a polytope has more vertices than the dimension of the similarity group, a *generic* smooth closed hypersurface contains no inscribed copy of it. In particular the inscribed-cube conjecture is false, even for smooth strictly convex surfaces. **Theorem 1.3** gives an explicit one: a computer-assisted proof that a specific egg-shaped surface has no inscribed cube.
 2. **Theorem 2 (the centring jig, made rigorous).** Every smooth, strictly convex body in $\mathbb{R}^n$ contains an inscribed regular simplex in **every** orientation (more generally, any simplex whose circumcentre lies inside it). The proof is the skeletal-jig argument: the "rattle" is a vector field, and its zero is the inscribed simplex.
 3. **Theorem 3 (every convex body).** The same holds for *any* convex body, in every orientation that is **admissible** for it. Every orientation is admissible for a body with a $C^1$ boundary, so Theorem 2 holds without strict convexity. **Proposition 5** shows admissibility cannot be dropped: a thin enough triangle has no inscribed equilateral triangle in some orientations.
 4. **Lemma 4 (a route to the open case).** If ever-finer approximations of a curve each contain an inscribed square that cannot be arbitrarily small, the limiting curve contains one. This is the hypothesis that the shrinkage studies test.
@@ -74,8 +74,34 @@ $$\operatorname{codim} W = nm + m - D(n).$$
 
 **Corollary 1.2.** By the same argument, generic smooth Jordan curves contain no inscribed regular $k$-gon for $k \ge 5$ ($k > D(2) = 4$). Generic smooth closed hypersurfaces in $\mathbb{R}^n$, $n \ge 3$, contain no inscribed hypercube ($2^n > D(n)$). And generic smooth closed surfaces in $\mathbb{R}^3$ contain no inscribed icosahedron or dodecahedron.
 
+**Theorem 1.3 (an explicit egg with no inscribed cube).** Let
+$$F(x, y, z) = x^2 + \tfrac{16}{25}y^2 + \tfrac{400}{289}z^2 + \tfrac{3}{20}\big(\tfrac12x^3 + xyz + \tfrac{7}{10}y^2z + \tfrac{3}{10}z^3\big) - 1$$
+and $S = \{p : |p| \le \tfrac32,\ F(p) = 0\}$, the repository's *lopsided egg* (semi-axes about $1$, $\tfrac54$, $\tfrac{17}{20}$, with no symmetry). Then $S$ is a smooth sphere bounding a strictly convex body, and no cube has all eight vertices on $S$.
+
+So the cube analogue of the square peg problem fails for an explicit, smooth, strictly convex surface, and not only for unnamed generic ones.
+
+*Proof.* Computer-assisted, in three parts (`tools/egg-cube.c`; parts 1–2 take about a second, part 3 about 40 seconds on 4 cores). All bounds use interval arithmetic with outward rounding.
+
+- **Part 1: the surface.** $[-\tfrac32, \tfrac32]^3$ is split into boxes. On every box that meets the sphere $|p| = \tfrac32$, $F > 0$. On every box inside the ball where $F$ may vanish, $p \cdot \nabla F > 0$.
+  - Along each ray from the origin, $F$ starts at $F(0) = -1$, ends positive, and crosses zero only upwards, so it vanishes exactly once. Hence $S$ is a star-shaped sphere, smooth because $\nabla F \neq 0$ on it.
+  - The same boxes give $0.8329 \le |p| \le 1.2630$ and $|\nabla F| \ge g = 1.5612$ on $S$, and a bounding box for $S$.
+  - The Hessian of $F$ is positive definite on the ball $|p| \le 1.2630$ (all leading minors positive on boxes covering it). So $F$ is strictly convex there, the body $\{F \le 0\}$ inside that ball is strictly convex, and $S$, its boundary, has positive curvature. The Hessian's norm there is at most $M = 3.3939$.
+- **Part 2: no small cubes.** Let a cube of edge $a$ have its vertices $v_0, \dots, v_7$ on $S$, and let $n = \nabla F(v_0)/|\nabla F(v_0)|$.
+  - Each segment $v_0v_i$ lies in the ball, so by Taylor's theorem $0 = F(v_i) - F(v_0) = \nabla F(v_0)\cdot d + \tfrac12 d^{\mathsf T} H d$ with $d = v_i - v_0$. Hence $|n \cdot d| \le M|d|^2/(2g) \le 3Ma^2/(2g)$, using $|d| \le \sqrt3\,a$.
+  - So all eight vertices lie in a slab of thickness $3Ma^2/g$. A cube is at least $a$ wide in every direction, so $a \le 3Ma^2/g$, and $a \ge g/(3M) = 0.1533$.
+  - At the other end, the cube's diameter $2\sqrt3\,s$ (with $s = a/2$) is at most $S$'s diameter, and its centre, the average of its vertices, lies in $S$'s bounding box.
+- **Part 3: no other cubes.** Write a cube as centre $c$, half-edge $s \in [0.0767, 0.7292]$ and rotation $R(q)$.
+  - **Orientations.** The cube's 24 rotations are the 48 units of the binary octahedral group: $\pm1, \pm i, \pm j, \pm k$, $\tfrac12(\pm1 \pm i \pm j \pm k)$, and $(\pm a \pm b)/\sqrt2$ for distinct $a, b \in \{1, i, j, k\}$. As in Corollary 7.3, every rotation is equivalent to one closest to 1 among these units. Its Cayley vector satisfies $|q_i| \le \sqrt2 - 1$ (from $(1 \pm i)/\sqrt2$ and the like) and $|q_1| + |q_2| + |q_3| \le 1$ (from the Hurwitz units).
+  - **The search.** The 7-dimensional region of $(c, s, q)$ is searched by branch and bound. A box is excluded if, for some vertex $c + sR(q)e$, $|F| > G\rho$ at the box's centre. Here $\rho = |\Delta c| + \sqrt3\,|\Delta s| + 2\sqrt3\,s_{\max}|\Delta q|$ bounds how far that vertex moves across the box (as in Corollary 7.3), and $G$ bounds $|\nabla F|$ within $\rho$ of it. Otherwise the box is split.
+  - **Result.** All 63,130,228 boxes are excluded, and none is split more than 37 times. $\blacksquare$
+
+**Checks.**
+- **Control.** With the asymmetry set to 0 (`-DE_NUM=0`), the surface is an ellipsoid. That is centrally symmetric, so it has inscribed cubes (Hausel–Makai–Szűcs). The search then fails exactly where it should: around the cube with centre 0 and half-edge $1/\sqrt{1 + 16/25 + 400/289} = 0.57505$. So the program finds cubes when they exist.
+- **Independent check** (`tools/egg-cube-arb.c`, about 10 minutes). A second program, in C with Arb's ball arithmetic, shares no code with the first. It bounds boxes differently: it evaluates the vertices and $F$ directly on balls of parameters, instead of using a Lipschitz bound. It redoes all three parts: 367 million boxes, all excluded. Its own control (`./egg-cube-arb control`) finds the ellipsoid's cube.
+- **Margin.** The method has room to spare. With the asymmetry $\tfrac{3}{20}$ reduced to $\tfrac1{20}$ or $\tfrac1{50}$, the proof still goes through in about half a minute.
+
 **Remarks.**
-- The theorem is non-constructive: it shows counterexamples are everywhere, not where. The repository's *lopsided egg* (strictly convex, checked numerically in 2–6 dimensions) is a concrete candidate. Two independent solvers find no cube on it closer than 1.5–2.8% (relative to its size).
+- Theorem 1 is non-constructive: it shows that counterexamples are everywhere, but not where. Theorem 1.3 gives one explicitly. Before it was proved, two independent solvers found no cube on the egg closer than 1.5–2.8% of its size.
 - **Symmetry is not generic.** A centrally symmetric surface has inscribed cubes (Hausel–Makai–Szűcs 2000), and so, numerically, do mirror-symmetric ones. Symmetric surfaces form a small (meagre) set, so this does not contradict Theorem 1.
 - Theorem 1 says nothing about shapes with $m \le D(n)$. For those, the count only says solutions are *expected*; existence needs a separate argument, such as Theorem 2.
 
@@ -337,7 +363,7 @@ Why only $T = 0.02$? Turning within a cube costs $2\sqrt3\,h\,s_{\max} \approx 0
 | Rectangle of every aspect ratio in every continuous Jordan curve | **Open.** Proved for smooth curves (Greene–Lobb) and extended to rectifiable curves; *some* rectangle always exists (Vaughan) |
 | Regular tetrahedron / simplex in every continuous Jordan sphere | **Open.** Proved for $C^1$ spheres in every pose (Gromov 1969); Theorems 2–3 give elementary proofs for every $C^1$ convex body and, in admissible orientations, every convex body. Theorem 7 certifies every surface within 0.13 of one ellipsoid, and Corollary 7.3 every orientation for every surface within 0.02. "Every pose" fails for non-smooth bodies (Proposition 5) |
 | Regular octahedron / cross-polytope | **Open.** Proved for smooth convex bodies in $\mathbb{R}^3$ (Makeev 2001) and in $\mathbb{R}^n$ for $n$ an odd prime power (Karasev 2009) |
-| Cube / hypercube ($n \ge 3$) | **False in general** (Theorem 1). True for centrally symmetric convex bodies in $\mathbb{R}^3$ (Hausel–Makai–Szűcs 2000) |
+| Cube / hypercube ($n \ge 3$) | **False in general** (Theorem 1), with an explicit strictly convex surface that has no inscribed cube (Theorem 1.3). True for centrally symmetric convex bodies in $\mathbb{R}^3$ (Hausel–Makai–Szűcs 2000) |
 
 ## References
 

@@ -51,7 +51,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | Square | Regular pentagon, hexagon, … | 2 | 5, 6, … | < 0 | Known to fail in general (e.g. ellipses) | Theorem 1 (generic) | ✅ only on curves with matching symmetry |
 | Square | Regular octahedron | 3 | 6 | 1 | **Open.** Proved for smooth convex bodies (Makeev 2001) | — | ✅ every surface tested |
 | Square | Cross-polytope (16-cell, …) | 4, 5 | 8, 10 | 3, 6 | **Open.** Proved for smooth convex bodies when $n$ is an odd prime power (Karasev 2009) | — | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
-| **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1) | ❌ except on symmetric surfaces |
+| **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1), and proved false for one explicit smooth strictly convex egg (Theorem 1.3, computer-assisted) | ❌ except on symmetric surfaces |
 | Cube | Hypercube | 4, 5 | 16, 32 | −5, −16 | — | **False in general** (Theorem 1) | ✅ only on the sphere and ellipsoid; ❌ elsewhere (closest misses 0.6–9%) |
 | Cube | Icosahedron, dodecahedron | 3 | 12, 20 | −5, −13 | — | **False in general** (Theorem 1) | not tested |
 | **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.13 of one ellipsoid, rough ones included, with an open set of orientations, and every orientation within 0.02 (Theorem 7 and Corollary 7.3, computer-assisted, interval arithmetic) | ✅ every surface tested, at any rotation |
@@ -63,7 +63,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
    - **Theorem 2:** every smooth strictly convex body, in every orientation and every dimension.
    - **Theorem 3:** every convex body, in every *admissible* orientation (one where, from every boundary point, some arm of the jig points strictly into the body). This includes every orientation for any convex body with a smooth boundary, flat pieces allowed.
    - **Proposition 5:** for non-smooth bodies "every orientation" can genuinely fail. A triangle with an apex sharper than 60° has no inscribed equilateral triangle pointing at its apex, and the 60° bound is sharp (`node tests/check-orientations.js`).
-3. **Cube:** settled in the negative for general surfaces ([PROOFS.md](PROOFS.md), Theorem 1): a cube has 7 degrees of freedom but 8 vertex conditions, so generic surfaces have none. The same holds for every hypercube in dimension ≥ 3.
+3. **Cube:** settled in the negative for general surfaces ([PROOFS.md](PROOFS.md), Theorem 1): a cube has 7 degrees of freedom but 8 vertex conditions, so generic surfaces have none. The same holds for every hypercube in dimension ≥ 3. **Theorem 1.3** makes this concrete: a computer-assisted proof that one explicit smooth, strictly convex egg has no inscribed cube at all.
 
 <details><summary>Full n-dimensional results (seed 1; ✅ verified with its error, ❌ closest miss)</summary>
 
@@ -256,7 +256,7 @@ A summary of where each part of the project stands, combining the literature wit
 | **Rectangles of a given aspect ratio** | Verified on all 16 curves at aspect 2 and on 6 curves at aspect 4 | The 90° swap does not apply (the chords never trade places), so the IVT step gives nothing. Proved for smooth curves (Greene–Lobb 2021); open for continuous curves |
 | **Triangles of any shape** | Verified on all 16 curves, including an obtuse 20°/30°/130° triangle | Known theorem (Nielsen 1992) |
 | **Regular octahedron** | Verified on all 11 surfaces | 1-parameter family expected; related results by Makeev |
-| **Cube** | Verified only on surfaces with central or mirror symmetry; elsewhere the closest cube misses by 5e-5 to 5e-2 | **Disproved** for generic surfaces ([PROOFS.md](PROOFS.md), Theorem 1); true for centrally symmetric convex bodies (Hausel–Makai–Szűcs) |
+| **Cube** | Verified only on surfaces with central or mirror symmetry; elsewhere the closest cube misses by 5e-5 to 5e-2 | **Disproved** for generic surfaces ([PROOFS.md](PROOFS.md), Theorem 1), and for one explicit egg (Theorem 1.3); true for centrally symmetric convex bodies (Hausel–Makai–Szűcs) |
 | **Regular pentagon / hexagon** (controls) | Verified only on the circle and on curves with 5-fold (pentagon) or 3- or 6-fold (hexagon) symmetry | Known to fail in general: a non-circular ellipse has no inscribed regular pentagon, because five points determine a conic |
 | Expansion paradox | — | Does not hold as stated (see caveat in that section) |
 | Odd perfect number heuristic | — | The claim (odd divisors never arrive exactly at $N$) is the open conjecture. The size-based reasoning for it fails, since odd abundant numbers such as 945 pass $N$. The binary-spine intuition is made exact, with provable results: at least 3 distinct primes, Euler's form ([Odd Perfect Numbers](#odd-perfect-numbers)) |
@@ -363,6 +363,22 @@ Define a 3D "Skeletal Jig" representing the four internal diagonals of a cube. T
 ![Inscribed Cube Spacefinder Demo](images/cube_demonstration.gif)
 
 The Inscribed Cube Viewfinder on the lopsided egg (strictly convex, no symmetry): 120 starts, and the closest cube still misses the surface by 1.5% of its size, as Theorem 1 predicts.
+
+**Proved: the egg has no inscribed cube** ([PROOFS.md, Theorem 1.3](PROOFS.md#theorem-1--generic-non-existence)). Not finding a cube is not a proof, so the egg was settled rigorously, in three parts, all in interval arithmetic:
+1. **The shape.** The egg's equation, which has exact rational coefficients, is checked to describe one smooth, strictly convex closed surface.
+2. **Small cubes.** A short argument with the egg's curvature shows that a cube with all 8 vertices on it would need an edge of at least 0.15.
+3. **The rest.** Every remaining cube is ruled out by a search over all positions, sizes and orientations: 63 million boxes, about 40 seconds, each shown to have a vertex that cannot touch the egg.
+
+Two checks guard against a program that "excludes" everything by mistake:
+- **A control.** With the egg's asymmetry set to zero it becomes an ellipsoid, which does have a cube, and the search finds exactly that cube.
+- **An independent re-check.** A second program, in C with Arb's ball arithmetic, shares no code with the first and bounds the boxes differently. It reaches the same result: 367 million boxes, about 10 minutes.
+
+```bash
+gcc -O2 -fopenmp -ffp-contract=off -o egg-cube tools/egg-cube.c -lm
+./egg-cube surface && ./egg-cube search                     # the proof, under a minute
+gcc -O2 -fopenmp -o egg-cube-arb tools/egg-cube-arb.c -lflint -lm
+./egg-cube-arb && ./egg-cube-arb control                    # the independent check, about 10 minutes
+```
 
 ![Inscribed Cube Viewfinder Demo](images/cube_viewfinder_demo.gif)
 
