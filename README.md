@@ -54,7 +54,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1) | ❌ except on symmetric surfaces |
 | Cube | Hypercube | 4, 5 | 16, 32 | −5, −16 | — | **False in general** (Theorem 1) | ✅ only on the sphere and ellipsoid; ❌ elsewhere (closest misses 0.6–9%) |
 | Cube | Icosahedron, dodecahedron | 3 | 12, 20 | −5, −13 | — | **False in general** (Theorem 1) | not tested |
-| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.13 of one ellipsoid, rough ones included, with an open set of orientations (Theorem 7, computer-assisted, interval arithmetic) | ✅ every surface tested, at any rotation |
+| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.13 of one ellipsoid, rough ones included, with an open set of orientations, and every orientation within 0.02 (Theorem 7 and Corollary 7.3, computer-assisted, interval arithmetic) | ✅ every surface tested, at any rotation |
 | Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorems 2–3 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
 
 **Where the three open problems stand.**
@@ -174,8 +174,16 @@ The test works in any dimension. On the boundary of a box around the ellipsoid's
 
 Turning the tetrahedron by a small angle acts like one more small perturbation, so the same certificate covers a whole range of orientations. For every surface within 0.06 of the ellipsoid there is a tetrahedron in **every** orientation within 4.16° of the given one (7.5° for the ellipsoid itself).
 
+**Every orientation** ([PROOFS.md, Corollary 7.3](PROOFS.md#theorem-7--the-same-for-tetrahedra-on-rough-surfaces)). Every surface within 0.02 of the ellipsoid has an inscribed regular tetrahedron in **every** orientation. That is the analogue, for these rough surfaces, of Gromov's "every pose" theorem for smooth ones. The proof uses the following facts:
+- The tetrahedron's 12 symmetries cut the space of rotations down to one octahedron of Cayley vectors.
+- That octahedron is covered by 10,544 small cubes of orientations.
+- Each cube gets its own certificate, with the turning inside it counted as one more perturbation.
+
+All 10,544 pass: 8.26 billion cells, 108 minutes on 4 cores. The covering is re-checked in exact rational arithmetic in Python. A random sample of 100 cubes is re-checked from scratch in C with Arb.
+
 ```bash
-node tools/certify-tetra.js      # seconds for the theorem, about a minute with the orientation table
+node tools/certify-tetra.js          # seconds for the theorem, about a minute with the orientation table
+node tools/certify-orientations.js   # every orientation: about 2 hours on 4 cores, resumable
 ```
 
 **Checked three times, independently.** Two further programs redo both certificates from scratch, each sharing only the box definitions:
@@ -189,6 +197,8 @@ pip install mpmath
 python3 tools/verify_certificates.py   # about 8 minutes on 4 cores
 sudo apt install libflint-dev          # FLINT 3, which includes Arb
 gcc -O2 -fopenmp -o verify tools/verify-certificates.c -lflint -lm && ./verify   # about 4 seconds
+python3 tools/verify_certificates.py orientations   # Corollary 7.3: the covering, in exact arithmetic
+./verify orientations                # Corollary 7.3: a random sample of 100 cubes in Arb, about 4 minutes
 ```
 
 ## Preprint
@@ -538,19 +548,21 @@ This reframes the question. A miss of 0 needs $D(N) = 2N$, which means every pri
 
 This is a measurement, not a proof. The known bound $N > 10^{1500}$ for an odd perfect number is far beyond any search. What it shows is the shape of the problem: even numbers land on the mark whenever the spine meets a Mersenne prime, while odd numbers come ever closer in relative terms but, in the range searched, miss by whole steps. Raw data are in `data/nearest-misses.json`, and the viewer's fourth panel shows the chart and the decade-by-decade results.
 
-**Machine-checked in Lean.** [`lean/PerfectNumbers.lean`](lean/PerfectNumbers.lean) proves the main results of this section in Lean 4 with the Mathlib library, so every step is checked by computer:
+**Machine-checked in Lean.** [`lean/PerfectNumbers.lean`](lean/PerfectNumbers.lean) proves all nine results of this section in Lean 4 with the Mathlib library, so every step is checked by computer:
 
 | In the file | Result |
 |---|---|
 | `geom_mod_two`, `geom_one`, `geom_neg_one`, `geom_euler` | The rules for one prime power: $\sigma(p^a) = 1 + p + \dots + p^a$ mod 2, mod $r$ when $p \equiv \pm 1$, and Euler's mod-4 step |
 | `sigma_pow_dvd` | Each prime-power factor $\sigma(p^a)$ divides $\sigma(N)$ |
+| `three_primes` | Result 1: an odd perfect number has at least three distinct prime factors (via $\sigma(N)\prod(p-1) \le N\prod p$) |
 | `euler_form` | Result 2, Euler's form: an odd perfect number has exactly one prime $p$ to an odd power $a$, with $p \equiv a \equiv 1 \pmod 4$ |
 | `steps_of_six` | Result 3, steps of 6 (with "not a square" stated as "some prime to an odd power", which is the same thing) |
-| `spine_miss`, `perfect_mul_prime` | Results 4 and 6: the spine rule, and perfect times a prime |
+| `spine_miss`, `spine`, `perfect_mul_prime` | Results 4, 5 and 6: the spine rule, the spine on its own ($\sigma(2^k) + 1 = 2^{k+1}$), and perfect times a prime |
+| `sigma_odd_iff` | Result 7: $\sigma(N)$ is odd exactly when every odd prime divides $N$ to an even power, that is, when $N$ is a square or twice a square |
 | `nine_or_twelve` | Result 8: an odd perfect number is divisible by 9, or its special prime is $1 \bmod 12$ |
 | `forced_step`, `forced_step_le` | Result 9: $\gcd(\sigma(N), 2N)$ divides the miss, so a nonzero miss is at least that big |
 
-Lean reports that each theorem uses only its three standard axioms and nothing is left unproved. Results 1, 5 and 7 are not formalised yet; they are short and would follow the same pattern.
+Lean reports that each theorem uses only its three standard axioms and nothing is left unproved.
 
 ```bash
 cd lean

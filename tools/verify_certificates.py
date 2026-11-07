@@ -11,6 +11,7 @@ J, K, and their accuracy affects only the margin.
     pip install mpmath
     python3 tools/verify_certificates.py            # square (T = 0.15) and tetrahedron (T = 0.13)
     python3 tools/verify_certificates.py square     # one of them
+    python3 tools/verify_certificates.py orientations   # Corollary 7.3: the covering, exactly
 
 The square check is the full Theorem 6 (80,000 boundary samples, seconds). The
 tetrahedron check is the full Theorem 7, using adaptive cells as the JavaScript does
@@ -235,6 +236,42 @@ def report(title, r):
     print(f"  min |G| on the box edge {r['minG']:.4f} → {r['minGBoundary']:.4f} after the change between samples; perturbation {r['Teff']:.4f}")
     print(f"  |G| − |G − L| ≥ {r['degMargin']:.4f} > {r['needed']:.4f} needed: degree fixed")
 
+# ---- Corollary 7.3: do the certified cubes cover the octahedron |a| + |b| + |c| <= 1? ----
+# Independent of the JavaScript's split tree: every coordinate that bounds a certified cube is a
+# grid line; the union of the cubes contains the octahedron exactly when every elementary cell
+# of that grid which meets the octahedron lies inside some certified cube. All in exact
+# rationals (each float is converted exactly).
+def covering():
+    from fractions import Fraction as Fr
+    from bisect import bisect_left
+    recs = [json.loads(l) for l in open(os.path.join(ROOT, 'data', 'orientations-progress.jsonl')) if l.strip()]
+    cubes = [([Fr(v) for v in r['lo']], [Fr(v) for v in r['hi']]) for r in recs if r['ok']]
+    axes = [sorted({v for lo_, hi_ in cubes for v in (lo_[i], hi_[i])} | {Fr(-1), Fr(1)}) for i in range(3)]
+    covered = set()
+    for lo_, hi_ in cubes:
+        rng = [range(bisect_left(axes[i], lo_[i]), bisect_left(axes[i], hi_[i])) for i in range(3)]
+        for a in rng[0]:
+            for b in rng[1]:
+                for c in rng[2]: covered.add((a, b, c))
+    dist = lambda l, h: l if l > 0 else (-h if h < 0 else Fr(0))   # distance from 0 to [l, h]
+    need = missing = 0
+    for a in range(len(axes[0]) - 1):
+        da = dist(axes[0][a], axes[0][a + 1])
+        if da > 1: continue
+        for b in range(len(axes[1]) - 1):
+            db = da + dist(axes[1][b], axes[1][b + 1])
+            if db > 1: continue
+            for c in range(len(axes[2]) - 1):
+                if db + dist(axes[2][c], axes[2][c + 1]) > 1: continue
+                need += 1; missing += (a, b, c) not in covered
+    inside = all(axes[i][0] >= -1 and axes[i][-1] <= 1 for i in range(3))
+    # every certified centre must lie in its cube (the C check recomputes h from it)
+    centred = all(Fr(r['lo'][i]) <= Fr(r['q'][i]) <= Fr(r['hi'][i]) for r in recs if r['ok'] for i in range(3))
+    ok = missing == 0 and inside and centred and need > 0
+    print(f"Corollary 7.3 covering: {'VALID' if ok else 'FAILED'}")
+    print(f"  {len(cubes):,} certified cubes; {need:,} elementary cells meet the octahedron, {missing} not covered")
+    return ok
+
 def main():
     which = sys.argv[1:] or ['square', 'tetra']; all_ok = True
     if 'square' in which:
@@ -264,6 +301,7 @@ def main():
         print(f"  on every cell: |G| − (change across the cell) − T ≥ {r['slackG']:.2e}; degree condition slack {r['slackD']:.2e}")
         print(f'  circumradius ≥ {smin:.4f}')
         all_ok &= r['ok']
+    if 'orientations' in which: all_ok &= covering()
     sys.exit(0 if all_ok else 1)
 
 if __name__ == '__main__':

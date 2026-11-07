@@ -5,6 +5,8 @@ section "Odd Perfect Numbers":
 * `geom_mod_two`, `geom_neg_one`, `geom_one`, `geom_euler`: the local rules for a single
   prime power, `σ(p^a) = 1 + p + ⋯ + p^a`;
 * `sigma_pow_dvd`: the factor `σ(p^a)` of each prime power `p^a ∥ N` divides `σ(N)`;
+* `three_primes` (result 1): an odd perfect number has at least three distinct primes;
+* `spine` (result 5) and `sigma_odd_iff` (result 7);
 * `forced_step`, `forced_step_le` (result 9): `gcd(σ(N), 2N)` divides `σ(N) − 2N`;
 * `steps_of_six` (result 3);
 * `spine_miss` (result 4) and `perfect_mul_prime` (result 6);
@@ -267,6 +269,114 @@ theorem nine_or_twelve {N : ℕ} (hN : N % 2 = 1) (hperf : σ 1 N = 2 * N) :
       have := (Nat.prime_dvd_prime_iff_eq Nat.prime_three hp).1 this; omega
     omega
 
+/-! ### Result 5: the spine on its own -/
+
+/-- `σ(2^k) = 2^(k+1) − 1`, so every power of two misses being perfect by exactly `−1`. -/
+theorem spine (k : ℕ) : σ 1 (2 ^ k) + 1 = 2 ^ (k + 1) := by
+  rw [sigma_prime_pow Nat.prime_two]; exact g_two k
+
+/-! ### Result 7: when σ(N) is odd -/
+
+/-- The factor `σ(q^e)` of a prime power is odd exactly when `q = 2` or `e` is even. -/
+theorem sigma_pow_mod_two {q : ℕ} (hq : q.Prime) (e : ℕ) :
+    σ 1 (q ^ e) % 2 = if q = 2 then 1 else (e + 1) % 2 := by
+  rw [sigma_prime_pow hq]
+  split_ifs with h2
+  · subst h2
+    have h := g_two e
+    have : 2 ^ (e + 1) % 2 = 0 := by rw [pow_succ]; simp
+    omega
+  · exact geom_mod_two (hq.eq_two_or_odd.resolve_left h2) e
+
+/-- `σ(N)` is odd exactly when every odd prime divides `N` to an even power, that is, when
+`N` is a square or twice a square. -/
+theorem sigma_odd_iff {N : ℕ} (hN : N ≠ 0) :
+    σ 1 N % 2 = 1 ↔ ∀ p, p.Prime → p ≠ 2 → N.factorization p % 2 = 0 := by
+  constructor
+  · intro hodd p hp hp2
+    by_contra hpodd
+    have hpN := mem_primeFactors_of_odd hN hp (by omega)
+    have heven : 2 ∣ σ 1 (p ^ N.factorization p) := by
+      have := sigma_pow_mod_two hp (N.factorization p); simp only [hp2, ↓reduceIte] at this; omega
+    have := Nat.dvd_trans heven (sigma_pow_dvd hN hpN)
+    omega
+  · intro hall
+    rw [isMultiplicative_sigma.multiplicative_factorization (σ 1) hN, Finsupp.prod,
+      Nat.support_factorization]
+    refine Finset.prod_induction _ (fun x => x % 2 = 1) (fun a b ha hb => by simp [Nat.mul_mod, ha, hb]) (by simp) ?_
+    intro q hq
+    have hqp := Nat.prime_of_mem_primeFactors hq
+    rw [sigma_pow_mod_two hqp]
+    split_ifs with h2
+    · rfl
+    · have := hall q hqp h2; omega
+
+/-! ### Result 1: at least three distinct prime factors -/
+
+/-- `(p − 1)(1 + p + ⋯ + p^a) = p^(a+1) − 1`. -/
+theorem g_mul_pred {p : ℕ} (hp : 1 ≤ p) (a : ℕ) : g p a * (p - 1) + 1 = p ^ (a + 1) := by
+  induction a with
+  | zero => simp [g]; omega
+  | succ a ih =>
+    rw [g_succ, add_mul, pow_succ p (a + 1)]
+    obtain ⟨r, rfl⟩ : ∃ r, p = r + 1 := ⟨p - 1, by omega⟩
+    simp only [Nat.add_sub_cancel] at ih ⊢
+    rw [← ih]; ring
+
+/-- `σ(N)·∏(p − 1) ≤ N·∏p` over the primes of `N`. -/
+theorem sigma_mul_prod_le {N : ℕ} (hN : N ≠ 0) :
+    σ 1 N * ∏ p ∈ N.primeFactors, (p - 1) ≤ N * ∏ p ∈ N.primeFactors, p := by
+  have hNe := Nat.prod_primeFactors_pow_factorization hN
+  calc σ 1 N * ∏ p ∈ N.primeFactors, (p - 1)
+      = ∏ p ∈ N.primeFactors, σ 1 (p ^ N.factorization p) * (p - 1) := by
+        rw [isMultiplicative_sigma.multiplicative_factorization (σ 1) hN, Finsupp.prod,
+          Nat.support_factorization, prod_mul_distrib]
+    _ ≤ ∏ p ∈ N.primeFactors, p ^ N.factorization p * p := by
+        refine Finset.prod_le_prod fun p hp => ?_
+        have hpp := Nat.prime_of_mem_primeFactors hp
+        rw [sigma_prime_pow hpp]
+        have := g_mul_pred hpp.one_lt.le (N.factorization p)
+        rw [pow_succ] at this; omega
+    _ = N * ∏ p ∈ N.primeFactors, p := by rw [prod_mul_distrib, ← hNe]
+
+/-- An odd perfect number has at least three distinct prime factors. -/
+theorem three_primes {N : ℕ} (hN : N % 2 = 1) (hperf : σ 1 N = 2 * N) :
+    3 ≤ N.primeFactors.card := by
+  have hN0 : N ≠ 0 := by omega
+  have hb := sigma_mul_prod_le hN0
+  rw [hperf] at hb
+  -- every prime factor is odd, so at least 3
+  have h3 : ∀ p ∈ N.primeFactors, 3 ≤ p := fun p hp => by
+    have := odd_of_dvd_odd hN (Nat.dvd_of_mem_primeFactors hp)
+    have := (Nat.prime_of_mem_primeFactors hp).two_le; omega
+  have hNpos : 0 < N := by omega
+  by_contra hlt
+  rcases (by omega : N.primeFactors.card = 0 ∨ N.primeFactors.card = 1 ∨ N.primeFactors.card = 2)
+    with h0 | h1 | h2
+  · -- no prime factors: N = 1, but σ(1) = 1 ≠ 2
+    rw [Finset.card_eq_zero, Nat.primeFactors_eq_empty] at h0
+    rcases h0 with rfl | rfl
+    · omega
+    · simp at hperf
+  · obtain ⟨p, hp⟩ := Finset.card_eq_one.1 h1
+    have hp3 := h3 p (by simp [hp])
+    rw [hp, prod_singleton, prod_singleton] at hb
+    have : 2 * (p - 1) ≤ p := Nat.le_of_mul_le_mul_left (by nlinarith) hNpos
+    omega
+  · obtain ⟨p, q, hpq, hs⟩ := Finset.card_eq_two.1 h2
+    have hp3 := h3 p (by simp [hs]); have hq3 := h3 q (by simp [hs])
+    have hpo := odd_of_dvd_odd hN (Nat.dvd_of_mem_primeFactors (by simp [hs] : p ∈ N.primeFactors))
+    have hqo := odd_of_dvd_odd hN (Nat.dvd_of_mem_primeFactors (by simp [hs] : q ∈ N.primeFactors))
+    rw [hs, prod_pair hpq, prod_pair hpq] at hb
+    have hle : 2 * ((p - 1) * (q - 1)) ≤ p * q :=
+      Nat.le_of_mul_le_mul_left (by nlinarith) hNpos
+    -- write p = a + 3, q = b + 3 with a ≠ b both even, so a + b ≥ 2
+    obtain ⟨a, rfl⟩ : ∃ a, p = a + 3 := ⟨p - 3, by omega⟩
+    obtain ⟨b, rfl⟩ : ∃ b, q = b + 3 := ⟨q - 3, by omega⟩
+    have hab : 2 ≤ a + b := by omega
+    simp only [show a + 3 - 1 = a + 2 by omega, show b + 3 - 1 = b + 2 by omega] at hle
+    nlinarith [Nat.zero_le (a * b)]
+
 end PerfectNumbers
 
 -- Each main theorem uses only Lean's three standard axioms
@@ -277,3 +387,6 @@ end PerfectNumbers
 #print axioms PerfectNumbers.perfect_mul_prime
 #print axioms PerfectNumbers.euler_form
 #print axioms PerfectNumbers.nine_or_twelve
+#print axioms PerfectNumbers.spine
+#print axioms PerfectNumbers.sigma_odd_iff
+#print axioms PerfectNumbers.three_primes

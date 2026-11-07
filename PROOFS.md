@@ -7,7 +7,7 @@ This document contains the following results, written to be checked line by line
 3. **Theorem 3 (every convex body).** The same holds for *any* convex body, in every orientation that is **admissible** for it. Every orientation is admissible for a body with a $C^1$ boundary, so Theorem 2 holds without strict convexity. **Proposition 5** shows admissibility cannot be dropped: a thin enough triangle has no inscribed equilateral triangle in some orientations.
 4. **Lemma 4 (a route to the open case).** If ever-finer approximations of a curve each contain an inscribed square that cannot be arbitrarily small, the limiting curve contains one. This is the hypothesis that the shrinkage studies test.
 5. **Theorem 6 (a computer-assisted certificate).** Every curve whose radius stays within 0.15 of a 1 × 0.6 ellipse's has an inscribed square, proved in interval arithmetic. This includes nowhere-differentiable, non-symmetric fractal curves that are not locally monotone.
-6. **Theorem 7 (the same in 3D).** Every surface whose radius stays within 0.13 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, including rough surfaces that are not $C^1$, where Gromov's theorem does not apply.
+6. **Theorem 7 (the same in 3D).** Every surface whose radius stays within 0.13 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, including rough surfaces that are not $C^1$, where Gromov's theorem does not apply. Corollary 7.3: within 0.02, it has one in **every** orientation.
 
 Neither result settles the open problems. The square (Toeplitz), regular tetrahedron and cross-polytope problems remain open for general *continuous* Jordan curves and surfaces; see [What remains open](#what-remains-open).
 
@@ -297,10 +297,35 @@ and $w_k = R v_k/\sqrt3$, where the $v_k$ are $(\pm1, \pm1, \pm1)$ with an even 
 |---|---|---|---|---|---|
 | orientations within | 7.52° | 5.84° | 4.16° | 2.48° | 0.81° |
 
+**Corollary 7.3 (every orientation).** If $|\rho(\omega) - r_E(\omega)| \le T = \tfrac{1}{50}$ for all $\omega$, then $S_\rho$ has an inscribed regular tetrahedron in **every** orientation.
+
+This is the analogue, for these rough surfaces, of Gromov's "every pose" theorem for $C^1$ spheres.
+
+*Proof.*
+- **Orientations as quaternions.** Every rotation is $R(x)$ for a unit quaternion $x = (w, v)$, determined up to sign. When $w \ne 0$, the Cayley vector $q = v/w$ gives $R(x)$ as the matrix in Theorem 7. The tetrahedron's 12 rotational symmetries are $R(u)$ for the 24 Hurwitz units $u \in \{\pm1, \pm i, \pm j, \pm k, \tfrac12(\pm1 \pm i \pm j \pm k)\}$. For example, $i$ is the half-turn $(x, y, z) \mapsto (x, -y, -z)$ and $\tfrac12(1 + i + j + k)$ permutes the coordinates cyclically, and each permutes the $v_k$. So $R(x)$ and $R(xu) = R(x)R(u)$ give the same four directions $w_k$, in a different order, and it is enough to prove the result for one $xu$.
+- **A fundamental domain.** Given $x$, choose a unit $u$ that maximises $\langle x, u\rangle$ and put $y = x\bar u$, so $\bar u$ is again a unit. Right multiplication by a unit quaternion is an isometry that permutes the units. So $\langle y, 1\rangle = \langle x, u\rangle \ge \langle x, u'u\rangle = \langle y, u'\rangle$ for every unit $u'$. Write $y = (w, v)$. The units $\tfrac12(1 \pm i \pm j \pm k)$ give $w \ge |v_1| + |v_2| + |v_3|$, so $w > 0$ and the Cayley vector of $y$ lies in the solid octahedron $\Omega = \{|a| + |b| + |c| \le 1\}$. It is therefore enough to cover $\Omega$.
+- **Turning within a cube.** Let $q, q'$ lie in a cube of half-width $h$, and let $u, u'$ be the unit quaternions $(1, q)/|(1, q)|$ and $(1, q')/|(1, q')|$.
+  - $|u' - u| \le |q' - q| \le \sqrt3\,h$, because radial projection onto the unit sphere is 1-Lipschitz on points at distance at least 1 from the origin.
+  - For a unit vector $v$, $|R(u')v - R(u)v| = |(u' - u)v\bar u' + uv(\bar u' - \bar u)| \le 2|u' - u|$.
+  - So each vertex $x + s\,w_k$ moves by at most $2\sqrt3\,h\,s$, and since signed distance is 1-Lipschitz, $G$ moves by at most $2\sqrt3\,h\,s_{\max}$ on $Q$.
+  - As in Corollary 7.2, certifying orientation $q$ with the allowance $T + 2\sqrt3\,h\,s_{\max}$ proves the result for every orientation in the cube.
+- **The computation** (`node tools/certify-orientations.js`, 108 minutes on 4 cores).
+  - $[-1, 1]^3$ is split into $36^3$ cubes, of half-width $h = 1/36$, and the 10,544 that meet $\Omega$ are kept.
+  - For each one, Newton's method from a fixed start finds the tetrahedron on $E$ in the orientation of the cube's centre, and a box with $c = 0.20$ is built around it.
+  - The box is certified as in Theorem 7, with adaptive cells and the allowance $T + 2\sqrt3\,h\,s_{\max}$ (at most $0.1130$).
+  - Every cube passes on the first attempt, with no splitting: 8.26 billion cells in all, and the circumradius is at least $0.4716$ throughout.
+  - The results are in `data/orientations-progress.jsonl` (one line per cube) and `data/certificate-orientations.json`. $\blacksquare$
+
+**Checks.**
+- `python3 tools/verify_certificates.py orientations` re-checks the covering in exact rational arithmetic, without the JavaScript's bookkeeping. The coordinates bounding the certified cubes form a grid, and every cell of that grid that meets $\Omega$ lies inside a certified cube.
+- `./verify orientations` re-checks a seeded random sample of 100 cubes (`node tools/certify-orientations.js --sample 100`) in C with Arb. It takes only each cube's corners, its centre and the box data $z$, $J$, $K$, and recomputes the rotation, the allowance, the circumradius range and every cell itself. All 100 pass: 81 million cells, about 3.5 minutes.
+- Re-checking all 10,544 cubes in Arb would take about 6 hours on 4 cores. It has not been done.
+
+Why only $T = 0.02$? Turning within a cube costs $2\sqrt3\,h\,s_{\max} \approx 0.093$ of the allowance, and the box for a general orientation has less room than the one tuned for Theorem 7. A finer grid would leave more room for $T$, at about 8 times the cost per halving of $h$.
+
 **Remarks.**
 - The degree lemma needs no winding numbers and works in any number of unknowns. It only needs the equations to stay away from zero, and either close to their linearisation or closer to it than to zero, on the boundary of a box.
 - The neighbourhood is smaller than in 2D (0.13 against 0.15) because the tetrahedron equations are more curved relative to the box. At $c = 0.28$ the degree condition fails, so $c = 0.26$ is about as far as one box goes.
-- Covering *every* orientation for $T = 0.06$ would need balls of radius 4.16° to cover the space of rotations modulo the tetrahedron's 12 symmetries: on the order of $10^4$ certificates, each with its own box. With adaptive cells each takes seconds, so this is now a matter of hours rather than weeks. It has not been run.
 
 ---
 
@@ -310,7 +335,7 @@ and $w_k = R v_k/\sqrt3$, where the $v_k$ are $(\pm1, \pm1, \pm1)$ with an even 
 |---|---|
 | Square in every continuous Jordan curve (Toeplitz) | **Open.** Proved for convex (Emch), smooth (Schnirelmann), locally monotone (Stromquist) and small-Lipschitz (Tao) curves |
 | Rectangle of every aspect ratio in every continuous Jordan curve | **Open.** Proved for smooth curves (Greene–Lobb) and extended to rectifiable curves; *some* rectangle always exists (Vaughan) |
-| Regular tetrahedron / simplex in every continuous Jordan sphere | **Open.** Proved for $C^1$ spheres in every pose (Gromov 1969); Theorems 2–3 give elementary proofs for every $C^1$ convex body and, in admissible orientations, every convex body. Theorem 7 certifies every surface within 0.13 of one ellipsoid, and an open set of orientations within 0.06. "Every pose" fails for non-smooth bodies (Proposition 5) |
+| Regular tetrahedron / simplex in every continuous Jordan sphere | **Open.** Proved for $C^1$ spheres in every pose (Gromov 1969); Theorems 2–3 give elementary proofs for every $C^1$ convex body and, in admissible orientations, every convex body. Theorem 7 certifies every surface within 0.13 of one ellipsoid, and Corollary 7.3 every orientation for every surface within 0.02. "Every pose" fails for non-smooth bodies (Proposition 5) |
 | Regular octahedron / cross-polytope | **Open.** Proved for smooth convex bodies in $\mathbb{R}^3$ (Makeev 2001) and in $\mathbb{R}^n$ for $n$ an odd prime power (Karasev 2009) |
 | Cube / hypercube ($n \ge 3$) | **False in general** (Theorem 1). True for centrally symmetric convex bodies in $\mathbb{R}^3$ (Hausel–Makai–Szűcs 2000) |
 

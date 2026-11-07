@@ -13,6 +13,7 @@
  *   sudo apt install libflint-dev          (or build FLINT 3 from source)
  *   gcc -O2 -fopenmp -o verify tools/verify-certificates.c -lflint -lm
  *   ./verify                               (run from the repository root)
+ *   ./verify orientations                  (Corollary 7.3: the sample in data/orientation-sample.json)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -140,12 +141,14 @@ static void square_problem(Problem *P) {
   arb_init(P->b); set_ratio(P->b, 3, 5);
   arb_t l; arb_init(l); arb_set_si(l, 2); arb_sqrt(l, l, PREC); arb_mul_si(l, l, 2, PREC); P->lip = up_d(l); arb_clear(l);   /* 2√2 */
 }
-/* Cayley rotation R = ((1 − |q|²)I + 2qqᵀ + 2[q]×)/(1 + |q|²), q = (1/8, 1/4, 3/8); w_k = R v_k/√3 */
-static void tetra_problem(Problem *P) {
+/* Cayley rotation R = ((1 − |q|²)I + 2qqᵀ + 2[q]×)/(1 + |q|²), q = (1/8, 1/4, 3/8) or the
+ * given Cayley vector qd (exact doubles); w_k = R v_k/√3 */
+static void tetra_problem(Problem *P, const double *qd) {
   long num[3] = {1, 4, 3}, den[3] = {1, 5, 5}; P->n = 4; ellipsoid_init(&P->E, 3, num, den);
   arb_t q[3], qq, d0, den1, R[3][3], s3, x, X; for (int i = 0; i < 3; i++) arb_init(q[i]);
   arb_init(qq); arb_init(d0); arb_init(den1); arb_init(s3); arb_init(x); arb_init(X);
-  set_ratio(q[0], 1, 8); set_ratio(q[1], 1, 4); set_ratio(q[2], 3, 8);
+  if (qd) for (int i = 0; i < 3; i++) arb_set_d(q[i], qd[i]);
+  else { set_ratio(q[0], 1, 8); set_ratio(q[1], 1, 4); set_ratio(q[2], 3, 8); }
   arb_zero(qq); for (int i = 0; i < 3; i++) { arb_sqr(x, q[i], PREC); arb_add(qq, qq, x, PREC); }
   arb_sub_si(d0, qq, 1, PREC); arb_neg(d0, d0); arb_add_si(den1, qq, 1, PREC);
   for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) {
@@ -328,7 +331,60 @@ static int run(const char *title, Box *X, int adaptive, int N) {
   return ok;
 }
 
-int main(void) {
+/* ---- Corollary 7.3: re-check a sample of the orientation cubes ----
+ * Each record gives a cube [lo, hi] of Cayley vectors, its centre q, the box size c and the
+ * box data z, J, K. Everything else is computed here: the half-width h of the cube around q,
+ * the circumradius range on Q, the allowance T + s_max·2√3·h for turning within the cube,
+ * and the adaptive-cell check of both conditions. */
+static int read_seq(const char **p, const char *key, double *out, int count) {
+  char pat[64]; snprintf(pat, sizeof pat, "\"%s\":", key); const char *q = strstr(*p, pat); if (!q) return 0;
+  q += strlen(pat);
+  for (int i = 0; i < count; i++) { while (*q && !(*q == '-' || (*q >= '0' && *q <= '9'))) q++; char *end; out[i] = strtod(q, &end); q = end; }
+  *p = q; return 1;
+}
+static int orientations(const char *file) {
+  char *json = slurp(file); const char *p = json;
+  double Tq[2]; if (!read_seq(&p, "T", Tq, 2)) { fprintf(stderr, "missing T\n"); exit(2); }
+  enum { MAXC = 100000 }; static double LO[MAXC][3], HI[MAXC][3], Q[MAXC][3], C[MAXC], Z[MAXC][4], JJ[MAXC][16], KK[MAXC][16];
+  int m = 0;
+  while (m < MAXC && read_seq(&p, "lo", LO[m], 3)) {
+    read_seq(&p, "hi", HI[m], 3); read_seq(&p, "q", Q[m], 3); read_seq(&p, "c", &C[m], 1);
+    read_seq(&p, "zero", Z[m], 4); read_seq(&p, "J", JJ[m], 16); read_seq(&p, "K", KK[m], 16); m++;
+  }
+  free(json);
+  int passed = 0; double worstG = INFINITY, worstD = INFINITY, smallS = INFINITY; long cells = 0; double t0 = omp_get_wtime();
+  #pragma omp parallel for schedule(dynamic, 1) reduction(+:passed, cells) reduction(min:worstG, worstD, smallS)
+  for (int i = 0; i < m; i++) {
+    Problem P; tetra_problem(&P, Q[i]); Box X; X.P = &P; X.n = 4; X.c = C[i];
+    for (int r = 0; r < 4; r++) { X.z[r] = Z[i][r]; for (int k = 0; k < 4; k++) { X.J[r][k] = JJ[i][4 * r + k]; X.K[r][k] = KK[i][4 * r + k]; } }
+    arb_t h, a, t; arb_init(h); arb_init(a); arb_init(t); arb_zero(h);
+    /* h ≥ the largest coordinate distance from q to the cube's faces */
+    for (int k = 0; k < 3; k++) {
+      arb_set_d(a, HI[i][k]); sub_d(a, a, Q[i][k], PREC); arb_abs(a, a); arb_max(h, h, a, PREC);
+      arb_set_d(a, Q[i][k]); sub_d(a, a, LO[i][k], PREC); arb_abs(a, a); arb_max(h, h, a, PREC);
+      if (!(LO[i][k] <= Q[i][k] && Q[i][k] <= HI[i][k])) arb_set_si(h, 1000);   /* q must lie in the cube */
+    }
+    /* circumradius range over the corners of Q (s is affine on Q) */
+    double smin = INFINITY, smax = -INFINITY;
+    for (int k = 0; k < 16; k++) { arb_set_d(a, X.z[3]); for (int r = 0; r < 4; r++) { arb_set_d(t, X.K[3][r]); mul_d(t, t, (k >> r) & 1 ? X.c : -X.c, PREC); arb_add(a, a, t, PREC); } if (lo_d(a) < smin) smin = lo_d(a); if (up_d(a) > smax) smax = up_d(a); }
+    /* Teff = T + s_max·2√3·h */
+    arb_set_si(t, 3); arb_sqrt(t, t, PREC); arb_mul_si(t, t, 2, PREC); arb_mul(t, t, h, PREC); mul_d(t, t, smax, PREC);
+    set_ratio(a, (long)Tq[0], (long)Tq[1]); arb_add(t, t, a, PREC); X.Teff = up_d(t);
+    arb_clear(h); arb_clear(a); arb_clear(t);
+    double cEff; int degree = box_setup(&X, &cEff); Stats S = {0, 0, 0, INFINITY, INFINITY};
+    for (int f = 0; f < 8; f++) { Stats R = scan_face(&X, f / 2, f % 2 ? 1 : -1, 8, 12); S.cells += R.cells; S.failed += R.failed; if (R.slackG < S.slackG) S.slackG = R.slackG; if (R.slackD < S.slackD) S.slackD = R.slackD; }
+    int ok = degree != 0 && cEff > 0 && S.failed == 0 && smin > 0;
+    passed += ok; cells += S.cells; if (S.slackG < worstG) worstG = S.slackG; if (S.slackD < worstD) worstD = S.slackD; if (smin < smallS) smallS = smin;
+    if (!ok) printf("  cube %d (q = %.4f, %.4f, %.4f) FAILED: degree %d, cEff %.3g, %ld cells failed, circumradius ≥ %.4f\n", i, Q[i][0], Q[i][1], Q[i][2], degree, cEff, S.failed, smin);
+  }
+  int ok = passed == m && m > 0;
+  printf("Corollary 7.3 (every orientation, T = %g/%g), sample of %d cubes: %s\n  %d passed, %ld cells checked, %.0f s\n  on every cell: |G| − (change) − perturbation ≥ %.3g; degree condition slack %.3g; circumradius ≥ %.4f\n",
+         Tq[0], Tq[1], m, ok ? "VALID" : "FAILED", passed, cells, omp_get_wtime() - t0, worstG, worstD, smallS);
+  return ok;
+}
+
+int main(int argc, char **argv) {
+  if (argc > 1 && !strcmp(argv[1], "orientations")) return orientations(argc > 2 ? argv[2] : "data/orientation-sample.json") ? 0 : 1;
   int all = 1;
   { /* Theorem 6: square, T = 15/100, perturbation (1 + √2)T */
     Problem P; square_problem(&P); Box X; X.P = &P; X.n = 2; X.c = 0.5; load_box(&X, "data/certificates.json", 2);
@@ -349,7 +405,7 @@ int main(void) {
     printf("  diagonal ≥ %.4f − 2T = %.4f\n", m, m - 0.3); ok = ok && m - 0.3 > 0; all = all && ok;
   }
   { /* Theorem 7: tetrahedron, T = 13/100, box c = 0.26, adaptive cells */
-    Problem P; tetra_problem(&P); Box X; X.P = &P; X.n = 4; X.c = 0.26; load_box(&X, "data/certificate-tetrahedron.json", 4);
+    Problem P; tetra_problem(&P, NULL); Box X; X.P = &P; X.n = 4; X.c = 0.26; load_box(&X, "data/certificate-tetrahedron.json", 4);
     arb_t T; arb_init(T); set_ratio(T, 13, 100); X.Teff = up_d(T); arb_clear(T);
     int ok = run("Theorem 7 (tetrahedron, T = 0.13, box c = 0.26, adaptive cells)", &X, 1, 0);
     double smin = INFINITY;

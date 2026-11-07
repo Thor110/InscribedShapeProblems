@@ -1,0 +1,17 @@
+{
+ "theorem": "Every surface ρ(ω)·ω with ρ continuous and |ρ(ω) − r_E(ω)| ≤ 1/50, where r_E is the radial function of the ellipsoid x² + y²/0.8² + z²/0.6² = 1, has an inscribed regular tetrahedron in every orientation.",
+ "method": "cover the octahedron |a|+|b|+|c| ≤ 1 of Cayley vectors (a fundamental domain of the tetrahedral group) by cubes; certify each cube centre in interval arithmetic with adaptive cells, with a perturbation allowance for turning within the cube",
+ "T": "1/50",
+ "grid": 36,
+ "ok": true,
+ "cubesCertified": 10544,
+ "missing": 0,
+ "failed": 0,
+ "smallestCircumradius": 0.47157517165972274,
+ "smallestSlack": 6.1699853559638e-11,
+ "smallestDegreeSlack": 4.939526565550521e-11,
+ "boxesUsed": {
+  "0.2": 10544
+ },
+ "splitCubes": 0
+}

@@ -256,12 +256,13 @@
     const s3 = sqrt(exact(3));
     return [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]].map(v => R.map(r => div(r.reduce((s, x, k) => add(s, mul(x, exact(v[k]))), exact(0)), s3)));
   }
-  function tetraProblem(T, c, N) {
-    const sd = V.ellipsoidSD([exact(1), ratio(4, 5), ratio(3, 5)]), W = tetraDirs();
+  // q: the orientation's Cayley vector (default: the one of Theorem 7); start: Newton's start.
+  function tetraProblem(T, c, N, q, start) {
+    const sd = V.ellipsoidSD([exact(1), ratio(4, 5), ratio(3, 5)]), W = tetraDirs(q);
     const Gi = p => W.map(w => sdBox(sd, [0, 1, 2].map(i => add(exact(p[i]), mul(exact(p[3]), w[i])))));
     const wmax = Math.max(...W.map(w => V.norm(w).hi));
     // |Δ(x + s·w)| ≤ |Δx|₂ + |Δs|·|w| ≤ (√3 + |w|)·‖Δp‖∞
-    return { n: 4, Gi, W, lipG: up.add(up.sqrt(3), wmax), Teff: ratio(T[0], T[1]).hi, start: [0, 0, 0, 0.75], c, N, T };
+    return { n: 4, Gi, W, lipG: up.add(up.sqrt(3), wmax), Teff: ratio(T[0], T[1]).hi, start: start || [0, 0, 0, 0.75], c, N, T };
   }
   // The circumradius s is affine on Q, so its minimum and maximum are at corners.
   function tetraRadius(prob, res, max = false) {
