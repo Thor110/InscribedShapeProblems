@@ -383,6 +383,7 @@ gcc -O2 -fopenmp -o egg-cube-arb tools/egg-cube-arb.c -lflint -lm
 
 **Further results** ([PROOFS.md, Corollary 1.4](PROOFS.md#theorem-1--generic-non-existence)):
 - **Other shapes.** The egg has no regular icosahedron (129 million boxes, about 2 minutes, also re-checked in Arb). It has no regular dodecahedron either, with no extra search needed: a dodecahedron's 20 vertices include a cube's 8.
+- **4D.** A 4D egg, whose slice *w* = 0 is this egg, is proved to be a smooth, strictly convex 3-sphere. Whether it has an inscribed tesseract is not settled: the search would need about 10¹⁴ boxes, because the rotation of 4D space has 6 parameters. The [Dimension Explorer](pages/dimension-explorer.html) shows both eggs turning, the 4D one through its fourth dimension, with the closest cube and tesseract the solver finds (2.4% and 3.3% off).
 - **A flatter egg.** The proof survives making the egg much less lopsided. Even when it is within about 10⁻⁸ of an ellipsoid, a surface that does have a cube, there is still no cube, and the proof still takes under a minute. The cost grows only with the number of digits of the asymmetry. That is the instability behind Theorem 1: the ellipsoid's cube exists only because of its symmetry.
 
 ![Inscribed Cube Viewfinder Demo](images/cube_viewfinder_demo.gif)

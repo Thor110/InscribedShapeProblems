@@ -117,6 +117,19 @@
     throw new Error('unknown surface ' + type);
   }
 
+  // The eggs of PROOFS.md, Theorem 1.3 (3D: proved to have no inscribed cube) and its 4D
+  // extension in tools/egg-tesseract.c (proved to be a smooth strictly convex 3-sphere; whether
+  // it has an inscribed tesseract is not settled). Exact rational coefficients, as in the proofs.
+  function provedEgg(n) {
+    const e = 3 / 20;
+    const F = n === 3
+      ? p => { const [x, y, z] = p; return x * x + (16 / 25) * y * y + (400 / 289) * z * z + e * (0.5 * x ** 3 + x * y * z + 0.7 * y * y * z + 0.3 * z ** 3) - 1; }
+      : p => { const [x, y, z, w] = p; return x * x + (16 / 25) * y * y + (400 / 289) * z * z + (100 / 81) * w * w + e * (0.5 * x ** 3 + x * y * z + 0.7 * y * y * z + 0.3 * z ** 3 + x * z * w + 0.4 * w ** 3) - 1; };
+    // F < 0 inside, F > 0 on |p| = 3/2, one crossing on each ray (proved): bisect on [0, 3/2]
+    const rad = u => { let lo = 0, hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (F(u.map(v => v * m)) < 0) lo = m; else hi = m; } return (lo + hi) / 2; };
+    return { F, rad, rmax: 1.3 };
+  }
+
   // ---------- the solver ----------
   // `surface` (optional) supplies a ready-made surface { rad(u), rmax } instead of surfType/seed.
   function makeProblem(shape, n, surfType, seed, surface) {
@@ -303,6 +316,6 @@
     return 'False for generic smooth hypersurfaces (PROOFS.md)';
   }
 
-  const api = { rng, randomRotation, SHAPES, SURFACES, shapeName, directions, simDim, expectedDim, makeSurface, makeProblem, run, literature };
+  const api = { rng, randomRotation, SHAPES, SURFACES, shapeName, directions, simDim, expectedDim, makeSurface, makeProblem, run, literature, provedEgg };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.InscribedND = api;
 })(typeof window !== 'undefined' ? window : globalThis);

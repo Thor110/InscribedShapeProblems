@@ -25,13 +25,11 @@ The search turned out far cheaper than feared, because most boxes are ruled out 
 - **Other shapes.** The regular icosahedron is excluded (129 million boxes, also re-checked in Arb), and a control on the sphere finds its icosahedra. The dodecahedron, the rhombic dodecahedron and any shape containing a cube's vertices are excluded with no further search (Corollary 1.4). The regular pentagon needs no computation: a non-circular ellipse has none, because five points determine a conic.
 - **Exact arithmetic for the surface checks.** Not done, and no longer needed: the Arb program already redoes part 1 independently.
 
-**Still open: the 4D hypercube on a 4D egg.** Theorem 1 says a generic hypersurface in $\mathbb{R}^4$ has no inscribed tesseract (16 vertices against 11 parameters). An explicit example needs:
-- a 4D egg, for example $\sum a_i x_i^2 + \varepsilon\,(\text{a cubic}) = 1$, with part 1 redone in 4D;
-- rotations of $\mathbb{R}^4$ written as $p \mapsto lp\bar r$ for two unit quaternions $l$ and $r$. Turning moves a point by at most $(|l' - l| + |r' - r|)\,|p|$, the same bound as in 3D twice over;
-- orientations covered by Cayley charts for $l$ and $r$ separately, and either the tesseract's 192 rotations used to cut them down, or the covering simply made 192 times larger;
-- a branch and bound in 11 dimensions (centre 4, scale 1, rotation 6).
-
-The 3D experience suggests that each extra vertex makes exclusion easier, but 11 dimensions is a large jump from 7. It needs a feasibility measurement first, as for the cube. *Medium.*
+**4D hypercube: started, not settled (7 November 2026).** `tools/egg-tesseract.c` defines a 4D egg whose slice $w = 0$ is the 3D egg.
+- **Proved so far.** Parts 1–2: the 4D egg is a smooth, strictly convex 3-sphere, and any inscribed tesseract has half-edge in $[0.0525, 0.6425]$.
+- **The search.** Rotations are written $p \mapsto lp\bar r$. The units $\pm1, \pm i, \pm j, \pm k$ act on both sides, which reduces $l$ and $r$ each to one Cayley box. Even so, the direct branch and bound is out of reach. Knuth's random-probe estimate gives about $10^{14}$ boxes, against about $10^8$ for the cube. A mean-value bound only gained a factor of 4. The six rotation parameters are what multiply the work.
+- **A more promising route,** if it is ever worth doing. For each pair of opposite vertices $c \pm w$, subtracting the two conditions $F(c + w) = F(c - w) = 0$ gives an equation nearly linear in $c$: $4\,c^{\mathsf T}Aw$ plus the odd part of the cubic. Summed over the 8 diagonals, it pins $|c| \lesssim \varepsilon/s$ for an egg of asymmetry $\varepsilon$. On the ellipsoid, $M^{\mathsf T}AM$ must be diagonal, so the only tesseracts are the axis-aligned ones. For a slightly lopsided egg, a hand-written perturbation argument would confine any tesseract to near the axis-aligned one, and a local computation could exclude it there. *Medium to large; low priority.*
+- **Visualisation, done.** The Dimension Explorer shows both eggs turning, the 4D one through its fourth dimension, with the closest cube (2.4% off) and closest tesseract (3.3% off) the solver finds.
 
 ## Next phase (plan of 7 November 2026)
 

@@ -118,6 +118,8 @@ So the cube analogue of the square peg problem fails for an explicit, smooth, st
   - The branch and bound excludes all 129 million boxes.
 - **Checks.** The Arb program (`./egg-cube-arb icosahedron`) re-checks the icosahedron independently: 254 million boxes, about 9 minutes. As a control, both programs, run on the unit sphere (`-DE_NUM=0 -DSPHERE`, and `./egg-cube-arb icosahedron-control`), find its icosahedra at scale $1/\sqrt{\varphi + 2} = 0.5257$. The ellipsoid cannot serve as the control here: the only quadric through the 12 vertices of a regular icosahedron is its circumsphere, so an ellipsoid that is not a sphere has none. $\blacksquare$
 
+**In 4D** (`tools/egg-tesseract.c`), the analogous hypersurface $F + \tfrac{100}{81}w^2 + \tfrac{3}{20}(xzw + \tfrac25 w^3) = 0$ is proved to be a smooth, strictly convex 3-sphere. Its slice $w = 0$ is the egg $S$. The same lemma confines any inscribed tesseract to half-edge $s \in [0.0525, 0.6425]$. Whether it has an inscribed tesseract is **not settled**: the branch and bound now runs over 11 parameters, and a random-probe estimate puts it at about $10^{14}$ boxes. The closest tesseract a numerical search finds is off by 3.3% of its edge. The [Dimension Explorer](pages/dimension-explorer.html) shows both eggs with the closest cube and tesseract.
+
 **In the plane** the analogous question is classical. A regular pentagon's five vertices lie on its circumcircle, and five points determine a conic. So no ellipse other than a circle contains a regular pentagon, and no computation is needed.
 
 
