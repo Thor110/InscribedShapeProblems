@@ -13,7 +13,7 @@
  *   sudo apt install libflint-dev          (or build FLINT 3 from source)
  *   gcc -O2 -fopenmp -o verify tools/verify-certificates.c -lflint -lm
  *   ./verify                               (run from the repository root)
- *   ./verify orientations                  (Corollary 7.3: the sample in data/orientation-sample.json)
+ *   ./verify orientations FILE             (Corollary 7.3: a sample written by certify-orientations.js --sample)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,11 +179,11 @@ static void tetra_problem(Problem *P, const double *qd) {
 }
 
 /* ---- one check: centre point of a cell, with the bound r for the cell's points ---- */
-typedef struct { const Problem *P; int n; double z[MAXN], J[MAXN][MAXN], K[MAXN][MAXN], c, Teff, nK, kD; } Box;
+typedef struct { const Problem *P; int n; double z[MAXN], J[MAXN][MAXN], K[MAXN][MAXN], c, Teff, nK, kD, turn; } Box;   /* turn: extra allowance turn*s (0 if none) */
 
 /* evaluates at y (in [−c, c]^n), returns gl = lower bound of ‖G‖∞, h = upper bound of ‖G − L‖∞,
  * and fl = the rounding in computing the sample point z + K·y */
-static void check_point(const Box *X, const double *y, double *gl, double *h, double *fl) {
+static void check_point(const Box *X, const double *y, double *gl, double *h, double *fl, double *slast) {
   int n = X->n; double ps[MAXN]; *gl = 0; *h = 0; *fl = 0;
   arb_t ex, t, L; arb_init(ex); arb_init(t); arb_init(L); arb_ptr g = _arb_vec_init(n);
   for (int r = 0; r < n; r++) {
@@ -191,6 +191,7 @@ static void check_point(const Box *X, const double *y, double *gl, double *h, do
     arb_set_d(ex, X->z[r]); for (int k = 0; k < n; k++) { arb_set_d(t, X->K[r][k]); mul_d(t, t, y[k], PREC); arb_add(ex, ex, t, PREC); }
     sub_d(ex, ex, ps[r], PREC); double e = mag_d(ex); if (e > *fl) *fl = e;
   }
+  *slast = ps[n - 1];
   G_eval(g, X->P, ps);
   for (int r = 0; r < n; r++) {
     arb_zero(L); for (int k = 0; k < n; k++) { arb_set_d(t, ps[k]); sub_d(t, t, X->z[k], PREC); mul_d(t, t, X->J[r][k], PREC); arb_add(L, L, t, PREC); }
@@ -201,10 +202,13 @@ static void check_point(const Box *X, const double *y, double *gl, double *h, do
 }
 /* does the cell of half-width hw around y pass both conditions? */
 static int cell_passes(const Box *X, const double *y, double hw, double *sG, double *sD) {
-  double gl, h, fl; check_point(X, y, &gl, &h, &fl);
+  double gl, h, fl, sl; check_point(X, y, &gl, &h, &fl, &sl);
   arb_t rad, a, b; arb_init(rad); arb_init(a); arb_init(b);
   arb_set_d(rad, X->nK); mul_d(rad, rad, hw, PREC); add_d(rad, rad, fl, PREC);      /* r = ‖K‖·h + ε */
   arb_set_d(a, gl); arb_set_d(b, X->P->lip); arb_mul(b, b, rad, PREC); arb_sub(a, a, b, PREC); sub_d(a, a, X->Teff, PREC);
+  if (X->turn > 0) {   /* the turning allowance turn * s, with s at most its sample value plus rad on the cell */
+    arb_t t; arb_init(t); arb_set_d(t, sl); arb_add(t, t, rad, PREC); mul_d(t, t, X->turn, PREC); arb_sub(a, a, t, PREC); arb_clear(t);
+  }
   arb_set_d(b, gl - 0.0); sub_d(b, b, h, PREC); { arb_t k; arb_init(k); arb_set_d(k, X->kD); arb_mul(k, k, rad, PREC); arb_sub(b, b, k, PREC); arb_clear(k); }
   *sG = lo_d(a); *sD = lo_d(b); int ok = arb_is_positive(a) && arb_is_positive(b);
   arb_clear(rad); arb_clear(a); arb_clear(b); return ok;
@@ -365,12 +369,15 @@ static int orientations(const char *file) {
       if (!(LO[i][k] <= Q[i][k] && Q[i][k] <= HI[i][k])) arb_set_si(h, 1000);   /* q must lie in the cube */
     }
     /* circumradius range over the corners of Q (s is affine on Q) */
-    double smin = INFINITY, smax = -INFINITY;
-    for (int k = 0; k < 16; k++) { arb_set_d(a, X.z[3]); for (int r = 0; r < 4; r++) { arb_set_d(t, X.K[3][r]); mul_d(t, t, (k >> r) & 1 ? X.c : -X.c, PREC); arb_add(a, a, t, PREC); } if (lo_d(a) < smin) smin = lo_d(a); if (up_d(a) > smax) smax = up_d(a); }
-    /* Teff = T + s_max·2√3·h */
-    arb_set_si(t, 3); arb_sqrt(t, t, PREC); arb_mul_si(t, t, 2, PREC); arb_mul(t, t, h, PREC); mul_d(t, t, smax, PREC);
-    set_ratio(a, (long)Tq[0], (long)Tq[1]); arb_add(t, t, a, PREC); X.Teff = up_d(t);
-    arb_clear(h); arb_clear(a); arb_clear(t);
+    double smin = INFINITY;
+    for (int k = 0; k < 16; k++) { arb_set_d(a, X.z[3]); for (int r = 0; r < 4; r++) { arb_set_d(t, X.K[3][r]); mul_d(t, t, (k >> r) & 1 ? X.c : -X.c, PREC); arb_add(a, a, t, PREC); } if (lo_d(a) < smin) smin = lo_d(a); }
+    /* turn = 2 sqrt3 h / d with d = min |(1, q)| over the cube; the allowance on a cell is T + turn * s */
+    arb_t dd; arb_init(dd); arb_one(dd);
+    for (int k = 0; k < 3; k++) { double m = LO[i][k] > 0 ? LO[i][k] : HI[i][k] < 0 ? -HI[i][k] : 0; arb_set_d(a, m); arb_sqr(a, a, PREC); arb_add(dd, dd, a, PREC); }
+    arb_sqrt(dd, dd, PREC);
+    arb_set_si(t, 3); arb_sqrt(t, t, PREC); arb_mul_si(t, t, 2, PREC); arb_mul(t, t, h, PREC); arb_div(t, t, dd, PREC); X.turn = up_d(t);
+    set_ratio(a, (long)Tq[0], (long)Tq[1]); X.Teff = up_d(a);
+    arb_clear(dd); arb_clear(h); arb_clear(a); arb_clear(t);
     double cEff; int degree = box_setup(&X, &cEff); Stats S = {0, 0, 0, INFINITY, INFINITY};
     for (int f = 0; f < 8; f++) { Stats R = scan_face(&X, f / 2, f % 2 ? 1 : -1, 8, 12); S.cells += R.cells; S.failed += R.failed; if (R.slackG < S.slackG) S.slackG = R.slackG; if (R.slackD < S.slackD) S.slackD = R.slackD; }
     int ok = degree != 0 && cEff > 0 && S.failed == 0 && smin > 0;
@@ -384,10 +391,10 @@ static int orientations(const char *file) {
 }
 
 int main(int argc, char **argv) {
-  if (argc > 1 && !strcmp(argv[1], "orientations")) return orientations(argc > 2 ? argv[2] : "data/orientation-sample.json") ? 0 : 1;
+  if (argc > 1 && !strcmp(argv[1], "orientations")) return orientations(argc > 2 ? argv[2] : "data/orientation-sample-T1-20.json") ? 0 : 1;
   int all = 1;
   { /* Theorem 6: square, T = 15/100, perturbation (1 + √2)T */
-    Problem P; square_problem(&P); Box X; X.P = &P; X.n = 2; X.c = 0.5; load_box(&X, "data/certificates.json", 2);
+    Problem P; square_problem(&P); Box X; X.P = &P; X.n = 2; X.c = 0.5; X.turn = 0; load_box(&X, "data/certificates.json", 2);
     arb_t T; arb_init(T); set_ratio(T, 15, 100); arb_t s2; arb_init(s2); arb_set_si(s2, 2); arb_sqrt(s2, s2, PREC); arb_add_si(s2, s2, 1, PREC); arb_mul(T, T, s2, PREC);
     X.Teff = up_d(T); arb_clear(T); arb_clear(s2);
     int ok = run("Theorem 6 (square, T = 0.15)", &X, 0, 20000);
@@ -405,7 +412,7 @@ int main(int argc, char **argv) {
     printf("  diagonal ≥ %.4f − 2T = %.4f\n", m, m - 0.3); ok = ok && m - 0.3 > 0; all = all && ok;
   }
   { /* Theorem 7: tetrahedron, T = 13/100, box c = 0.26, adaptive cells */
-    Problem P; tetra_problem(&P, NULL); Box X; X.P = &P; X.n = 4; X.c = 0.26; load_box(&X, "data/certificate-tetrahedron.json", 4);
+    Problem P; tetra_problem(&P, NULL); Box X; X.P = &P; X.n = 4; X.c = 0.26; X.turn = 0; load_box(&X, "data/certificate-tetrahedron.json", 4);
     arb_t T; arb_init(T); set_ratio(T, 13, 100); X.Teff = up_d(T); arb_clear(T);
     int ok = run("Theorem 7 (tetrahedron, T = 0.13, box c = 0.26, adaptive cells)", &X, 1, 0);
     double smin = INFINITY;

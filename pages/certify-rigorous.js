@@ -152,7 +152,9 @@
   // A cell that fails is split in half along every free direction (halving is exact in
   // floating point, so the leaves cover the face exactly), down to maxDepth levels.
   function scanAdaptive(problem, S, faces = allFaces(S.n), opts = {}) {
-    const { n, z, J, K, c } = S, { Gi, lipG, Teff } = problem, start = opts.start || 8, maxDepth = opts.maxDepth || 14;
+    const { n, z, J, K, c } = S, { Gi, lipG, Teff, turn } = problem, start = opts.start || 8, maxDepth = opts.maxDepth || 14;
+    // problem.turn (optional): an extra allowance turn·s that grows with the circumradius s (the
+    // last unknown), for turning the orientation: it is bounded on each cell by s's largest value there.
     const kG = lipG, kD = up.add(up.mul(2, lipG), S.normJ), y = new Array(n), ps = new Array(n);
     let cells = 0, failed = 0, deepest = 0, slackG = Infinity, slackD = Infinity, minG = Infinity;
     for (const [fixed, sign] of faces) {
@@ -186,7 +188,8 @@
           gl = Math.max(gl, g[r].lo > 0 ? g[r].lo : g[r].hi < 0 ? -g[r].hi : 0);
         }
         const rad = up.add(up.mul(S.normK, hw), S.flerr);
-        const sG = rd(rd(gl - up.mul(kG, rad)) - Teff), sD = rd(rd(gl - h) - up.mul(kD, rad));
+        const Tc = turn ? ru(Teff + up.mul(turn, ru(ps[n - 1] + rad))) : Teff;
+        const sG = rd(rd(gl - up.mul(kG, rad)) - Tc), sD = rd(rd(gl - h) - up.mul(kD, rad));
         if (sG > 0 && sD > 0) {
           slackG = Math.min(slackG, sG); slackD = Math.min(slackD, sD); minG = Math.min(minG, rd(gl - up.mul(kG, rad)));
           deepest = Math.max(deepest, cell.depth);

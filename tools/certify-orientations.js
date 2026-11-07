@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Every orientation (PROOFS.md, Corollary 7.3): every surface whose radius stays within
-// T = 0.02 of the ellipsoid with semi-axes 1, 0.8, 0.6 has an inscribed regular
-// tetrahedron in EVERY orientation.
+// T of the ellipsoid with semi-axes 1, 0.8, 0.6 has an inscribed regular tetrahedron in
+// EVERY orientation. T = 1/20 by default (--T p/q to choose another).
 //
 // Orientations. A rotation is a unit quaternion ±(1, a, b, c)/|·| with Cayley vector
 // (a, b, c); certify-rigorous.js builds its exactly orthogonal rational matrix. The
@@ -12,49 +12,59 @@
 // enough to cover that octahedron.
 //
 // Covering. [−1, 1]³ is split into cubes; every cube that meets the octahedron is
-// certified around its centre q. For q' in the cube, |u(q') − u(q)| ≤ |q' − q|₂ ≤ √3·h
-// (u(q) = (1, q)/|(1, q)| is 1-Lipschitz, h = the cube's half-width), and turning by the
-// rotation from u(q) to u(q') moves each vertex x + s·w by at most s·2|u(q') − u(q)|.
-// So a certificate for orientation q with perturbation allowance T + s_max·2√3·h proves
-// the theorem for every orientation in the cube. A cube that fails is retried with other
-// box sizes and then split into 8.
+// certified around its centre q. For q' in the cube, |u(q') − u(q)| ≤ |q' − q|₂/d ≤ √3·h/d,
+// where u(q) = (1, q)/|(1, q)|, h is the cube's half-width and d = min |(1, q)| over the
+// cube (radial projection onto the unit sphere is (1/d)-Lipschitz on points at distance at
+// least d from the origin). Turning by the rotation from u(q) to u(q') moves each vertex
+// x + s·w by at most s·2|u(q') − u(q)|. So a certificate for orientation q with the
+// allowance T + s·(2√3·h/d), bounded on each cell by that cell's largest s, proves the
+// theorem for every orientation in the cube. A cube that fails is retried with other box
+// sizes and then split into 8.
 //
-// Progress is appended to data/orientations-progress.jsonl, so an interrupted run resumes.
-// The result is data/certificate-orientations.json; the program exits with code 0 only
+// Progress is appended to data/orientations-progress-T<p>-<q>.jsonl, so an interrupted run resumes.
+// The result is data/certificate-orientations-T<p>-<q>.json; the program exits with code 0 only
 // if every cube is certified.
 //
-//   node tools/certify-orientations.js          # the full covering (about 1.5 hours on 4 cores)
-//   node tools/certify-orientations.js --check  # just re-check the covering from the data
-//   node tools/certify-orientations.js --sample 100  # export a random sample for ./verify orientations
+//   node tools/certify-orientations.js [--T 1/20]          # the full covering (hours on 4 cores)
+//   node tools/certify-orientations.js [--T 1/20] --check  # just re-check the covering from the data
+//   node tools/certify-orientations.js [--T 1/20] --sample 100  # a random sample for ./verify orientations
 'use strict';
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const fs = require('fs'), path = require('path'), os = require('os');
 const R = require('../pages/certify-rigorous.js');
 const { up, ru } = require('../pages/interval.js');
 
-const T = [1, 50], N_GRID = 36, BOXES = [0.20, 0.24, 0.18], MAX_SPLIT = 2;
+// T comes from --T in the main thread, and is handed to the worker threads explicitly (they do not
+// see the command line). Every progress record carries the T it was certified for.
+const ti = process.argv.indexOf('--T');
+const T = !isMainThread ? workerData.T : ti > 0 ? process.argv[ti + 1].split('/').map(Number) : [1, 20];
+const N_GRID = 36, BOXES = [0.24, 0.22, 0.20], MAX_SPLIT = 2;
 const STARTS = [[0, 0, 0, 0.75], [0, 0, 0, 0.6], [0, 0, 0, 0.9]];
-const ROOT = path.join(__dirname, '..'), PROGRESS = path.join(ROOT, 'data', 'orientations-progress.jsonl'), OUT = path.join(ROOT, 'data', 'certificate-orientations.json');
+const ROOT = path.join(__dirname, '..'), TAG = `T${T[0]}-${T[1]}`;
+const PROGRESS = path.join(ROOT, 'data', `orientations-progress-${TAG}.jsonl`), OUT = path.join(ROOT, 'data', `certificate-orientations-${TAG}.json`);
 
 // Certify one cube [lo, hi] (Cayley-vector coordinates). Returns the first passing set-up.
 function certifyCube(lo, hi) {
   const q = lo.map((v, i) => (v + hi[i]) / 2);
   let h = 0; for (let i = 0; i < 3; i++) h = Math.max(h, ru(hi[i] - q[i]), ru(q[i] - lo[i]));
-  const turn = up.mul(up.mul(2, up.sqrt(3)), h);        // vertex movement per unit circumradius
+  // d = a lower bound of |(1, q)| over the cube
+  let mq = 0; for (let i = 0; i < 3; i++) { const t = lo[i] > 0 ? lo[i] : hi[i] < 0 ? -hi[i] : 0; mq += t * t; }
+  const d = Math.sqrt(1 + mq) * (1 - 1e-15);
+  const turn = ru(up.mul(up.mul(2, up.sqrt(3)), h) / d);   // vertex movement per unit circumradius
   for (const c of BOXES) for (const start of STARTS) {
     const P = R.tetraProblem(T, c, 2, q, start), S = R.setup(P);
     if (!S.degree || !(S.cEff > 0)) continue;
     const res = { K: S.K, zero: S.z, c: S.c }, sMin = R.tetraRadius(P, res), sMax = R.tetraRadius(P, res, true);
     if (!(sMin > 0)) continue;
-    P.Teff = ru(P.Teff + up.mul(sMax, turn));
+    P.turn = turn;   // allowance T + turn·s, bounded cell by cell
     const r = R.finishAdaptive(P, S, [R.scanAdaptive(P, S, R.allFaces(4), { start: 4, maxDepth: 8, failFast: true })]);
-    if (r.ok) return { ok: true, q, h, c, start, sMin, sMax, Teff: P.Teff, cells: r.cellsChecked, slack: r.slackOverTeff, degSlack: r.degreeSlack };
+    if (r.ok) return { ok: true, q, h, c, start, sMin, sMax, turn, cells: r.cellsChecked, slack: r.slackOverTeff, degSlack: r.degreeSlack };
   }
   return { ok: false, q, h };
 }
 
 if (!isMainThread) {
-  parentPort.on('message', job => parentPort.postMessage({ key: job.key, lo: job.lo, hi: job.hi, depth: job.depth, ...certifyCube(job.lo, job.hi) }));
+  parentPort.on('message', job => parentPort.postMessage({ key: job.key, lo: job.lo, hi: job.hi, depth: job.depth, T, ...certifyCube(job.lo, job.hi) }));
   return;
 }
 
@@ -79,7 +89,11 @@ const children = c => {
 
 // ---- resume ----
 const done = new Map();
-if (fs.existsSync(PROGRESS)) for (const line of fs.readFileSync(PROGRESS, 'utf8').split('\n')) if (line.trim()) { const r = JSON.parse(line); done.set(r.key, r); }
+if (fs.existsSync(PROGRESS)) for (const line of fs.readFileSync(PROGRESS, 'utf8').split('\n')) if (line.trim()) {
+  const r = JSON.parse(line);
+  if (!Array.isArray(r.T) || r.T[0] !== T[0] || r.T[1] !== T[1]) { console.error(`${path.basename(PROGRESS)}: a record for T = ${r.T} in the file for T = ${T.join('/')}`); process.exit(2); }
+  done.set(r.key, r);
+}
 
 // Covering check: every top cube is certified, or split into certified (or further split) children.
 function coverage() {
@@ -98,8 +112,8 @@ function finish() {
   const cov = coverage(), all = [...done.values()].filter(r => r.ok);
   const ok = cov.missing === 0 && cov.failed === 0;
   const summary = {
-    theorem: 'Every surface ρ(ω)·ω with ρ continuous and |ρ(ω) − r_E(ω)| ≤ 1/50, where r_E is the radial function of the ellipsoid x² + y²/0.8² + z²/0.6² = 1, has an inscribed regular tetrahedron in every orientation.',
-    method: 'cover the octahedron |a|+|b|+|c| ≤ 1 of Cayley vectors (a fundamental domain of the tetrahedral group) by cubes; certify each cube centre in interval arithmetic with adaptive cells, with a perturbation allowance for turning within the cube',
+    theorem: `Every surface ρ(ω)·ω with ρ continuous and |ρ(ω) − r_E(ω)| ≤ ${T[0]}/${T[1]}, where r_E is the radial function of the ellipsoid x² + y²/0.8² + z²/0.6² = 1, has an inscribed regular tetrahedron in every orientation.`,
+    method: 'cover the octahedron |a|+|b|+|c| ≤ 1 of Cayley vectors (a fundamental domain of the tetrahedral group) by cubes; certify each cube centre in interval arithmetic with adaptive cells, with a perturbation allowance T + turn·s for turning within the cube',
     T: `${T[0]}/${T[1]}`, grid: N_GRID, ok, cubesCertified: cov.certified, missing: cov.missing, failed: cov.failed,
     smallestCircumradius: Math.min(...all.map(r => r.sMin)), smallestSlack: Math.min(...all.map(r => r.slack)), smallestDegreeSlack: Math.min(...all.map(r => r.degSlack)),
     boxesUsed: all.reduce((o, r) => ((o[r.c] = (o[r.c] || 0) + 1), o), {}), splitCubes: all.filter(r => r.depth > 0).length,
@@ -124,9 +138,9 @@ if (si > 0) {
     const S = R.setup(R.tetraProblem(T, r.c, 2, r.q, r.start));
     return { lo: r.lo, hi: r.hi, q: r.q, c: r.c, zero: S.z, J: S.J, K: S.K };
   });
-  const file = path.join(ROOT, 'data', 'orientation-sample.json');
+  const file = path.join(ROOT, 'data', `orientation-sample-${TAG}.json`);
   fs.writeFileSync(file, '{"T": ' + JSON.stringify(T) + ', "cubes": [\n' + cubes.map(c => JSON.stringify(c)).join(',\n') + '\n]}\n');
-  console.log(`wrote ${cubes.length} cubes to data/orientation-sample.json`);
+  console.log(`wrote ${cubes.length} cubes to data/orientation-sample-${TAG}.json`);
   process.exit(0);
 }
 
@@ -143,7 +157,7 @@ if (process.env.LIMIT) queue.splice(+process.env.LIMIT);   // testing: only the 
 const total = queue.length; let finished = 0, active = 0;
 console.log(`${topCubes.length} cubes cover the octahedron; ${done.size} already done; ${total} to check now.`);
 const out = fs.openSync(PROGRESS, 'a'), nw = Math.max(1, os.cpus().length);
-const workers = [...Array(nw)].map(() => new Worker(__filename));
+const workers = [...Array(nw)].map(() => new Worker(__filename, { workerData: { T } }));
 let resolveAll; const allDone = new Promise(r => (resolveAll = r));
 const idle = [];
 const feed = w => {

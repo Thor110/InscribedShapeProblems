@@ -11,7 +11,7 @@ J, K, and their accuracy affects only the margin.
     pip install mpmath
     python3 tools/verify_certificates.py            # square (T = 0.15) and tetrahedron (T = 0.13)
     python3 tools/verify_certificates.py square     # one of them
-    python3 tools/verify_certificates.py orientations   # Corollary 7.3: the covering, exactly
+    python3 tools/verify_certificates.py orientations [--T 1/20]   # Corollary 7.3: the covering, exactly
 
 The square check is the full Theorem 6 (80,000 boundary samples, seconds). The
 tetrahedron check is the full Theorem 7, using adaptive cells as the JavaScript does
@@ -241,10 +241,13 @@ def report(title, r):
 # grid line; the union of the cubes contains the octahedron exactly when every elementary cell
 # of that grid which meets the octahedron lies inside some certified cube. All in exact
 # rationals (each float is converted exactly).
-def covering():
+def covering(tag):
     from fractions import Fraction as Fr
     from bisect import bisect_left
-    recs = [json.loads(l) for l in open(os.path.join(ROOT, 'data', 'orientations-progress.jsonl')) if l.strip()]
+    recs = [json.loads(l) for l in open(os.path.join(ROOT, 'data', f'orientations-progress-{tag}.jsonl')) if l.strip()]
+    want = [int(v) for v in tag[1:].split('-')]
+    if any(r.get('T') != want for r in recs):   # every cube must have been certified for this T
+        print(f'  a record in orientations-progress-{tag}.jsonl was certified for another T'); return False
     cubes = [([Fr(v) for v in r['lo']], [Fr(v) for v in r['hi']]) for r in recs if r['ok']]
     axes = [sorted({v for lo_, hi_ in cubes for v in (lo_[i], hi_[i])} | {Fr(-1), Fr(1)}) for i in range(3)]
     covered = set()
@@ -273,7 +276,7 @@ def covering():
     return ok
 
 def main():
-    which = sys.argv[1:] or ['square', 'tetra']; all_ok = True
+    which = [a for a in sys.argv[1:] if a in ('square', 'tetra', 'orientations')] or ['square', 'tetra']; all_ok = True
     if 'square' in which:
         d = json.load(open(os.path.join(ROOT, 'data', 'certificates.json')))['certificate']
         T = 0.15; Teff = hi((1 + iv.sqrt(I(2))) * (iv.mpf(15) / 100))
@@ -301,7 +304,9 @@ def main():
         print(f"  on every cell: |G| − (change across the cell) − T ≥ {r['slackG']:.2e}; degree condition slack {r['slackD']:.2e}")
         print(f'  circumradius ≥ {smin:.4f}')
         all_ok &= r['ok']
-    if 'orientations' in which: all_ok &= covering()
+    if 'orientations' in which:
+        t = sys.argv[sys.argv.index('--T') + 1] if '--T' in sys.argv else '1/20'
+        all_ok &= covering('T' + t.replace('/', '-'))
     sys.exit(0 if all_ok else 1)
 
 if __name__ == '__main__':

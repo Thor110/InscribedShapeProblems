@@ -5,7 +5,7 @@ Notes on work planned or considered but not yet done, so it can be picked up lat
 ## Where things stand
 
 - **Classical proofs** (PROOFS.md): Theorem 1 (no cube in a generic surface; Theorem 1.3, computer-assisted, names an explicit egg with none), Theorems 2–3 (regular simplices in convex bodies), Proposition 5, Lemma 4.
-- **Computer-assisted proofs** in interval arithmetic: Theorem 6 (squares in every curve within 0.15 of an ellipse) and Theorem 7 (tetrahedra in every surface within 0.13 of an ellipsoid, plus a range of orientations). Each is confirmed by three independent implementations: JavaScript, Python/mpmath and C/Arb. Corollary 7.3: every orientation within 0.02, by 10,544 certificates; the covering is re-checked exactly and a sample of 100 in Arb.
+- **Computer-assisted proofs** in interval arithmetic: Theorem 6 (squares in every curve within 0.15 of an ellipse) and Theorem 7 (tetrahedra in every surface within 0.13 of an ellipsoid, plus a range of orientations). Each is confirmed by three independent implementations: JavaScript, Python/mpmath and C/Arb. Corollary 7.3: every orientation within 0.05, by 10,544 certificates; the covering is re-checked exactly and a sample of 100 in Arb.
 - **Machine-checked proofs** in Lean 4: all nine odd perfect number results (at least three primes, Euler's form, steps of 6, forced steps, the spine rule, odd σ(N), "9 or 12k + 1").
 - **Numerical studies:** shrinkage, rectangle sweep, parity counts, and nearest misses to perfection up to $10^{11}$.
 
@@ -34,7 +34,7 @@ The search turned out far cheaper than feared, because most boxes are ruled out 
 ## Next phase (plan of 7 November 2026)
 
 **Progress (7 November 2026).**
-- Step 1 is done: Corollary 7.3, every orientation for $T = 0.02$. A finer covering could raise $T$. The turning allowance with cubes of half-width $1/36$ costs about $0.093$ of the room, so halving $h$ (8 times the work, about 15 hours) might roughly double $T$. A full Arb re-check of all 10,544 cubes would take about 6 hours on 4 cores.
+- Step 1 is done: Corollary 7.3, every orientation for $T = 0.05$ (first $0.02$; charging each cell its own turning cost and using a larger box raised it). At $T = 0.07$, 98 of 100 sampled cubes still pass with half-width $1/36$, so splitting only the cubes where the room is tight should reach it. A full Arb re-check of all 10,544 cubes would take about 10 hours on 4 cores.
 - Step 2 is done: drafts in OUTREACH-DRAFTS.md, none sent.
 - Step 3.1 is done: results 1, 5 and 7 are in Lean.
 - Step 3.2, the degree lemma, is not started. Mathlib (v4.35) has no Brouwer fixed-point theorem and no Poincaré–Miranda theorem, only the winding number of loops in the circle. The lemma in four dimensions would need Brouwer first, which is a large project on its own. A 2D version for squares might be reachable through the winding number.
@@ -89,7 +89,7 @@ These would be drafts in a file for you to read and decide on. Nothing is sent w
 
 ### Certificates
 
-- **Every orientation for a wider neighbourhood.** Corollary 7.3 holds for $T = 0.02$ with cubes of half-width $1/36$. Smaller cubes (or splitting only where the room is tight) leave more room for $T$. *Small to medium (computing time).*
+- **Every orientation for a wider neighbourhood.** Corollary 7.3 holds for $T = 0.05$ with cubes of half-width $1/36$. Splitting the cubes where the room is tight leaves more room for $T$; $0.07$ looks within reach. *Small to medium (computing time).*
 - **Several boxes / other base shapes.** One box is limited by the degree condition (it fails beyond $c \approx 0.28$ for the tetrahedron, and the square peaks at $T \approx 0.152$). Joining several boxes, or a base curve chosen to make the square more robust, could push the neighbourhoods further. *Medium, uncertain payoff.*
 - **An assembly checker**, for speed when checking many more values (for example the orientation covering above). It would use vector instructions with per-instruction outward rounding (AVX-512). It is not needed for trust, since three implementations already agree, so only worth it if a much larger computation is planned. *Medium.*
 
