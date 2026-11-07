@@ -98,7 +98,28 @@ So the cube analogue of the square peg problem fails for an explicit, smooth, st
 **Checks.**
 - **Control.** With the asymmetry set to 0 (`-DE_NUM=0`), the surface is an ellipsoid. That is centrally symmetric, so it has inscribed cubes (Hausel–Makai–Szűcs). The search then fails exactly where it should: around the cube with centre 0 and half-edge $1/\sqrt{1 + 16/25 + 400/289} = 0.57505$. So the program finds cubes when they exist.
 - **Independent check** (`tools/egg-cube-arb.c`, about 10 minutes). A second program, in C with Arb's ball arithmetic, shares no code with the first. It bounds boxes differently: it evaluates the vertices and $F$ directly on balls of parameters, instead of using a Lipschitz bound. It redoes all three parts: 367 million boxes, all excluded. Its own control (`./egg-cube-arb control`) finds the ellipsoid's cube.
-- **Margin.** The method has room to spare. With the asymmetry $\tfrac{3}{20}$ reduced to $\tfrac1{20}$ or $\tfrac1{50}$, the proof still goes through in about half a minute.
+- **Margin.** The method has room to spare. Replace the asymmetry $\tfrac{3}{20}$ by smaller $\varepsilon$, which moves the surface by at most about $\varepsilon$ towards the ellipsoid, a surface that *does* have a cube. The proof still goes through, and its cost grows only like $\log(1/\varepsilon)$ (`-DE_NUM=1 -DE_DEN=...`):
+
+| $\varepsilon$ | $\tfrac{3}{20}$ | $10^{-2}$ | $10^{-3}$ | $10^{-4}$ | $10^{-6}$ | $10^{-8}$ |
+|---|---|---|---|---|---|---|
+| boxes (millions) | 63.1 | 51.7 | 54.8 | 58.7 | 66.6 | 74.5 |
+| deepest split | 37 | 66 | 87 | 112 | 157 | 205 |
+| seconds (4 cores) | 45 | 32 | 34 | 37 | 42 | 46 |
+
+  So a surface within about $10^{-8}$ of an ellipsoid with an inscribed cube has none. That is the instability Theorem 1 predicts: the ellipsoid's cube exists only because of its symmetry. Much below $10^{-8}$, the boxes would have to be smaller than the program's floor of $10^{-9}$, which is set by double precision.
+
+**Corollary 1.4 (more shapes on the egg).** The egg $S$ of Theorem 1.3 also contains no inscribed regular icosahedron or dodecahedron, and no inscribed copy of any polytope whose vertices include those of a cube (for example the rhombic dodecahedron).
+
+*Proof.*
+- **Shapes containing a cube.** Any copy of such a polytope would contain an inscribed cube. The regular dodecahedron is one: its 20 vertices include the 8 of a cube, $(\pm1, \pm1, \pm1)$ in the usual coordinates.
+- **The icosahedron.** Its vertices $(0, \pm1, \pm\varphi)$ and their cyclic permutations include no cube, so it needs its own search (`./egg-cube icosahedron`, about 2 minutes).
+  - The icosahedron's rotations include the tetrahedral ones (the Hurwitz units of Corollary 7.3), so orientations with $|q_1| + |q_2| + |q_3| \le 1$ suffice.
+  - The small-shape lemma holds for any polytope. Let $W$ be its minimal width and $D$ its diameter. All vertices lie in a slab of thickness $MD^2/g$, so $W \le MD^2/g$. For the icosahedron at scale $s$, $W = 2\varphi^2 s/\sqrt3$ and $D = 2\sqrt{\varphi + 2}\,s$, which gives $s \ge 0.0961$.
+  - The branch and bound excludes all 129 million boxes.
+- **Checks.** The Arb program (`./egg-cube-arb icosahedron`) re-checks the icosahedron independently: 254 million boxes, about 9 minutes. As a control, both programs, run on the unit sphere (`-DE_NUM=0 -DSPHERE`, and `./egg-cube-arb icosahedron-control`), find its icosahedra at scale $1/\sqrt{\varphi + 2} = 0.5257$. The ellipsoid cannot serve as the control here: the only quadric through the 12 vertices of a regular icosahedron is its circumsphere, so an ellipsoid that is not a sphere has none. $\blacksquare$
+
+**In the plane** the analogous question is classical. A regular pentagon's five vertices lie on its circumcircle, and five points determine a conic. So no ellipse other than a circle contains a regular pentagon, and no computation is needed.
+
 
 **Remarks.**
 - Theorem 1 is non-constructive: it shows that counterexamples are everywhere, but not where. Theorem 1.3 gives one explicitly. Before it was proved, two independent solvers found no cube on the egg closer than 1.5–2.8% of its size.

@@ -18,10 +18,20 @@ None of this settles an open problem. What it provides is proved constraints, wi
 - `tools/egg-cube-arb.c` re-checks it independently with Arb's ball arithmetic: 367 million boxes, about 10 minutes.
 - Both pass a control: on the ellipsoid, which has a cube, they find it.
 
-The search turned out far cheaper than feared, because most boxes are ruled out by one vertex almost at once. Possible follow-ups:
-- **A flatter egg.** Asymmetry $\tfrac1{50}$ also passes in about half a minute. How small can the asymmetry go? As it tends to 0 the surface tends to an ellipsoid, which has cubes, so the cost must grow somewhere. Mapping that would show how robust the non-existence is. *Small.*
-- **Other shapes.** The same program works for any polytope with more vertices than the similarity group has dimensions. Candidates are a regular pentagon on an explicit curve (2D, a warm-up), the regular icosahedron or dodecahedron on the egg, and a 4D hypercube on a 4D egg. *Small to medium each.*
-- **Exact arithmetic for the surface checks.** Part 1 could be redone in exact rational arithmetic as a further independent check, for example in Python. *Small.*
+The search turned out far cheaper than feared, because most boxes are ruled out by one vertex almost at once.
+
+**Follow-ups (done, 7 November 2026):**
+- **A flatter egg.** The proof still works for asymmetry down to $10^{-8}$, with cost growing only like $\log(1/\varepsilon)$ (63 to 75 million boxes). Much below $10^{-8}$, the boxes would have to be smaller than the program's floor of $10^{-9}$.
+- **Other shapes.** The regular icosahedron is excluded (129 million boxes, also re-checked in Arb), and a control on the sphere finds its icosahedra. The dodecahedron, the rhombic dodecahedron and any shape containing a cube's vertices are excluded with no further search (Corollary 1.4). The regular pentagon needs no computation: a non-circular ellipse has none, because five points determine a conic.
+- **Exact arithmetic for the surface checks.** Not done, and no longer needed: the Arb program already redoes part 1 independently.
+
+**Still open: the 4D hypercube on a 4D egg.** Theorem 1 says a generic hypersurface in $\mathbb{R}^4$ has no inscribed tesseract (16 vertices against 11 parameters). An explicit example needs:
+- a 4D egg, for example $\sum a_i x_i^2 + \varepsilon\,(\text{a cubic}) = 1$, with part 1 redone in 4D;
+- rotations of $\mathbb{R}^4$ written as $p \mapsto lp\bar r$ for two unit quaternions $l$ and $r$. Turning moves a point by at most $(|l' - l| + |r' - r|)\,|p|$, the same bound as in 3D twice over;
+- orientations covered by Cayley charts for $l$ and $r$ separately, and either the tesseract's 192 rotations used to cut them down, or the covering simply made 192 times larger;
+- a branch and bound in 11 dimensions (centre 4, scale 1, rotation 6).
+
+The 3D experience suggests that each extra vertex makes exclusion easier, but 11 dimensions is a large jump from 7. It needs a feasibility measurement first, as for the cube. *Medium.*
 
 ## Next phase (plan of 7 November 2026)
 

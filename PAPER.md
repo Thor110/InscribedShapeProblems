@@ -70,6 +70,8 @@ The proof is computer-assisted, in interval arithmetic.
 - A branch-and-bound search over centre, size and orientation, with the orientations reduced by the cube's 24 rotations, excludes every other cube: 63 million boxes, under a minute.
 - An independent re-implementation with Arb's ball arithmetic agrees. In a control run on the ellipsoid (asymmetry 0), the search correctly finds that surface's cube.
 
+The same programs show that the egg has no regular icosahedron. It has no regular dodecahedron either, since a dodecahedron's vertices include a cube's (Corollary 1.4). The proof also survives making the asymmetry as small as $10^{-8}$, at almost no extra cost. So a surface within about $10^{-8}$ of an ellipsoid with an inscribed cube can have none.
+
 ## 3. Simplices in convex bodies: the centring jig
 
 Let $\Delta$ be a simplex whose circumcentre is interior, $w_0, \dots, w_n$ the unit vectors from the circumcentre to its vertices, and $\lambda_k > 0$ with $\sum \lambda_k w_k = 0$. The vector $\lambda$ spans the space of linear relations among the $w_k$. For a convex body $K$, let $r_k(x)$ be the length of the $k$-th arm of the jig at $x$, i.e. how far $x + t w_k$ stays in $K$. The **rattle field** is

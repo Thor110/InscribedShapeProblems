@@ -378,7 +378,12 @@ gcc -O2 -fopenmp -ffp-contract=off -o egg-cube tools/egg-cube.c -lm
 ./egg-cube surface && ./egg-cube search                     # the proof, under a minute
 gcc -O2 -fopenmp -o egg-cube-arb tools/egg-cube-arb.c -lflint -lm
 ./egg-cube-arb && ./egg-cube-arb control                    # the independent check, about 10 minutes
+./egg-cube icosahedron && ./egg-cube-arb icosahedron         # Corollary 1.4: no regular icosahedron either
 ```
+
+**Further results** ([PROOFS.md, Corollary 1.4](PROOFS.md#theorem-1--generic-non-existence)):
+- **Other shapes.** The egg has no regular icosahedron (129 million boxes, about 2 minutes, also re-checked in Arb). It has no regular dodecahedron either, with no extra search needed: a dodecahedron's 20 vertices include a cube's 8.
+- **A flatter egg.** The proof survives making the egg much less lopsided. Even when it is within about 10⁻⁸ of an ellipsoid, a surface that does have a cube, there is still no cube, and the proof still takes under a minute. The cost grows only with the number of digits of the asymmetry. That is the instability behind Theorem 1: the ellipsoid's cube exists only because of its symmetry.
 
 ![Inscribed Cube Viewfinder Demo](images/cube_viewfinder_demo.gif)
 

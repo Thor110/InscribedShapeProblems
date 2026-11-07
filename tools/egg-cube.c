@@ -11,6 +11,8 @@
  *   ./egg-cube surface         part 1: the surface is a smooth strictly convex sphere,
  *                              and the constants for part 2
  *   ./egg-cube search [parts]  part 3: no cube (all of it, or a fraction for timing)
+ *   ./egg-cube icosahedron     the same for the regular icosahedron (the dodecahedron needs
+ *                              no search: its 20 vertices include a cube's 8)
  *
  * Rigour. All bounds use interval arithmetic in which every operation is rounded outward by
  * one unit in the last place or more (the same scheme as pages/interval.js): after a
@@ -56,14 +58,21 @@ static inline double dn_sqrt(double a) { return rd(sqrt(a)); }
 
 /* ---------- the egg ---------- */
 /* The asymmetry e = E_NUM/E_DEN (3/20). Control runs: -DE_NUM=0 gives the ellipsoid, which is
- * centrally symmetric and so has inscribed cubes (Hausel-Makai-Szucs); the search must then fail. */
+ * centrally symmetric and so has inscribed cubes (Hausel-Makai-Szucs); the search must then fail.
+ * -DE_NUM=0 -DSPHERE gives the unit sphere, which has inscribed icosahedra (the ellipsoid has
+ * none: a quadric through the 12 vertices of a regular icosahedron is its circumsphere). */
 #ifndef E_NUM
 #define E_NUM 3
 #define E_DEN 20
 #endif
 static iv A, B, K1, K2, K3, K4;   /* 16/25, 400/289, e/2, e, 0.7e, 0.3e */
 static void init_coeffs(void) {
-  A = ratio(16, 25); B = ratio(400, 289); K1 = ratio(E_NUM, 2 * E_DEN); K2 = ratio(E_NUM, E_DEN);
+#ifdef SPHERE
+  A = I(1); B = I(1);   /* control: the unit sphere (with -DE_NUM=0), which has inscribed cubes and icosahedra */
+#else
+  A = ratio(16, 25); B = ratio(400, 289);
+#endif
+  K1 = ratio(E_NUM, 2 * E_DEN); K2 = ratio(E_NUM, E_DEN);
   K3 = ratio(7 * E_NUM, 10 * E_DEN); K4 = ratio(3 * E_NUM, 10 * E_DEN);
 }
 static iv F(iv x, iv y, iv z) {
@@ -182,8 +191,31 @@ static Surface surface(int verbose) {
 typedef struct { double lo[7], hi[7]; } Box;    /* c0 c1 c2 s q0 q1 q2 */
 typedef struct { long boxes, failed; int deepest; double smallestRho; } Stats;
 static Surface SF;
-static double QMAX;
 static long reported = 0;
+
+/* The shape: vertices v (at scale s = 1), an upper bound on |v|, and the domain of Cayley
+ * vectors that covers every orientation up to the shape's rotations:
+ *   cube: vertices (+-1, +-1, +-1); its 24 rotations give |q_i| <= sqrt2 - 1, sum |q_i| <= 1.
+ *   icosahedron: vertices (0, +-1, +-phi) and cyclic permutations; its rotations include the
+ *     tetrahedral ones (the Hurwitz units), which give sum |q_i| <= 1, as in Corollary 7.3. */
+typedef struct { const char *name; int nv; iv v[12][3]; double vnorm, qmax; } Shape;
+static Shape SH;
+static void make_shape(const char *name) {
+  SH.name = name;
+  if (!strcmp(name, "cube")) {
+    SH.nv = 8; for (int e = 0; e < 8; e++) for (int i = 0; i < 3; i++) SH.v[e][i] = I((e >> i) & 1 ? 1 : -1);
+    SH.vnorm = up_sqrt(3); SH.qmax = ru(sqrt(2) - 1) + 1e-12;
+  } else {   /* icosahedron */
+    iv sq5 = I2(rd(sqrt(5)), ru(sqrt(5))), phi = divi(add(I(1), sq5), I(2));
+    int n = 0;
+    for (int a = -1; a <= 1; a += 2) for (int b = -1; b <= 1; b += 2) {
+      iv one = I(a), ph = mul(I(b), phi);
+      iv w[3] = {I(0), one, ph};
+      for (int r = 0; r < 3; r++) { for (int i = 0; i < 3; i++) SH.v[n][i] = w[(i + 3 - r) % 3]; n++; }
+    }
+    SH.nv = 12; SH.vnorm = up_sqrt(ru(phi.hi + 2)); SH.qmax = 1;
+  }
+}
 
 /* rotation matrix of the Cayley vector q (a point), enclosed */
 static void rotation(const double q[3], iv R[3][3]) {
@@ -205,13 +237,13 @@ static int excluded(const Box *b) {
    * |dc| + sqrt3 |ds| + s_max * 2 sqrt3 |dq|   (|R(q')e - R(q)e| <= 2 |u' - u| |e|, |u' - u| <= |q' - q|) */
   double dc = up_sqrt(up_add(up_add(up_mul(hw[0], hw[0]), up_mul(hw[1], hw[1])), up_mul(hw[2], hw[2])));
   double dq = up_sqrt(up_add(up_add(up_mul(hw[4], hw[4]), up_mul(hw[5], hw[5])), up_mul(hw[6], hw[6])));
-  double s3 = up_sqrt(3), rho = up_add(up_add(dc, up_mul(s3, hw[3])), up_mul(up_mul(up_mul(2, s3), b->hi[3]), dq));
+  double vn = SH.vnorm, rho = up_add(up_add(dc, up_mul(vn, hw[3])), up_mul(up_mul(up_mul(2, vn), b->hi[3]), dq));
   iv R[3][3]; rotation(m + 4, R);
   iv s = I(m[3]);
-  for (int e = 0; e < 8; e++) {
-    double sg[3] = {e & 1 ? 1 : -1, e & 2 ? 1 : -1, e & 4 ? 1 : -1};
+  for (int e = 0; e < SH.nv; e++) {
+    const iv *v = SH.v[e];
     iv p[3];
-    for (int i = 0; i < 3; i++) { iv t = add(add(mul(R[i][0], I(sg[0])), mul(R[i][1], I(sg[1]))), mul(R[i][2], I(sg[2]))); p[i] = add(I(m[i]), mul(s, t)); }
+    for (int i = 0; i < 3; i++) { iv t = add(add(mul(R[i][0], v[0]), mul(R[i][1], v[1])), mul(R[i][2], v[2])); p[i] = add(I(m[i]), mul(s, t)); }
     iv f = F(p[0], p[1], p[2]);
     double fm = mig(f);
     if (fm == 0) continue;
@@ -226,7 +258,7 @@ static int excluded(const Box *b) {
 }
 static double rho_of(const Box *b) {   /* the same weights, for choosing the split */
   double w[7]; for (int k = 0; k < 7; k++) w[k] = (b->hi[k] - b->lo[k]) / 2;
-  return sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]) + sqrt(3) * w[3] + 2 * sqrt(3) * b->hi[3] * sqrt(w[4] * w[4] + w[5] * w[5] + w[6] * w[6]);
+  return sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]) + SH.vnorm * w[3] + 2 * SH.vnorm * b->hi[3] * sqrt(w[4] * w[4] + w[5] * w[5] + w[6] * w[6]);
 }
 static int q_outside(const Box *b) {   /* the box misses |q1| + |q2| + |q3| <= 1 */
   double s = 0; for (int k = 4; k < 7; k++) s += b->lo[k] > 0 ? b->lo[k] : b->hi[k] < 0 ? -b->hi[k] : 0;
@@ -238,10 +270,14 @@ static Stats search_box(Box b0) {
   long cap = 4096, top = 0; Box *st = malloc(cap * sizeof(Box)); int *dp = malloc(cap * sizeof(int));
   st[top] = b0; dp[top++] = 0;
   while (top) {
+    long nrep;
+    #pragma omp atomic read
+    nrep = reported;
+    if (nrep > 10) break;   /* the proof has failed: stop (this keeps control runs short) */
     Box b = st[--top]; int d = dp[top]; S.boxes++;
     if (q_outside(&b) || excluded(&b)) { if (d > S.deepest) S.deepest = d; continue; }
     double rho = rho_of(&b);
-    if (d >= 60 || rho < 1e-9) { S.failed++; if (rho < S.smallestRho) S.smallestRho = rho;
+    if (d >= 400 || rho < 1e-9) { S.failed++; if (rho < S.smallestRho) S.smallestRho = rho;
       long nf;
       #pragma omp atomic capture
       nf = ++reported;
@@ -251,7 +287,7 @@ static Stats search_box(Box b0) {
       continue; }
     /* split the coordinate contributing most to rho */
     double c[7]; for (int k = 0; k < 7; k++) c[k] = (b.hi[k] - b.lo[k]);
-    c[3] *= sqrt(3); for (int k = 4; k < 7; k++) c[k] *= 2 * sqrt(3) * b.hi[3];
+    c[3] *= SH.vnorm; for (int k = 4; k < 7; k++) c[k] *= 2 * SH.vnorm * b.hi[3];
     int k = 0; for (int i = 1; i < 7; i++) if (c[i] > c[k]) k = i;
     double mid = (b.lo[k] + b.hi[k]) / 2;
     if (top + 2 > cap) { cap *= 2; st = realloc(st, cap * sizeof(Box)); dp = realloc(dp, cap * sizeof(int)); }
@@ -264,16 +300,28 @@ static Stats search_box(Box b0) {
 int main(int argc, char **argv) {
   init_coeffs();
   if (argc > 1 && !strcmp(argv[1], "surface")) return surface(1).ok ? 0 : 1;
-  if (argc > 1 && !strcmp(argv[1], "search")) {
+  if (argc > 1 && (!strcmp(argv[1], "search") || !strcmp(argv[1], "icosahedron"))) {
     SF = surface(0); if (!SF.ok) { printf("surface checks failed\n"); return 1; }
-    QMAX = ru(sqrt(2) - 1) + 1e-12;
-    /* top-level grid: centres in the surface's bounding box, s in [smin, smax], q in [-QMAX, QMAX]^3 */
+    int ico = !strcmp(argv[1], "icosahedron"); make_shape(ico ? "icosahedron" : "cube");
+    double smin = SF.smin, smax = SF.smax;
+    if (ico) {
+      /* the small-shape lemma for any polytope: all vertices lie in a slab of thickness M D^2 / g
+       * (D the diameter), but the polytope is at least W wide in every direction, so
+       * s >= g W / (M D^2). Icosahedron with these vertices: W = 2 phi^2/sqrt3 (twice the
+       * inradius), D = 2 sqrt(phi + 2). Large: D s <= 2 rmax. */
+      iv sq5 = I2(rd(sqrt(5)), ru(sqrt(5))), phi = divi(add(I(1), sq5), I(2)), phi2 = mul(phi, phi);
+      double W = rd(rd(2 * phi2.lo) / up_sqrt(3)), D2 = ru(4 * ru(phi.hi + 2));
+      smin = rd(rd(rd(SF.g * W) / ru(SF.M * D2)) * (1 - 0x1p-50));
+      smax = ru(ru(2 * SF.rmax / dn_sqrt(D2)) * (1 + 0x1p-50));
+    }
+    double QM = SH.qmax;
+    /* top-level grid: centres in the surface's bounding box, s in [smin, smax], q in [-QM, QM]^3 */
     int N[7] = {8, 10, 7, 8, 4, 4, 4}; long total = 1; for (int k = 0; k < 7; k++) total *= N[k];
-    double lo[7] = {SF.bb[0][0], SF.bb[1][0], SF.bb[2][0], SF.smin, -QMAX, -QMAX, -QMAX};
-    double hi[7] = {SF.bb[0][1], SF.bb[1][1], SF.bb[2][1], SF.smax, QMAX, QMAX, QMAX};
+    double lo[7] = {SF.bb[0][0], SF.bb[1][0], SF.bb[2][0], smin, -QM, -QM, -QM};
+    double hi[7] = {SF.bb[0][1], SF.bb[1][1], SF.bb[2][1], smax, QM, QM, QM};
     double frac = argc > 2 ? atof(argv[2]) : 1; long count = (long)(total * frac); if (count < 1) count = 1;
     long step = total / count;   /* a spread-out sample of the top boxes when timing */
-    printf("Part 3: %ld of %ld top boxes; s in [%.4f, %.4f]\n", count, total, SF.smin, SF.smax);
+    printf("Part 3 (%s): %ld of %ld top boxes; scale s in [%.4f, %.4f]\n", SH.name, count, total, smin, smax);
     long boxes = 0, failed = 0; int deepest = 0; double t0 = omp_get_wtime(); long done = 0;
     #pragma omp parallel for schedule(dynamic, 1) reduction(+:boxes, failed) reduction(max:deepest)
     for (long t = 0; t < count; t++) {
@@ -287,8 +335,8 @@ int main(int argc, char **argv) {
       if (dn % 1000 == 0) { fprintf(stderr, "\r  %ld/%ld top boxes, %.0f s", dn, count, omp_get_wtime() - t0); }
     }
     printf("\n  %ld boxes checked, deepest split %d, %ld not excluded, %.1f s\n%s\n", boxes, deepest, failed, omp_get_wtime() - t0,
-           failed == 0 && count == total ? "VALID: no inscribed cube" : failed ? "FAILED" : "partial run: no cube in the part checked");
+           failed == 0 && count == total ? (ico ? "VALID: no inscribed regular icosahedron" : "VALID: no inscribed cube") : failed ? "FAILED" : "partial run: no cube in the part checked");
     return failed == 0 ? 0 : 1;
   }
-  fprintf(stderr, "usage: egg-cube surface | search [fraction]\n"); return 2;
+  fprintf(stderr, "usage: egg-cube surface | search [fraction] | icosahedron [fraction]\n"); return 2;
 }

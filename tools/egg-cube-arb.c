@@ -8,6 +8,8 @@
  *   ./egg-cube-arb
  *   ./egg-cube-arb control   (asymmetry 0, the ellipsoid: the boxes holding its known cube,
  *                            centre 0, half-edge 1/sqrt(1 + 16/25 + 400/289), must NOT be excluded)
+ *   ./egg-cube-arb icosahedron           the same for the regular icosahedron
+ *   ./egg-cube-arb icosahedron-control   (the unit sphere: its icosahedra must be found)
  *
  * The egg: F = x^2 + (16/25) y^2 + (400/289) z^2 + (3/20)(x^3/2 + xyz + (7/10) y^2 z + (3/10) z^3) - 1,
  * and the surface is its zero set in |p| <= 3/2.
@@ -134,7 +136,29 @@ static void p2(const double lo[3], const double hi[3], double r, int depth, P2 *
 }
 
 /* ---------- part 3: boxes of (c, s, q) evaluated as balls ---------- */
-static double RMAX;
+static double RMAX, VN, QM;          /* VN >= |v|; QM: the box of Cayley vectors searched */
+static int NV; static arb_t VB[12][3];   /* the vertices at scale 1 */
+/* cube: (+-1, +-1, +-1), orientations |q_i| <= sqrt2 - 1, sum |q_i| <= 1.
+ * icosahedron: (0, +-1, +-phi) and cyclic permutations; the Hurwitz units are among its
+ * rotations, so sum |q_i| <= 1 suffices. */
+static void make_shape(int ico) {
+  if (!ico) {
+    NV = 8; for (int e = 0; e < 8; e++) for (int i = 0; i < 3; i++) { arb_init(VB[e][i]); arb_set_si(VB[e][i], (e >> i) & 1 ? 1 : -1); }
+    VN = sqrt(3) * (1 + 1e-12); QM = (sqrt(2) - 1) * (1 + 1e-12);
+  } else {
+    arb_t phi; arb_init(phi); arb_sqrt_ui(phi, 5, PREC); arb_add_si(phi, phi, 1, PREC); arb_mul_2exp_si(phi, phi, -1);
+    int n = 0;
+    for (int a = -1; a <= 1; a += 2) for (int b = -1; b <= 1; b += 2) for (int r = 0; r < 3; r++) {
+      /* (0, a, b phi) with its coordinates rotated r places */
+      for (int i = 0; i < 3; i++) {
+        int w = (i + 3 - r) % 3; arb_init(VB[n][i]);
+        if (w == 0) arb_zero(VB[n][i]); else if (w == 1) arb_set_si(VB[n][i], a); else arb_mul_si(VB[n][i], phi, b, PREC);
+      }
+      n++;
+    }
+    NV = 12; VN = sqrt((1 + sqrt(5)) / 2 + 2) * (1 + 1e-12); QM = 1; arb_clear(phi);
+  }
+}
 /* 1 if no cube has its parameters in the box */
 static int no_cube(const double *lo, const double *hi) {
   arb_ptr v = _arb_vec_init(7), p = _arb_vec_init(3); arb_t qq, den, d0, x, f, n, R[3][3];
@@ -153,10 +177,9 @@ static int no_cube(const double *lo, const double *hi) {
       if (i != j) { arb_mul_2exp_si(x, q + k, 1); if ((j - i + 3) % 3 == 1) arb_sub(R[i][j], R[i][j], x, PREC); else arb_add(R[i][j], R[i][j], x, PREC); }
       arb_div(R[i][j], R[i][j], den, PREC);
     }
-    for (int e = 0; e < 8 && !res; e++) {
-      int sg[3] = {e & 1 ? 1 : -1, e & 2 ? 1 : -1, e & 4 ? 1 : -1};
+    for (int e = 0; e < NV && !res; e++) {
       for (int i = 0; i < 3; i++) {
-        arb_zero(x); for (int j = 0; j < 3; j++) { if (sg[j] > 0) arb_add(x, x, R[i][j], PREC); else arb_sub(x, x, R[i][j], PREC); }
+        arb_zero(x); for (int j = 0; j < 3; j++) arb_addmul(x, R[i][j], VB[e][j], PREC);
         arb_mul(x, x, v + 3, PREC); arb_add(p + i, v + i, x, PREC);
       }
       norm2(n, p);
@@ -170,14 +193,22 @@ static int no_cube(const double *lo, const double *hi) {
   return res;
 }
 typedef struct { double lo[7], hi[7]; int d; } Box;
+static long FAILED_TOTAL = 0;   /* a failed proof stops after a few failures (keeps control runs short) */
 static long search(Box b0, long *failed) {
   long cap = 1024, top = 0, boxes = 0; Box *st = malloc(cap * sizeof(Box)); st[top++] = b0;
   while (top) {
+    long nf;
+    #pragma omp atomic read
+    nf = FAILED_TOTAL;
+    if (nf > 10) break;
     Box b = st[--top]; boxes++;
     if (no_cube(b.lo, b.hi)) continue;
-    if (b.d >= 64) { (*failed)++; continue; }
+    if (b.d >= 64) { (*failed)++;
+      #pragma omp atomic
+      FAILED_TOTAL++;
+      continue; }
     double w[7]; for (int k = 0; k < 7; k++) w[k] = b.hi[k] - b.lo[k];
-    w[3] *= 1.7320508; for (int k = 4; k < 7; k++) w[k] *= 3.4641016 * b.hi[3];
+    w[3] *= VN; for (int k = 4; k < 7; k++) w[k] *= 2 * VN * b.hi[3];
     int k = 0; for (int i = 1; i < 7; i++) if (w[i] > w[k]) k = i;
     double m = (b.lo[k] + b.hi[k]) / 2;
     if (top + 2 > cap) { cap *= 2; st = realloc(st, cap * sizeof(Box)); }
@@ -187,9 +218,12 @@ static long search(Box b0, long *failed) {
 }
 
 int main(int argc, char **argv) {
-  int control = argc > 1 && !strcmp(argv[1], "control");
+  const char *mode = argc > 1 ? argv[1] : "";
+  int ico = !strncmp(mode, "icosahedron", 11), control = strstr(mode, "control") != NULL;
   arb_init(CA); arb_init(CB); arb_init(CE); arb_init(C7); arb_init(C3);
   q_(CA, 16, 25); q_(CB, 400, 289); q_(CE, control ? 0 : 3, 20); q_(C7, 7, 10); q_(C3, 3, 10);
+  if (ico && control) { arb_one(CA); arb_one(CB); }   /* the unit sphere, which has icosahedra */
+  make_shape(ico);
   double t0 = omp_get_wtime();
   /* part 1, in 64 pieces for the threads */
   P1 S = {0, 0, INFINITY, 0, {{INFINITY, -INFINITY}, {INFINITY, -INFINITY}, {INFINITY, -INFINITY}}, INFINITY};
@@ -211,13 +245,17 @@ int main(int argc, char **argv) {
     { H.boxes += L.boxes; H.failed += L.failed; H.M = fmax(H.M, L.M); }
   }
   double smin = S.g / (6 * H.M) * (1 - 1e-12), smax = S.rmax / sqrt(3) * (1 + 1e-12);
+  if (ico) {   /* s >= g W / (M D^2) with width W = 2 phi^2/sqrt3 and diameter D = 2 sqrt(phi + 2); D s <= 2 rmax */
+    double phi = (1 + sqrt(5)) / 2, W = 2 * phi * phi / sqrt(3), D2 = 4 * (phi + 2);
+    smin = S.g * W / (H.M * D2) * (1 - 1e-12); smax = 2 * S.rmax / sqrt(D2) * (1 + 1e-12);
+  }
   int ok1 = S.failed == 0 && H.failed == 0;
   printf("Part 1: %ld boxes, %ld failed: one smooth star-shaped sphere, %.4f <= |p| <= %.4f, |grad F| >= %.4f\n", S.boxes, S.failed, S.rmin, S.rmax, S.g);
   printf("        Hessian positive definite on |p| <= %.4f (%ld boxes, %ld failed), norm <= %.4f\n", r, H.boxes, H.failed, H.M);
-  printf("Part 2: half-edge s in [%.4f, %.4f]\n", smin, smax);
+  printf("Part 2 (%s): scale s in [%.4f, %.4f]\n", ico ? "icosahedron" : "cube", smin, smax);
   RMAX = S.rmax;
   /* part 3 */
-  double qm = (sqrt(2) - 1) * (1 + 1e-12);
+  double qm = QM;
   int N[7] = {8, 10, 7, 8, 4, 4, 4}; long total = 1; for (int k = 0; k < 7; k++) total *= N[k];
   double LO[7] = {S.bb[0][0], S.bb[1][0], S.bb[2][0], smin, -qm, -qm, -qm}, HI[7] = {S.bb[0][1], S.bb[1][1], S.bb[2][1], smax, qm, qm, qm};
   long boxes = 0, failed = 0;
@@ -225,16 +263,16 @@ int main(int argc, char **argv) {
   for (long t = 0; t < total; t++) {
     Box b; long idx = t; b.d = 0;
     for (int k = 0; k < 7; k++) { int j = idx % N[k]; idx /= N[k]; b.lo[k] = j == 0 ? LO[k] : LO[k] + (HI[k] - LO[k]) * j / N[k]; b.hi[k] = j == N[k] - 1 ? HI[k] : LO[k] + (HI[k] - LO[k]) * (j + 1) / N[k]; }
-    if (control) {   /* only the top boxes that contain the ellipsoid's cube */
-      double cube[7] = {0, 0, 0, 1 / sqrt(1 + 16.0 / 25 + 400.0 / 289), 0, 0, 0}; int in = 1;
+    if (control) {   /* only the top boxes that contain the known shape: the ellipsoid's cube, or an icosahedron in the sphere */
+      double cube[7] = {0, 0, 0, ico ? 1 / sqrt((1 + sqrt(5)) / 2 + 2) : 1 / sqrt(1 + 16.0 / 25 + 400.0 / 289), 0, 0, 0}; int in = 1;
       for (int k = 0; k < 7; k++) in &= b.lo[k] <= cube[k] && cube[k] <= b.hi[k];
       if (!in) continue;
     }
     long f = 0; boxes += search(b, &f); failed += f;
   }
-  if (control) { printf("Control (the ellipsoid): %ld boxes, %ld not excluded: %s\n", boxes, failed, failed ? "the known cube is found, as it must be" : "PROBLEM: the known cube was missed"); return failed ? 0 : 1; }
+  if (control) { printf("Control (%s): %ld boxes, %ld not excluded: %s\n", ico ? "icosahedra in the sphere" : "the ellipsoid's cube", boxes, failed, failed ? "the known shape is found, as it must be" : "PROBLEM: the known shape was missed"); return failed ? 0 : 1; }
   int ok = ok1 && failed == 0;
-  printf("Part 3: %ld boxes, %ld not excluded, %.0f s\n%s\n", boxes, failed, omp_get_wtime() - t0, ok ? "VALID: the egg has no inscribed cube" : "FAILED");
+  printf("Part 3: %ld boxes, %ld not excluded, %.0f s\n%s\n", boxes, failed, omp_get_wtime() - t0, ok ? (ico ? "VALID: the egg has no inscribed regular icosahedron" : "VALID: the egg has no inscribed cube") : "FAILED");
   flint_cleanup_master();
   return ok ? 0 : 1;
 }
