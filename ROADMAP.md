@@ -11,6 +11,49 @@ Notes on work planned or considered but not yet done, so it can be picked up lat
 
 None of this settles an open problem. What it provides is proved constraints, wider proved special cases, and evidence that others can check cheaply.
 
+## Next phase (plan of 7 November 2026)
+
+In priority order. Each step ends in something checkable, so the plan can stop after any step without leaving loose ends.
+
+### 1. Every tetrahedron orientation (the main goal)
+
+**Aim.** Theorem 7 currently gives, for surfaces within 0.06 of the ellipsoid, a tetrahedron in every orientation within 4.16° of one given orientation. Covering *all* orientations would prove that every such surface has an inscribed regular tetrahedron in **every** orientation. That is the analogue of Gromov's "every pose" theorem, for rough surfaces that his theorem does not cover.
+
+**Steps.**
+1. **Generalise the certificate to any orientation.** Take the orientation as input (an exact rational rotation, as now), find that orientation's tetrahedron on the ellipsoid by Newton's method, build its box, and certify a ball of orientations around it, using the turning-angle allowance already used for Corollary 7.2.
+2. **A rigorous covering of all rotations.** List centre orientations, each with its certified radius, so that every rotation is within the radius of some centre, after allowing for the tetrahedron's 12 symmetries. The covering must itself be checked rigorously (gaps between balls must be ruled out, not just made unlikely).
+3. **Run it in C/Arb**, in batches with a progress log, so it can resume after interruption. The estimate is on the order of $10^4$ certificates and hours of computing.
+4. **Independent check.** Re-check a random sample of the certificates in Python/mpmath, and the covering argument separately.
+5. **Write-up:** Corollary 7.3 in PROOFS.md, with the data file and the commands to reproduce it.
+
+**Decision point.** Some orientations may sit near a degenerate configuration and need a smaller T or smaller balls. After step 1, a quick scan over a coarse grid of orientations shows how the certified radius varies. If some regions are weak, the theorem is stated for the largest T that covers everything.
+
+**Size:** medium (a few sessions of work, plus hours of computing).
+
+### 2. Outreach, prepared in advance (alongside 1)
+
+**Aim:** make it easy to share the work when you choose, with the stressful parts written beforehand.
+- A MathOverflow question asking only "is Theorem 1 known?". It is factual and narrow, so there is little to strawman.
+- A short email to the one researcher closest to the certificates (Chambers' work on near-smooth curves is the natural match).
+- Prepared replies to likely pushback ("so you think you've proved X" → "No, the claim is Y; see section Z").
+
+These would be drafts in a file for you to read and decide on. Nothing is sent without you. *Small.*
+
+### 3. Lean, continued
+
+1. **The remaining small perfect-number results** (results 1, 5 and 7). *Small.*
+2. **The degree lemma behind the certificates.** It is the one mathematical step that the three independent programs all rely on. Formalising it would mean the computer-assisted proofs rest only on Lean and on the three programs' agreement about inequalities. *Medium to large;* first check what Mathlib offers on Brouwer degree.
+
+### 4. Wider searches (optional, any time)
+
+- Nearest misses to $10^{12}$, about three hours. Checks: whether the absolute miss stays at least 6, and whether near misses keep missing by exactly one forced step.
+- Wider certificates: several boxes joined, or other base shapes, to push past T = 0.15 (square) and 0.13 (tetrahedron).
+
+### 5. Maintenance
+
+- The smoke test and the GIF workflow run on GitHub automatically; keep both green.
+- After any change to a page: `node tests/smoke.js`. After a refactoring: `python3 tools/compare-gifs.py`, which should report every GIF identical.
+
 ## Planned
 
 ### Lean
