@@ -9,25 +9,11 @@ Drafts only. Nothing here has been sent, and nothing should be sent until you ha
 
 ---
 
-## 1. MathOverflow: "is an explicit smooth cube-free surface known?"
+## 1. MathOverflow: not needed
 
-**Why this one first.** It is a yes/no question about the literature, with a short proof sketch. It asks nobody to review a paper, and the answer you want is a reference (or "not that I know of"). Either answer tells you how to describe Theorems 1 and 1.3.
+An earlier draft asked whether an explicit smooth, strictly convex surface with no inscribed cube was known. Having read the sources, the answer is effectively "yes, in substance": Bielecki (1954) gave an explicit (non-smooth) convex body with no inscribed cube, and the Hausel–Makai–Szűcs argument (generic cubic surfaces near the sphere) gives smooth, strictly convex ones in a few lines. The egg of Theorem 1.3 is a certified instance of that, not a new fact, so there is nothing to ask. The write-up now says so.
 
-**What is already known, so the post does not over-claim** (both sources read; scans linked in PROOFS.md).
-- Bielecki (1954, *Ann. Univ. Mariae Curie-Skłodowska Sect. A* 8, 101–103) gave an explicit convex body with no inscribed rectangular parallelepiped, so no inscribed cube: the region $(x - 2y)^2 - \tfrac{1}{400} \le z \le \tfrac{1}{400} - (x + 2y)^2$ between two parabolic cylinders. It is neither smooth (the sheets meet in a sharp edge) nor strictly convex (its boundary is ruled by lines), and his proof uses exactly those lines.
-- Hausel, Makai Jr. and Szűcs (survey, *General Mathematics* 5) prove that most convex bodies in $\mathbb{R}^n$, $n \ge 5$, have no inscribed parallelepiped, by the same dimension count, via generic cubic surfaces near the sphere. So the idea of Theorem 1 is theirs; ours is the same argument for similar copies of any polytope.
-- Every centrally symmetric convex body in $\mathbb{R}^3$ has an inscribed cube (Hausel–Makai–Szűcs, *Mathematika* 2000).
-
-**Suggested title:** Is there a known explicit smooth, strictly convex surface with no inscribed cube?
-
-**Points the post should make (rewrite in your own words):**
-
-1. The background, briefly, with the references above. Say clearly that convex bodies without inscribed cubes are known (Bielecki's is explicit), so the question is not "is it false?" but about smoothness.
-2. The question: is a *smooth, strictly convex* example known, given explicitly, with a proof? Bielecki's argument needs the ruled boundary, and the generic argument names no body. Mention that you have one candidate: the zero set of a cubic with rational coefficients, close to an ellipsoid, proved cube-free by an interval-arithmetic branch and bound that anyone can re-run (link to PROOFS.md, Theorem 1.3). Ask whether there is an earlier example you should cite.
-3. A short side question, if it fits: is the general dimension-count statement (any polytope with more vertices than $\dim$ of the similarity group, generic smooth hypersurfaces) written down anywhere, beyond the parallelepiped case in the survey?
-4. One line of context, with a link to the proof. Do not link the whole project in the first lines: the question should stand on its own.
-
-**Tags:** `mg.metric-geometry`, `convex-geometry`, `differential-topology`.
+If you ever do want a literature question answered, the one remaining candidate is whether the general counting statement (Theorem 1, for any polytope) is written down in full anywhere. It is a minor point and not worth a post on its own.
 
 ---
 
@@ -67,7 +53,7 @@ Short answers to the replies most likely to come back, written now so they need 
 > Agreed, the proof is a dimension count. I am asking because I would like to cite it rather than reprove it. Do you know where it is written down?
 
 **"Who ever conjectured that every surface has an inscribed cube?" or "Bielecki already showed this in 1954."**
-> Agreed on both. The answer was known to be negative: Bielecki gave a convex body with no inscribed cube, and the write-up cites him and describes his example. His body is not smooth or strictly convex, which is the only gap the egg fills. It is posed as a natural analogue of the square and tetrahedron problems rather than as a conjecture. The only thing I think may be new is an explicit smooth, strictly convex example with a checkable proof, and I would like to know if that is known too.
+> Agreed on both. The answer was known to be negative: Bielecki gave a convex body with no inscribed cube, and the write-up cites him and describes his example. The egg adds no new fact: it is a smooth example of the same thing, certified by computer, which the Hausel–Makai–Szűcs argument already implies. It is posed as a natural analogue of the square and tetrahedron problems rather than as a conjecture. The only thing I think may be new is an explicit smooth, strictly convex example with a checkable proof, and I would like to know if that is known too.
 
 **"Computer proofs are not proofs" or "floating point can't prove anything."**
 > Every estimate uses outward-rounded interval arithmetic, so each computed bound provably contains the true value. Three independent implementations agree, one of them using the Arb library, which is designed for exactly this. The mathematical part (the degree lemma) is a short pen-and-paper proof. Which part would you like me to explain in more detail?
@@ -91,6 +77,6 @@ Short answers to the replies most likely to come back, written now so they need 
 
 ## Order, if you decide to go ahead
 
-1. The MathOverflow question (in your own words). It is low-stakes, public, and its answer is useful whatever it is.
-2. arXiv, if you want the preprint citable. It needs an endorsement in math.MG for a first submission, and a positive reply to step 1 or 3 is the natural place to ask for one.
+1. (The MathOverflow question is no longer needed; see section 1.)
+2. arXiv, if you want the preprint citable. It needs an endorsement in math.MG for a first submission, and a positive reply to step 3 is the natural place to ask for one.
 3. The email to Chambers.

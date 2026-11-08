@@ -111,7 +111,7 @@ So the cube analogue of the square peg problem fails for an explicit, smooth, st
 <a id="prior-work-on-cubes"></a>**Prior work on cubes.**
 - *An explicit body.* Bielecki (1954) showed that the convex body $(x - 2y)^2 - \tfrac{1}{400} \le z \le \tfrac{1}{400} - (x + 2y)^2$, lying between two parabolic cylinders, has no inscribed rectangular parallelepiped at all, so in particular no inscribed cube. The proof is short and elementary: the boundary is ruled by two families of straight lines that are not perpendicular, and a box with its vertices on it would need a face whose sides follow both families. That is stronger than Theorem 1.3 in one way (no box of any proportions, although a box has 9 parameters for 8 conditions), but the body is neither smooth (the two sheets meet along a sharp edge) nor strictly convex (its boundary contains segments), and the argument depends on both features.
 - *Generic bodies.* Hausel, Makai Jr. and Szűcs (survey, *General Mathematics* 5) prove that "most" convex bodies in $\mathbb{R}^n$, $n \ge 5$ (in the Baire sense for the Hausdorff metric), have no inscribed parallelepiped, by the same dimension count as Theorem 1: a generic cubic surface close to the sphere has none. Theorem 1 is that argument for similar copies of any polytope with $m > D(n)$ vertices and smooth hypersurfaces; we do not claim the idea as new. The egg of Theorem 1.3 is itself a cubic close to an ellipsoid, so it is an explicit instance of their construction.
-- *What Theorem 1.3 adds,* as far as we know, is a smooth, strictly convex, algebraic example with a proof that can be re-run. We would welcome an earlier one.
+- *So the existence of smooth, strictly convex surfaces with no inscribed cube is not new.* It follows from their argument in a few lines (a cube in $\mathbb{R}^3$ is one condition short, just as a parallelepiped is in $\mathbb{R}^5$), and experts would regard it as known. Theorem 1.3 is a worked, certified instance of that fact: one named surface, checked rigorously. Its use here is as a demonstration that the counting argument really produces cube-free surfaces, and as a test case for the cube finders. It has probably not been written down before only because it tells a specialist nothing new.
 
 **Corollary 1.4 (more shapes on the egg).** The egg $S$ of Theorem 1.3 also contains no inscribed regular icosahedron or dodecahedron, and no inscribed copy of any polytope whose vertices include those of a cube (for example the rhombic dodecahedron).
 
@@ -129,7 +129,7 @@ So the cube analogue of the square peg problem fails for an explicit, smooth, st
 
 
 **Remarks.**
-- Theorem 1 is non-constructive: it shows that counterexamples are everywhere, but not where. Theorem 1.3 gives one explicitly. Before it was proved, two independent solvers found no cube on the egg closer than 1.5–2.8% of its size.
+- Theorem 1 is non-constructive: it shows that counterexamples are everywhere, but not where. Theorem 1.3 names one and checks it. Before it was proved, two independent solvers found no cube on the egg closer than 1.5–2.8% of its size.
 - **Symmetry is not generic.** A centrally symmetric surface has inscribed cubes (Hausel–Makai–Szűcs 2000), and so, numerically, do mirror-symmetric ones. Symmetric surfaces form a small (meagre) set, so this does not contradict Theorem 1.
 - Theorem 1 says nothing about shapes with $m \le D(n)$. For those, the count only says solutions are *expected*; existence needs a separate argument, such as Theorem 2.
 

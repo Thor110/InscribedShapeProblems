@@ -4,7 +4,7 @@ Notes on work planned or considered but not yet done, so it can be picked up lat
 
 ## Where things stand
 
-- **Classical proofs** (PROOFS.md): Theorem 1 (no cube in a generic surface, probably folklore; Theorem 1.3, computer-assisted, names an explicit smooth egg with none, while Bielecki 1954 already gave a convex body with none), Theorems 2–3 (regular simplices in convex bodies), Proposition 5, Lemma 4.
+- **Classical proofs** (PROOFS.md): Theorem 1 (no cube in a generic surface, probably folklore; Theorem 1.3, computer-assisted, certifies one explicit smooth egg with none: a worked example of a known fact, since Bielecki 1954 and the Hausel–Makai–Szűcs argument already give such bodies), Theorems 2–3 (regular simplices in convex bodies), Proposition 5, Lemma 4.
 - **Computer-assisted proofs** in interval arithmetic: Theorem 6 (squares in every curve within 0.15 of an ellipse) and Theorem 7 (tetrahedra in every surface within 0.13 of an ellipsoid, plus a range of orientations). Each is confirmed by three independent implementations: JavaScript, Python/mpmath and C/Arb. Corollary 7.3: every orientation within 0.07, by 12,784 certificates; the covering is re-checked exactly and a sample of 100 in Arb.
 - **Machine-checked proofs** in Lean 4: all nine odd perfect number results (at least three primes, Euler's form, steps of 6, forced steps, the spine rule, odd σ(N), "9 or 12k + 1").
 - **Numerical studies:** shrinkage, rectangle sweep, parity counts, and nearest misses to perfection up to $10^{11}$.
