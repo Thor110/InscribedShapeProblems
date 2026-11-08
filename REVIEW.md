@@ -13,7 +13,7 @@ Each kind needs a different kind of check, and it helps a reviewer to know which
 | **Machine-checked proofs** | Euler's form, steps of 6, forced steps, the spine rule, and the "9 or 12k + 1" result for odd perfect numbers (README, odd perfect numbers) | `cd lean && lake build`: Lean 4 checks every step, using only its standard axioms |
 | **Numerical evidence** | Shrinkage studies, rectangle sweep, parity counts | Evidence only, not proof; `node tests/run-study.js all` reproduces it |
 
-**What is not claimed.** None of the open problems (inscribed square, rectangle or tetrahedron in every continuous Jordan curve or sphere) is claimed solved. Theorems 2–3 are special cases of Gromov's theorem in the smooth case; their value is an elementary proof that also covers non-smooth convex bodies in admissible orientations. Theorems 6–7 are quantitative results near one ellipse and one ellipsoid, not new structural classes. Parts may well be known, and pointers to the literature are as welcome as corrections.
+**What is not claimed.** None of the open problems (inscribed square, rectangle or tetrahedron in every continuous Jordan curve or sphere) is claimed solved. Theorems 2–3 are known in substance (Gromov; Kramer–Németh and Makeev for convex bodies, also by Brouwer); their value is a short self-contained proof and the description of admissible orientations for non-smooth bodies. Theorem 1 is the dimension count Hausel–Makai–Szűcs used for parallelepipeds, and a non-smooth convex body with no inscribed cube was given by Bielecki (1954). Theorems 6–7 are quantitative results near one ellipse and one ellipsoid, not new structural classes. Parts may well be known, and pointers to the literature are as welcome as corrections.
 
 ## Questions to ask
 

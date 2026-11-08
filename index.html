@@ -109,7 +109,7 @@
         <p><b>What is known.</b> For smooth surfaces it is true, and more: Gromov proved in 1969 that you can find one turned to <i>any</i> orientation you like. That fits the count above, since the tetrahedron has 3 choices to spare, exactly enough to fix its orientation. For surfaces that are merely continuous, with corners or fractal roughness, it is open.</p>
         <p><b>What this project adds.</b></p>
         <ul>
-          <li>An elementary proof, using a "centring jig", for every smooth convex body, and for every convex body in a large set of orientations (Theorems 2–3). It also shows that "every orientation" genuinely fails for some sharp-edged bodies (Proposition 5).</li>
+          <li>A short, self-contained proof, using a "centring jig", for every smooth convex body, and for every convex body in a large set of orientations (Theorems 2–3). These facts were already known (Kramer–Németh, Makeev); the jig is a new route to them. It also shows that "every orientation" genuinely fails for some sharp-edged bodies (Proposition 5).</li>
           <li>A computer-assisted proof that every surface within 0.13 of a particular ellipsoid has one, including rough surfaces Gromov's theorem does not cover (Theorem 7), and within 0.07 in <b>every</b> orientation (Corollary 7.3).</li>
         </ul>
         <p>Explore them in the <a href="pages/skeletal-spacefinder.html">Skeletal Space Finder</a>.</p>
@@ -129,7 +129,7 @@
       <div class="body">
         <p><b>The question.</b> Does every closed surface have an inscribed cube, with all 8 corners on it?</p>
         <p><b>The answer: no.</b> A cube has 8 corners but only 7 free choices (position, turning, size), so it is one short. For a "typical" surface there is no cube at all: making all 8 corners land is one demand too many. This project proves that properly (Theorem 1): a generic smooth convex surface has no inscribed cube. Some special surfaces do have one, for example every centrally symmetric convex body, where opposite points match up (Hausel–Makai–Szűcs, 2000).</p>
-        <p>This was not a surprise to experts: Bielecki already described a convex body with no inscribed cube in 1954, and the counting argument is standard. "Generic" says that cube-free surfaces are everywhere, but does not name one. So the project also proves, with an exact computer check, that one explicit smooth egg-shaped surface has no inscribed cube anywhere (Theorem 1.3). The same egg has no inscribed regular icosahedron either.</p>
+        <p>This was not a surprise to experts: in 1954 Bielecki described a convex body with no inscribed cube (a body between two curved sheets, with a sharp edge), and the counting argument was used by Hausel, Makai and Szűcs in the 1990s. "Generic" says that cube-free surfaces are everywhere, but does not name one. So the project also proves, with an exact computer check, that one explicit smooth egg-shaped surface has no inscribed cube anywhere (Theorem 1.3). The same egg has no inscribed regular icosahedron either.</p>
         <p>See it in the <a href="pages/inscribed-cube-viewfinder.html">Cube Viewfinder</a>. The same count shows hypercubes in 4D and beyond fail too; the <a href="pages/dimension-explorer.html">Dimension Explorer</a> shows the proved eggs in 3D and 4D.</p>
       </div>
     </details>
@@ -188,7 +188,7 @@
   <div class="proved">
     <ul>
       <li><b>No cube in general:</b> a generic smooth convex surface has no inscribed cube (Theorem 1), and an explicit smooth egg-shaped one is proved to have none (Theorem 1.3). That some convex body has none was already known (Bielecki, 1954).</li>
-      <li><b>Simplices in convex bodies:</b> an elementary proof of regular simplices in every admissible orientation (Theorems 2–3), and why admissibility is needed (Proposition 5).</li>
+      <li><b>Simplices in convex bodies:</b> a short new proof that convex bodies contain regular simplices in every admissible orientation (Theorems 2–3; the facts were known, from Kramer–Németh and Makeev), and why admissibility is needed (Proposition 5).</li>
       <li><b>Squares near an ellipse, fractals included:</b> every curve within 0.15 of a 1 × 0.6 ellipse has an inscribed square (Theorem 6), <a href="pages/certificate.html">proved live in your browser</a> in interval arithmetic.</li>
       <li><b>Tetrahedra near an ellipsoid:</b> every surface within 0.13 of a 1 × 0.8 × 0.6 ellipsoid has an inscribed regular tetrahedron (Theorem 7), and within 0.07 one in <b>every</b> orientation (Corollary 7.3).</li>
       <li><b>Odd perfect numbers:</b> Euler's form, at least three distinct primes, the steps of 6 and forced steps, all machine-checked in Lean.</li>

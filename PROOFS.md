@@ -2,7 +2,7 @@
 
 This document contains the following results, written to be checked line by line:
 
-1. **Theorem 1 (a disproof).** If a polytope has more vertices than the dimension of the similarity group, a *generic* smooth closed hypersurface contains no inscribed copy of it. In particular the cube analogue of the square peg problem fails, even for smooth strictly convex surfaces. **Theorem 1.3** gives an explicit one: a computer-assisted proof that a specific egg-shaped surface has no inscribed cube. That *some* convex body in $\mathbb{R}^3$ has no inscribed cube was already known (Bielecki 1954); see [Prior work](#prior-work-on-cubes).
+1. **Theorem 1 (a disproof).** If a polytope has more vertices than the dimension of the similarity group, a *generic* smooth closed hypersurface contains no inscribed copy of it. In particular the cube analogue of the square peg problem fails, even for smooth strictly convex surfaces. **Theorem 1.3** gives an explicit one: a computer-assisted proof that a specific egg-shaped surface has no inscribed cube. That *some* convex body in $\mathbb{R}^3$ has no inscribed cube was already known (Bielecki 1954, a non-smooth example), and the dimension count behind Theorem 1 was used by Hausel, Makai and Szűcs for parallelepipeds; see [Prior work](#prior-work-on-cubes).
 2. **Theorem 2 (the centring jig, made rigorous).** Every smooth, strictly convex body in $\mathbb{R}^n$ contains an inscribed regular simplex in **every** orientation (more generally, any simplex whose circumcentre lies inside it). The proof is the skeletal-jig argument: the "rattle" is a vector field, and its zero is the inscribed simplex.
 3. **Theorem 3 (every convex body).** The same holds for *any* convex body, in every orientation that is **admissible** for it. Every orientation is admissible for a body with a $C^1$ boundary, so Theorem 2 holds without strict convexity. **Proposition 5** shows admissibility cannot be dropped: a thin enough triangle has no inscribed equilateral triangle in some orientations.
 4. **Lemma 4 (a route to the open case).** If ever-finer approximations of a curve each contain an inscribed square that cannot be arbitrarily small, the limiting curve contains one. This is the hypothesis that the shrinkage studies test.
@@ -11,7 +11,7 @@ This document contains the following results, written to be checked line by line
 
 Neither result settles the open problems. The square (Toeplitz), regular tetrahedron and cross-polytope problems remain open for general *continuous* Jordan curves and surfaces; see [What remains open](#what-remains-open).
 
-Theorem 2 is a special case of a theorem of Gromov (1969), which covers every $C^1$ embedded sphere, convex or not, and every simplex shape. Its value here is that the proof is elementary and is exactly the mechanism the Skeletal Shape and Space Finders use.
+Theorem 2 is a special case of a theorem of Gromov (1969), which covers every $C^1$ embedded sphere, convex or not, and every simplex shape; for $C^1$ convex bodies it was also proved with Brouwer's fixed-point theorem by Kramer and Németh (1973, 1975) and by Makeev (1987). Makeev (1992) showed that *every* convex body contains a similar copy of any simplex in *some* orientation. So these statements are known; the value here is a short self-contained proof that is exactly the mechanism the Skeletal Shape and Space Finders use, and Theorem 3's description of which orientations work for a non-smooth body.
 
 ---
 
@@ -80,8 +80,6 @@ and $S = \{p : |p| \le \tfrac32,\ F(p) = 0\}$, the repository's *lopsided egg* (
 
 So the cube analogue of the square peg problem fails for an explicit, smooth, strictly convex surface, and not only for unnamed generic ones.
 
-<a id="prior-work-on-cubes"></a>**Prior work on cubes.** The failure itself is not new. Bielecki (1954) gave a convex body in $\mathbb{R}^3$ with no inscribed rectangular parallelepiped at all, so in particular no inscribed cube; the survey of Hausel, Makai and Szűcs cites it. We have not been able to read Bielecki's note, so we do not know whether his body is smooth or strictly convex, or how it is described. What Theorem 1.3 adds, as far as we know, is an example that is smooth, strictly convex and algebraic (a cubic with rational coefficients), with a proof that anyone can re-run. Theorem 1, that *generic* smooth surfaces have none, is a standard transversality argument and is probably folklore; Cantarella, Denne and McCleary (2022) use the same framework for simplices. We would welcome a reference that states it.
-
 *Proof.* Computer-assisted, in three parts (`tools/egg-cube.c`; parts 1–2 take about a second, part 3 about 40 seconds on 4 cores). All bounds use interval arithmetic with outward rounding.
 
 - **Part 1: the surface.** $[-\tfrac32, \tfrac32]^3$ is split into boxes. On every box that meets the sphere $|p| = \tfrac32$, $F > 0$. On every box inside the ball where $F$ may vanish, $p \cdot \nabla F > 0$.
@@ -109,6 +107,11 @@ So the cube analogue of the square peg problem fails for an explicit, smooth, st
 | seconds (4 cores) | 45 | 32 | 34 | 37 | 42 | 46 |
 
   So a surface within about $10^{-8}$ of an ellipsoid with an inscribed cube has none. That is the instability Theorem 1 predicts: the ellipsoid's cube exists only because of its symmetry. Much below $10^{-8}$, the boxes would have to be smaller than the program's floor of $10^{-9}$, which is set by double precision.
+
+<a id="prior-work-on-cubes"></a>**Prior work on cubes.**
+- *An explicit body.* Bielecki (1954) showed that the convex body $(x - 2y)^2 - \tfrac{1}{400} \le z \le \tfrac{1}{400} - (x + 2y)^2$, lying between two parabolic cylinders, has no inscribed rectangular parallelepiped at all, so in particular no inscribed cube. The proof is short and elementary: the boundary is ruled by two families of straight lines that are not perpendicular, and a box with its vertices on it would need a face whose sides follow both families. That is stronger than Theorem 1.3 in one way (no box of any proportions, although a box has 9 parameters for 8 conditions), but the body is neither smooth (the two sheets meet along a sharp edge) nor strictly convex (its boundary contains segments), and the argument depends on both features.
+- *Generic bodies.* Hausel, Makai Jr. and Szűcs (survey, *General Mathematics* 5) prove that "most" convex bodies in $\mathbb{R}^n$, $n \ge 5$ (in the Baire sense for the Hausdorff metric), have no inscribed parallelepiped, by the same dimension count as Theorem 1: a generic cubic surface close to the sphere has none. Theorem 1 is that argument for similar copies of any polytope with $m > D(n)$ vertices and smooth hypersurfaces; we do not claim the idea as new. The egg of Theorem 1.3 is itself a cubic close to an ellipsoid, so it is an explicit instance of their construction.
+- *What Theorem 1.3 adds,* as far as we know, is a smooth, strictly convex, algebraic example with a proof that can be re-run. We would welcome an earlier one.
 
 **Corollary 1.4 (more shapes on the egg).** The egg $S$ of Theorem 1.3 also contains no inscribed regular icosahedron or dodecahedron, and no inscribed copy of any polytope whose vertices include those of a cube (for example the rhombic dodecahedron).
 
@@ -404,6 +407,8 @@ How far does this go? An earlier version charged the whole box the largest turni
 - V. V. Makeev, "On inscribing a regular octahedron in a three-dimensional convex body with smooth boundary", *Zap. Nauchn. Sem. POMI* 279 (2001) 183–186.
 - R. N. Karasev, "Inscribing a regular crosspolytope" — [arXiv:0905.2671](https://arxiv.org/abs/0905.2671).
 - T. Hausel, E. Makai, A. Szűcs, "Inscribing cubes and covering by rhombic dodecahedra via equivariant topology", *Mathematika* 47 (2000) — [arXiv:math/9906066](https://arxiv.org/abs/math/9906066).
-- T. Hausel, E. Makai Jr., A. Szűcs, "Polyhedra inscribed and circumscribed to convex bodies", *General Mathematics* 5, 183–190 (Proceedings of the 3rd International Conference in Sibiu), a survey.
-- A. Bielecki, "Quelques remarques sur la note précédente", *Ann. Univ. Mariae Curie-Skłodowska Sect. A* 8 (1954) 101–103: a convex body in $\mathbb{R}^3$ with no inscribed rectangular parallelepiped, so no inscribed cube (cited in the survey below; we have not read the original).
+- T. Hausel, E. Makai Jr., A. Szűcs, "Polyhedra inscribed and circumscribed to convex bodies", *General Mathematics* 5, 183–190 (Proceedings of the 3rd International Conference in Sibiu), a survey — [PDF](https://users.renyi.hu/~makai/sibiu.pdf).
+- A. Bielecki, "Quelques remarques sur la note précédente", *Ann. Univ. Mariae Curie-Skłodowska Sect. A* 8 (1954) 101–103: an explicit (non-smooth) convex body in $\mathbb{R}^3$ with no inscribed rectangular parallelepiped, so no inscribed cube. Scans: [UMCS digital library](https://bc.umcs.pl/Content/30620/download).
+- H. Kramer, A. B. Németh, "Equally spaced points for families of compact convex sets in Minkowski spaces", *Mathematica (Cluj)* 15(38) (1973) 71–78; "The application of Brouwer's fixed point theorem to the geometry of convex bodies", *An. Univ. Timişoara Ser. Şti. Mat.* 13 (1975) 33–39.
+- V. V. Makeev, "The degree of a mapping in some problems of combinatorial geometry", *Ukr. Geom. Sb.* 30 (1987) 62–66; "Inscribed simplices of a convex body", *Ukr. Geom. Sb.* 35 (1992) 47–49.
 - Square and rectangle references: see the README.

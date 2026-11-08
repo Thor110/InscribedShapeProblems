@@ -13,18 +13,18 @@ Drafts only. Nothing here has been sent, and nothing should be sent until you ha
 
 **Why this one first.** It is a yes/no question about the literature, with a short proof sketch. It asks nobody to review a paper, and the answer you want is a reference (or "not that I know of"). Either answer tells you how to describe Theorems 1 and 1.3.
 
-**What is already known, so the post does not over-claim.**
-- Bielecki (1954, *Ann. Univ. Mariae Curie-Skłodowska Sect. A* 8, 101–103) gave a convex body in $\mathbb{R}^3$ with no inscribed rectangular parallelepiped, so no inscribed cube. It is cited in the survey by Hausel, Makai Jr. and Szűcs (*General Mathematics* 5). We have not read Bielecki's note, so we do not know whether his body is smooth or strictly convex. **Try to read it before posting** (the Lublin university library, bc.umcs.pl, has scans of that volume); if it is already smooth and strictly convex, question (a) below is answered and should be dropped.
+**What is already known, so the post does not over-claim** (both sources read; scans linked in PROOFS.md).
+- Bielecki (1954, *Ann. Univ. Mariae Curie-Skłodowska Sect. A* 8, 101–103) gave an explicit convex body with no inscribed rectangular parallelepiped, so no inscribed cube: the region $(x - 2y)^2 - \tfrac{1}{400} \le z \le \tfrac{1}{400} - (x + 2y)^2$ between two parabolic cylinders. It is neither smooth (the sheets meet in a sharp edge) nor strictly convex (its boundary is ruled by lines), and his proof uses exactly those lines.
+- Hausel, Makai Jr. and Szűcs (survey, *General Mathematics* 5) prove that most convex bodies in $\mathbb{R}^n$, $n \ge 5$, have no inscribed parallelepiped, by the same dimension count, via generic cubic surfaces near the sphere. So the idea of Theorem 1 is theirs; ours is the same argument for similar copies of any polytope.
 - Every centrally symmetric convex body in $\mathbb{R}^3$ has an inscribed cube (Hausel–Makai–Szűcs, *Mathematika* 2000).
-- The generic statement (Theorem 1) is a standard transversality argument, probably folklore. Cantarella–Denne–McCleary (*Forum Math. Sigma* 2022) use the same framework for simplices.
 
 **Suggested title:** Is there a known explicit smooth, strictly convex surface with no inscribed cube?
 
 **Points the post should make (rewrite in your own words):**
 
-1. The background, briefly, with the references above. Say clearly that the existence of convex bodies without inscribed cubes is known (Bielecki), so the question is not "is it false?".
-2. Question (a): is an *explicit* smooth, strictly convex example known, given by a formula, with a proof? Mention that you have one candidate: the zero set of a cubic with rational coefficients, proved cube-free by an interval-arithmetic branch and bound that anyone can re-run (link to PROOFS.md, Theorem 1.3). Ask whether this is new or whether there is an earlier example you should cite.
-3. Question (b): where is the generic statement written down? If $P \subset \mathbb{R}^n$ has more vertices than $D(n) = n(n+1)/2 + 1$, the dimension of the similarity group, then a generic smooth hypersurface contains no similar copy of $P$ (one line: parametric transversality makes the solution set of dimension $D(n) - m < 0$). A reference to cite would be the most useful answer.
+1. The background, briefly, with the references above. Say clearly that convex bodies without inscribed cubes are known (Bielecki's is explicit), so the question is not "is it false?" but about smoothness.
+2. The question: is a *smooth, strictly convex* example known, given explicitly, with a proof? Bielecki's argument needs the ruled boundary, and the generic argument names no body. Mention that you have one candidate: the zero set of a cubic with rational coefficients, close to an ellipsoid, proved cube-free by an interval-arithmetic branch and bound that anyone can re-run (link to PROOFS.md, Theorem 1.3). Ask whether there is an earlier example you should cite.
+3. A short side question, if it fits: is the general dimension-count statement (any polytope with more vertices than $\dim$ of the similarity group, generic smooth hypersurfaces) written down anywhere, beyond the parallelepiped case in the survey?
 4. One line of context, with a link to the proof. Do not link the whole project in the first lines: the question should stand on its own.
 
 **Tags:** `mg.metric-geometry`, `convex-geometry`, `differential-topology`.
@@ -67,7 +67,7 @@ Short answers to the replies most likely to come back, written now so they need 
 > Agreed, the proof is a dimension count. I am asking because I would like to cite it rather than reprove it. Do you know where it is written down?
 
 **"Who ever conjectured that every surface has an inscribed cube?" or "Bielecki already showed this in 1954."**
-> Agreed on both. The answer was known to be negative: Bielecki gave a convex body with no inscribed cube, and the write-up cites him. It is posed as a natural analogue of the square and tetrahedron problems rather than as a conjecture. The only thing I think may be new is an explicit smooth, strictly convex example with a checkable proof, and I would like to know if that is known too.
+> Agreed on both. The answer was known to be negative: Bielecki gave a convex body with no inscribed cube, and the write-up cites him and describes his example. His body is not smooth or strictly convex, which is the only gap the egg fills. It is posed as a natural analogue of the square and tetrahedron problems rather than as a conjecture. The only thing I think may be new is an explicit smooth, strictly convex example with a checkable proof, and I would like to know if that is known too.
 
 **"Computer proofs are not proofs" or "floating point can't prove anything."**
 > Every estimate uses outward-rounded interval arithmetic, so each computed bound provably contains the true value. Three independent implementations agree, one of them using the Arb library, which is designed for exactly this. The mathematical part (the degree lemma) is a short pen-and-paper proof. Which part would you like me to explain in more detail?
