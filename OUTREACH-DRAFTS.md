@@ -9,21 +9,25 @@ Drafts only. Nothing here has been sent, and nothing should be sent until you ha
 
 ---
 
-## 1. MathOverflow: "is Theorem 1 known?"
+## 1. MathOverflow: "is an explicit smooth cube-free surface known?"
 
-**Why this one first.** It is a yes/no question about the literature, with a one-paragraph proof sketch. It asks nobody to review a paper, and there is nothing to argue with except "here is a reference", which is the answer you want.
+**Why this one first.** It is a yes/no question about the literature, with a short proof sketch. It asks nobody to review a paper, and the answer you want is a reference (or "not that I know of"). Either answer tells you how to describe Theorems 1 and 1.3.
 
-**Suggested title:** Generic smooth surfaces have no inscribed cube: is this stated in the literature?
+**What is already known, so the post does not over-claim.**
+- Bielecki (1954, *Ann. Univ. Mariae Curie-Skłodowska Sect. A* 8, 101–103) gave a convex body in $\mathbb{R}^3$ with no inscribed rectangular parallelepiped, so no inscribed cube. It is cited in the survey by Hausel, Makai Jr. and Szűcs (*General Mathematics* 5). We have not read Bielecki's note, so we do not know whether his body is smooth or strictly convex. **Try to read it before posting** (the Lublin university library, bc.umcs.pl, has scans of that volume); if it is already smooth and strictly convex, question (a) below is answered and should be dropped.
+- Every centrally symmetric convex body in $\mathbb{R}^3$ has an inscribed cube (Hausel–Makai–Szűcs, *Mathematika* 2000).
+- The generic statement (Theorem 1) is a standard transversality argument, probably folklore. Cantarella–Denne–McCleary (*Forum Math. Sigma* 2022) use the same framework for simplices.
+
+**Suggested title:** Is there a known explicit smooth, strictly convex surface with no inscribed cube?
 
 **Points the post should make (rewrite in your own words):**
 
-1. The setting. A copy of a polytope $P \subset \mathbb{R}^n$ means its image under a similarity (rotation, translation, positive scaling). The similarity group of $\mathbb{R}^n$ has dimension $D(n) = n(n+1)/2 + 1$, which is 7 for $n = 3$.
-2. The statement. If $P$ has $m > D(n)$ vertices, then for a residual (hence dense) set of smooth functions $f$ in the Whitney $C^\infty$ topology, the hypersurface $f^{-1}(0)$ contains no copy of $P$ with all vertices on it. For the cube, $m = 8 > 7$, and the residual set meets the open set of functions whose zero set is a smooth strictly convex sphere. So a generic smooth strictly convex surface has no inscribed cube.
-3. The proof idea in one line. The map $(f, g) \mapsto (f(g v_1), \dots, f(g v_m))$ is a submersion over non-degenerate similarities $g$, so by parametric transversality, for generic $f$ the solution set has dimension $D(n) - m < 0$, so it is empty.
-4. The question. Is this stated somewhere, in this generality or for cubes? It reads like folklore. The closest results found are the positive ones (for example Hausel–Makai–Szűcs on cubes in centrally symmetric convex bodies) and dimension counts used for squares and rectangles. A reference to cite would be the most useful answer. A second, related question: is an *explicit* smooth convex surface with no inscribed cube known? We have a computer-assisted proof for one, a cubic "egg" with rational coefficients (PROOFS.md, Theorem 1.3), and would cite an earlier one if it exists.
-5. One line of context, with a link to the proof (PROOFS.md, Theorem 1). Do not link the whole project in the first lines: the question should stand on its own.
+1. The background, briefly, with the references above. Say clearly that the existence of convex bodies without inscribed cubes is known (Bielecki), so the question is not "is it false?".
+2. Question (a): is an *explicit* smooth, strictly convex example known, given by a formula, with a proof? Mention that you have one candidate: the zero set of a cubic with rational coefficients, proved cube-free by an interval-arithmetic branch and bound that anyone can re-run (link to PROOFS.md, Theorem 1.3). Ask whether this is new or whether there is an earlier example you should cite.
+3. Question (b): where is the generic statement written down? If $P \subset \mathbb{R}^n$ has more vertices than $D(n) = n(n+1)/2 + 1$, the dimension of the similarity group, then a generic smooth hypersurface contains no similar copy of $P$ (one line: parametric transversality makes the solution set of dimension $D(n) - m < 0$). A reference to cite would be the most useful answer.
+4. One line of context, with a link to the proof. Do not link the whole project in the first lines: the question should stand on its own.
 
-**Tags:** `mg.metric-geometry`, `differential-topology`, `convex-geometry`.
+**Tags:** `mg.metric-geometry`, `convex-geometry`, `differential-topology`.
 
 ---
 
@@ -62,8 +66,8 @@ Short answers to the replies most likely to come back, written now so they need 
 **"Theorem 1 is trivial / folklore."**
 > Agreed, the proof is a dimension count. I am asking because I would like to cite it rather than reprove it. Do you know where it is written down?
 
-**"Who ever conjectured that every surface has an inscribed cube?"**
-> Fair point. It is posed as a natural analogue of the square and tetrahedron problems more often than as a formal conjecture. I am happy to describe it as "the cube analogue" instead of "the inscribed-cube conjecture".
+**"Who ever conjectured that every surface has an inscribed cube?" or "Bielecki already showed this in 1954."**
+> Agreed on both. The answer was known to be negative: Bielecki gave a convex body with no inscribed cube, and the write-up cites him. It is posed as a natural analogue of the square and tetrahedron problems rather than as a conjecture. The only thing I think may be new is an explicit smooth, strictly convex example with a checkable proof, and I would like to know if that is known too.
 
 **"Computer proofs are not proofs" or "floating point can't prove anything."**
 > Every estimate uses outward-rounded interval arithmetic, so each computed bound provably contains the true value. Three independent implementations agree, one of them using the Arb library, which is designed for exactly this. The mathematical part (the degree lemma) is a short pen-and-paper proof. Which part would you like me to explain in more detail?

@@ -2,7 +2,7 @@
 
 This document contains the following results, written to be checked line by line:
 
-1. **Theorem 1 (a disproof).** If a polytope has more vertices than the dimension of the similarity group, a *generic* smooth closed hypersurface contains no inscribed copy of it. In particular the inscribed-cube conjecture is false, even for smooth strictly convex surfaces. **Theorem 1.3** gives an explicit one: a computer-assisted proof that a specific egg-shaped surface has no inscribed cube.
+1. **Theorem 1 (a disproof).** If a polytope has more vertices than the dimension of the similarity group, a *generic* smooth closed hypersurface contains no inscribed copy of it. In particular the cube analogue of the square peg problem fails, even for smooth strictly convex surfaces. **Theorem 1.3** gives an explicit one: a computer-assisted proof that a specific egg-shaped surface has no inscribed cube. That *some* convex body in $\mathbb{R}^3$ has no inscribed cube was already known (Bielecki 1954); see [Prior work](#prior-work-on-cubes).
 2. **Theorem 2 (the centring jig, made rigorous).** Every smooth, strictly convex body in $\mathbb{R}^n$ contains an inscribed regular simplex in **every** orientation (more generally, any simplex whose circumcentre lies inside it). The proof is the skeletal-jig argument: the "rattle" is a vector field, and its zero is the inscribed simplex.
 3. **Theorem 3 (every convex body).** The same holds for *any* convex body, in every orientation that is **admissible** for it. Every orientation is admissible for a body with a $C^1$ boundary, so Theorem 2 holds without strict convexity. **Proposition 5** shows admissibility cannot be dropped: a thin enough triangle has no inscribed equilateral triangle in some orientations.
 4. **Lemma 4 (a route to the open case).** If ever-finer approximations of a curve each contain an inscribed square that cannot be arbitrarily small, the limiting curve contains one. This is the hypothesis that the shrinkage studies test.
@@ -79,6 +79,8 @@ $$F(x, y, z) = x^2 + \tfrac{16}{25}y^2 + \tfrac{400}{289}z^2 + \tfrac{3}{20}\big
 and $S = \{p : |p| \le \tfrac32,\ F(p) = 0\}$, the repository's *lopsided egg* (semi-axes about $1$, $\tfrac54$, $\tfrac{17}{20}$, with no symmetry). Then $S$ is a smooth sphere bounding a strictly convex body, and no cube has all eight vertices on $S$.
 
 So the cube analogue of the square peg problem fails for an explicit, smooth, strictly convex surface, and not only for unnamed generic ones.
+
+<a id="prior-work-on-cubes"></a>**Prior work on cubes.** The failure itself is not new. Bielecki (1954) gave a convex body in $\mathbb{R}^3$ with no inscribed rectangular parallelepiped at all, so in particular no inscribed cube; the survey of Hausel, Makai and Szűcs cites it. We have not been able to read Bielecki's note, so we do not know whether his body is smooth or strictly convex, or how it is described. What Theorem 1.3 adds, as far as we know, is an example that is smooth, strictly convex and algebraic (a cubic with rational coefficients), with a proof that anyone can re-run. Theorem 1, that *generic* smooth surfaces have none, is a standard transversality argument and is probably folklore; Cantarella, Denne and McCleary (2022) use the same framework for simplices. We would welcome a reference that states it.
 
 *Proof.* Computer-assisted, in three parts (`tools/egg-cube.c`; parts 1–2 take about a second, part 3 about 40 seconds on 4 cores). All bounds use interval arithmetic with outward rounding.
 
@@ -387,7 +389,7 @@ How far does this go? An earlier version charged the whole box the largest turni
 | Rectangle of every aspect ratio in every continuous Jordan curve | **Open.** Proved for smooth curves (Greene–Lobb) and extended to rectifiable curves; *some* rectangle always exists (Vaughan) |
 | Regular tetrahedron / simplex in every continuous Jordan sphere | **Open.** Proved for $C^1$ spheres in every pose (Gromov 1969); Theorems 2–3 give elementary proofs for every $C^1$ convex body and, in admissible orientations, every convex body. Theorem 7 certifies every surface within 0.13 of one ellipsoid, and Corollary 7.3 every orientation for every surface within 0.07. "Every pose" fails for non-smooth bodies (Proposition 5) |
 | Regular octahedron / cross-polytope | **Open.** Proved for smooth convex bodies in $\mathbb{R}^3$ (Makeev 2001) and in $\mathbb{R}^n$ for $n$ an odd prime power (Karasev 2009) |
-| Cube / hypercube ($n \ge 3$) | **False in general** (Theorem 1), with an explicit strictly convex surface that has no inscribed cube (Theorem 1.3). True for centrally symmetric convex bodies in $\mathbb{R}^3$ (Hausel–Makai–Szűcs 2000) |
+| Cube / hypercube ($n \ge 3$) | **False in general**: some convex body in $\mathbb{R}^3$ has no inscribed cube (Bielecki 1954), generic smooth surfaces have none (Theorem 1), and an explicit smooth strictly convex surface has none (Theorem 1.3). True for centrally symmetric convex bodies in $\mathbb{R}^3$ (Hausel–Makai–Szűcs 2000) |
 
 ## References
 
@@ -402,4 +404,6 @@ How far does this go? An earlier version charged the whole box the largest turni
 - V. V. Makeev, "On inscribing a regular octahedron in a three-dimensional convex body with smooth boundary", *Zap. Nauchn. Sem. POMI* 279 (2001) 183–186.
 - R. N. Karasev, "Inscribing a regular crosspolytope" — [arXiv:0905.2671](https://arxiv.org/abs/0905.2671).
 - T. Hausel, E. Makai, A. Szűcs, "Inscribing cubes and covering by rhombic dodecahedra via equivariant topology", *Mathematika* 47 (2000) — [arXiv:math/9906066](https://arxiv.org/abs/math/9906066).
+- T. Hausel, E. Makai Jr., A. Szűcs, "Polyhedra inscribed and circumscribed to convex bodies", *General Mathematics* 5, 183–190 (Proceedings of the 3rd International Conference in Sibiu), a survey.
+- A. Bielecki, "Quelques remarques sur la note précédente", *Ann. Univ. Mariae Curie-Skłodowska Sect. A* 8 (1954) 101–103: a convex body in $\mathbb{R}^3$ with no inscribed rectangular parallelepiped, so no inscribed cube (cited in the survey below; we have not read the original).
 - Square and rectangle references: see the README.
