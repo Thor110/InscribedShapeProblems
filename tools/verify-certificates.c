@@ -391,7 +391,7 @@ static int orientations(const char *file) {
 }
 
 int main(int argc, char **argv) {
-  if (argc > 1 && !strcmp(argv[1], "orientations")) return orientations(argc > 2 ? argv[2] : "data/orientation-sample-T1-20.json") ? 0 : 1;
+  if (argc > 1 && !strcmp(argv[1], "orientations")) return orientations(argc > 2 ? argv[2] : "data/orientation-sample-T7-100.json") ? 0 : 1;
   int all = 1;
   { /* Theorem 6: square, T = 15/100, perturbation (1 + √2)T */
     Problem P; square_problem(&P); Box X; X.P = &P; X.n = 2; X.c = 0.5; X.turn = 0; load_box(&X, "data/certificates.json", 2);

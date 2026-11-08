@@ -7,7 +7,7 @@ This document contains the following results, written to be checked line by line
 3. **Theorem 3 (every convex body).** The same holds for *any* convex body, in every orientation that is **admissible** for it. Every orientation is admissible for a body with a $C^1$ boundary, so Theorem 2 holds without strict convexity. **Proposition 5** shows admissibility cannot be dropped: a thin enough triangle has no inscribed equilateral triangle in some orientations.
 4. **Lemma 4 (a route to the open case).** If ever-finer approximations of a curve each contain an inscribed square that cannot be arbitrarily small, the limiting curve contains one. This is the hypothesis that the shrinkage studies test.
 5. **Theorem 6 (a computer-assisted certificate).** Every curve whose radius stays within 0.15 of a 1 × 0.6 ellipse's has an inscribed square, proved in interval arithmetic. This includes nowhere-differentiable, non-symmetric fractal curves that are not locally monotone.
-6. **Theorem 7 (the same in 3D).** Every surface whose radius stays within 0.13 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, including rough surfaces that are not $C^1$, where Gromov's theorem does not apply. Corollary 7.3: within 0.05, it has one in **every** orientation.
+6. **Theorem 7 (the same in 3D).** Every surface whose radius stays within 0.13 of a 1 × 0.8 × 0.6 ellipsoid's has an inscribed regular tetrahedron, including rough surfaces that are not $C^1$, where Gromov's theorem does not apply. Corollary 7.3: within 0.07, it has one in **every** orientation.
 
 Neither result settles the open problems. The square (Toeplitz), regular tetrahedron and cross-polytope problems remain open for general *continuous* Jordan curves and surfaces; see [What remains open](#what-remains-open).
 
@@ -346,7 +346,7 @@ and $w_k = R v_k/\sqrt3$, where the $v_k$ are $(\pm1, \pm1, \pm1)$ with an even 
 |---|---|---|---|---|---|
 | orientations within | 7.52° | 5.84° | 4.16° | 2.48° | 0.81° |
 
-**Corollary 7.3 (every orientation).** If $|\rho(\omega) - r_E(\omega)| \le T = \tfrac{1}{20}$ for all $\omega$, then $S_\rho$ has an inscribed regular tetrahedron in **every** orientation.
+**Corollary 7.3 (every orientation).** If $|\rho(\omega) - r_E(\omega)| \le T = \tfrac{7}{100}$ for all $\omega$, then $S_\rho$ has an inscribed regular tetrahedron in **every** orientation.
 
 This is the analogue, for these rough surfaces, of Gromov's "every pose" theorem for $C^1$ spheres.
 
@@ -358,19 +358,20 @@ This is the analogue, for these rough surfaces, of Gromov's "every pose" theorem
   - For a unit vector $v$, $|R(u')v - R(u)v| = |(u' - u)v\bar u' + uv(\bar u' - \bar u)| \le 2|u' - u|$.
   - So each vertex $x + s\,w_k$ moves by at most $\tau s$, with $\tau = 2\sqrt3\,h/d$, and since signed distance is 1-Lipschitz, $G$ moves by at most $\tau s$ at a point of $Q$ with circumradius $s$.
   - As in Corollary 7.2, certifying orientation $q$ with the allowance $T + \tau s$ proves the result for every orientation in the cube. The allowance is bounded cell by cell, with $s$ replaced by its largest value on the cell, rather than by one bound $T + \tau s_{\max}$ for the whole box.
-- **The computation** (`node tools/certify-orientations.js --T 1/20`, about 3 hours on 4 cores).
+- **The computation** (`node tools/certify-orientations.js --T 7/100`, about 4 hours on 4 cores).
   - $[-1, 1]^3$ is split into $36^3$ cubes, of half-width $h = 1/36$, and the 10,544 that meet $\Omega$ are kept.
-  - For each one, Newton's method from a fixed start finds the tetrahedron on $E$ in the orientation of the cube's centre, and a box with $c = 0.24$ is built around it (the program would fall back to $c = 0.22$ or $0.20$, and then split the cube into 8, but never needs to).
+  - For each one, Newton's method from a fixed start finds the tetrahedron on $E$ in the orientation of the cube's centre, and a box with $c = 0.24$ is built around it. If that box fails, the program tries $c = 0.22$ and $0.20$, and if those fail too it splits the cube into 8 cubes of half the width and certifies each of them in the same way.
   - The box is certified as in Theorem 7, with adaptive cells and the allowance $T + \tau s$, where $\tau \le 0.0963$.
-  - Every cube passes on the first attempt: 12.9 billion cells in all. On every cell, $|G|$ exceeds the allowance by at least $0.0079$, and the circumradius is at least $0.4239$ throughout.
-  - The results are in `data/orientations-progress-T1-20.jsonl` (one line per cube, each recording the $T$ it was certified for) and `data/certificate-orientations-T1-20.json`. $\blacksquare$
+  - 10,224 cubes pass with $c = 0.24$. The other 320 fail with all three boxes and are split; all 2,560 halves pass with $c = 0.24$ (their $\tau$ is half as large). So 12,784 certificates cover $\Omega$, with 16.3 billion cells in all, and the circumradius is at least $0.4239$ throughout.
+  - Cells are split only until they pass, so on the tightest cells the margin is small (the smallest is $2.4 \times 10^{-9}$). It is still a strict inequality in outward-rounded interval arithmetic, which is all the degree lemma needs.
+  - The results are in `data/orientations-progress-T7-100.jsonl` (one line per cube, including the 320 that were split, each recording the $T$ it was certified for) and `data/certificate-orientations-T7-100.json`. $\blacksquare$
 
 **Checks.**
-- `python3 tools/verify_certificates.py orientations --T 1/20` re-checks the covering in exact rational arithmetic, without the JavaScript's bookkeeping. The coordinates bounding the certified cubes form a grid, and every cell of that grid that meets $\Omega$ lies inside a certified cube.
-- `./verify orientations data/orientation-sample-T1-20.json` re-checks a seeded random sample of 100 cubes (`node tools/certify-orientations.js --T 1/20 --sample 100`) in C with Arb. It takes only $T$, each cube's corners, its centre and the box data $z$, $J$, $K$, and recomputes the rotation, $\tau$, the circumradius range and every cell itself. All 100 pass, with at least $0.0098$ to spare on every cell: 125 million cells, about 6 minutes.
-- Re-checking all 10,544 cubes in Arb would take about 10 hours on 4 cores. It has not been done.
+- `python3 tools/verify_certificates.py orientations --T 7/100` re-checks the covering in exact rational arithmetic, without the JavaScript's bookkeeping. The coordinates bounding the certified cubes form a grid, and every cell of that grid that meets $\Omega$ lies inside a certified cube.
+- `./verify orientations data/orientation-sample-T7-100.json` re-checks a seeded random sample of 100 of the 12,784 certified cubes (`node tools/certify-orientations.js --T 7/100 --sample 100`; 24 of them are halves of split cubes) in C with Arb. It takes only $T$, each cube's corners, its centre and the box data $z$, $J$, $K$, and recomputes the rotation, $\tau$, the circumradius range and every cell itself. All 100 pass: 137 million cells, about 6 minutes.
+- Re-checking all 12,784 cubes in Arb would take about 13 hours on 4 cores. It has not been done.
 
-How far does this go? An earlier version charged the whole box the largest turning cost $2\sqrt3\,h\,s_{\max} \approx 0.093$ and reached only $T = 0.02$. Charging each cell its own $\tau s$, and using $d$, saves about $0.03$ where the room is tightest, and the larger box $c = 0.24$ gives more room for a general orientation. At $T = 0.07$, 98 of the 100 sampled cubes still pass with $h = 1/36$ and 2 do not, so going further means splitting the cubes where the room is tight, at about 8 times the cost per halving of $h$.
+How far does this go? An earlier version charged the whole box the largest turning cost $2\sqrt3\,h\,s_{\max} \approx 0.093$ and reached only $T = 0.02$. Charging each cell its own $\tau s$, and using $d$, saves about $0.03$ where the room is tightest, and the larger box $c = 0.24$ gives more room for a general orientation. At $T = 0.05$ every cube of half-width $1/36$ passes, with at least $0.0079$ to spare. At $T = 0.07$, 320 of them (3%) need splitting, and the margins become small, so going further would mean splitting many more cubes, at about 8 times the cost per halving of $h$.
 
 **Remarks.**
 - The degree lemma needs no winding numbers and works in any number of unknowns. It only needs the equations to stay away from zero, and either close to their linearisation or closer to it than to zero, on the boundary of a box.
@@ -384,7 +385,7 @@ How far does this go? An earlier version charged the whole box the largest turni
 |---|---|
 | Square in every continuous Jordan curve (Toeplitz) | **Open.** Proved for convex (Emch), smooth (Schnirelmann), locally monotone (Stromquist) and small-Lipschitz (Tao) curves |
 | Rectangle of every aspect ratio in every continuous Jordan curve | **Open.** Proved for smooth curves (Greene–Lobb) and extended to rectifiable curves; *some* rectangle always exists (Vaughan) |
-| Regular tetrahedron / simplex in every continuous Jordan sphere | **Open.** Proved for $C^1$ spheres in every pose (Gromov 1969); Theorems 2–3 give elementary proofs for every $C^1$ convex body and, in admissible orientations, every convex body. Theorem 7 certifies every surface within 0.13 of one ellipsoid, and Corollary 7.3 every orientation for every surface within 0.05. "Every pose" fails for non-smooth bodies (Proposition 5) |
+| Regular tetrahedron / simplex in every continuous Jordan sphere | **Open.** Proved for $C^1$ spheres in every pose (Gromov 1969); Theorems 2–3 give elementary proofs for every $C^1$ convex body and, in admissible orientations, every convex body. Theorem 7 certifies every surface within 0.13 of one ellipsoid, and Corollary 7.3 every orientation for every surface within 0.07. "Every pose" fails for non-smooth bodies (Proposition 5) |
 | Regular octahedron / cross-polytope | **Open.** Proved for smooth convex bodies in $\mathbb{R}^3$ (Makeev 2001) and in $\mathbb{R}^n$ for $n$ an odd prime power (Karasev 2009) |
 | Cube / hypercube ($n \ge 3$) | **False in general** (Theorem 1), with an explicit strictly convex surface that has no inscribed cube (Theorem 1.3). True for centrally symmetric convex bodies in $\mathbb{R}^3$ (Hausel–Makai–Szűcs 2000) |
 

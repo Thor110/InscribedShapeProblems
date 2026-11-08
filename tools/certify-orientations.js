@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Every orientation (PROOFS.md, Corollary 7.3): every surface whose radius stays within
 // T of the ellipsoid with semi-axes 1, 0.8, 0.6 has an inscribed regular tetrahedron in
-// EVERY orientation. T = 1/20 by default (--T p/q to choose another).
+// EVERY orientation. T = 7/100 by default (--T p/q to choose another).
 //
 // Orientations. A rotation is a unit quaternion ±(1, a, b, c)/|·| with Cayley vector
 // (a, b, c); certify-rigorous.js builds its exactly orthogonal rational matrix. The
@@ -25,9 +25,9 @@
 // The result is data/certificate-orientations-T<p>-<q>.json; the program exits with code 0 only
 // if every cube is certified.
 //
-//   node tools/certify-orientations.js [--T 1/20]          # the full covering (hours on 4 cores)
-//   node tools/certify-orientations.js [--T 1/20] --check  # just re-check the covering from the data
-//   node tools/certify-orientations.js [--T 1/20] --sample 100  # a random sample for ./verify orientations
+//   node tools/certify-orientations.js [--T 7/100]          # the full covering (hours on 4 cores)
+//   node tools/certify-orientations.js [--T 7/100] --check  # just re-check the covering from the data
+//   node tools/certify-orientations.js [--T 7/100] --sample 100  # a random sample for ./verify orientations
 'use strict';
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const fs = require('fs'), path = require('path'), os = require('os');
@@ -37,7 +37,7 @@ const { up, ru } = require('../pages/interval.js');
 // T comes from --T in the main thread, and is handed to the worker threads explicitly (they do not
 // see the command line). Every progress record carries the T it was certified for.
 const ti = process.argv.indexOf('--T');
-const T = !isMainThread ? workerData.T : ti > 0 ? process.argv[ti + 1].split('/').map(Number) : [1, 20];
+const T = !isMainThread ? workerData.T : ti > 0 ? process.argv[ti + 1].split('/').map(Number) : [7, 100];
 const N_GRID = 36, BOXES = [0.24, 0.22, 0.20], MAX_SPLIT = 2;
 const STARTS = [[0, 0, 0, 0.75], [0, 0, 0, 0.6], [0, 0, 0, 0.9]];
 const ROOT = path.join(__dirname, '..'), TAG = `T${T[0]}-${T[1]}`;

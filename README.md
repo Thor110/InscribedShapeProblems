@@ -54,7 +54,7 @@ The original four problems ask for an inscribed equilateral triangle, square, re
 | **Cube** | Cube | 3 | 8 | **−1** | Proved for centrally symmetric convex bodies (Hausel–Makai–Szűcs 2000) | **False in general** (Theorem 1), and proved false for one explicit smooth strictly convex egg (Theorem 1.3, computer-assisted) | ❌ except on symmetric surfaces |
 | Cube | Hypercube | 4, 5 | 16, 32 | −5, −16 | — | **False in general** (Theorem 1) | ✅ only on the sphere and ellipsoid; ❌ elsewhere (closest misses 0.6–9%) |
 | Cube | Icosahedron, dodecahedron | 3 | 12, 20 | −5, −13 | — | **False in general** (Theorem 1) | not tested |
-| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.13 of one ellipsoid, rough ones included, with an open set of orientations, and every orientation within 0.05 (Theorem 7 and Corollary 7.3, computer-assisted, interval arithmetic) | ✅ every surface tested, at any rotation |
+| **Tetrahedron** | Regular tetrahedron | 3 | 4 | 3 | **Open** for continuous surfaces. Proved for $C^1$ surfaces in every orientation (Gromov 1969) | Every orientation in every smooth convex body; admissible orientations in every convex body (Theorems 2–3); not every orientation in sharp bodies (Proposition 5); every surface within 0.13 of one ellipsoid, rough ones included, with an open set of orientations, and every orientation within 0.07 (Theorem 7 and Corollary 7.3, computer-assisted, interval arithmetic) | ✅ every surface tested, at any rotation |
 | Tetrahedron | Regular simplex (5-cell, …) | 4, 5 | 5, 6 | 6, 10 | **Open** for continuous; proved for $C^1$ (Gromov) | Theorems 2–3 (convex, every dimension) | ✅ every surface tested (5 surfaces × 2 seeds in each dimension) |
 
 **Where the three open problems stand.**
@@ -174,16 +174,16 @@ The test works in any dimension. On the boundary of a box around the ellipsoid's
 
 Turning the tetrahedron by a small angle acts like one more small perturbation, so the same certificate covers a whole range of orientations. For every surface within 0.06 of the ellipsoid there is a tetrahedron in **every** orientation within 4.16° of the given one (7.5° for the ellipsoid itself).
 
-**Every orientation** ([PROOFS.md, Corollary 7.3](PROOFS.md#theorem-7--the-same-for-tetrahedra-on-rough-surfaces)). Every surface within 0.05 of the ellipsoid has an inscribed regular tetrahedron in **every** orientation. That is the analogue, for these rough surfaces, of Gromov's "every pose" theorem for smooth ones. The proof uses the following facts:
+**Every orientation** ([PROOFS.md, Corollary 7.3](PROOFS.md#theorem-7--the-same-for-tetrahedra-on-rough-surfaces)). Every surface within 0.07 of the ellipsoid has an inscribed regular tetrahedron in **every** orientation. That is the analogue, for these rough surfaces, of Gromov's "every pose" theorem for smooth ones. The proof uses the following facts:
 - The tetrahedron's 12 symmetries cut the space of rotations down to one octahedron of Cayley vectors.
-- That octahedron is covered by 10,544 small cubes of orientations.
+- That octahedron is covered by 12,784 small cubes of orientations (10,544 of half-width 1/36, with 320 of those split into 8 where the room is tight).
 - Each cube gets its own certificate, with the turning inside it counted as one more perturbation.
 
-All 10,544 pass: 12.9 billion cells, about 3 hours on 4 cores. The covering is re-checked in exact rational arithmetic in Python. A random sample of 100 cubes is re-checked from scratch in C with Arb.
+All 12,784 pass: 16.3 billion cells, about 4 hours on 4 cores. The covering is re-checked in exact rational arithmetic in Python. A random sample of 100 cubes is re-checked from scratch in C with Arb.
 
 ```bash
 node tools/certify-tetra.js          # seconds for the theorem, about a minute with the orientation table
-node tools/certify-orientations.js --T 1/20   # every orientation: about 3 hours on 4 cores, resumable
+node tools/certify-orientations.js --T 7/100  # every orientation: about 4 hours on 4 cores, resumable
 ```
 
 **Checked three times, independently.** Two further programs redo both certificates from scratch, each sharing only the box definitions:
@@ -197,8 +197,8 @@ pip install mpmath
 python3 tools/verify_certificates.py   # about 8 minutes on 4 cores
 sudo apt install libflint-dev          # FLINT 3, which includes Arb
 gcc -O2 -fopenmp -o verify tools/verify-certificates.c -lflint -lm && ./verify   # about 4 seconds
-python3 tools/verify_certificates.py orientations --T 1/20     # Corollary 7.3: the covering, in exact arithmetic
-./verify orientations data/orientation-sample-T1-20.json       # Corollary 7.3: a random sample of 100 cubes in Arb, about 6 minutes
+python3 tools/verify_certificates.py orientations --T 7/100    # Corollary 7.3: the covering, in exact arithmetic
+./verify orientations data/orientation-sample-T7-100.json      # Corollary 7.3: a random sample of 100 cubes in Arb, about 6 minutes
 ```
 
 ## Preprint

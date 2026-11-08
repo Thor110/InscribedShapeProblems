@@ -11,7 +11,7 @@ J, K, and their accuracy affects only the margin.
     pip install mpmath
     python3 tools/verify_certificates.py            # square (T = 0.15) and tetrahedron (T = 0.13)
     python3 tools/verify_certificates.py square     # one of them
-    python3 tools/verify_certificates.py orientations [--T 1/20]   # Corollary 7.3: the covering, exactly
+    python3 tools/verify_certificates.py orientations [--T 7/100]   # Corollary 7.3: the covering, exactly
 
 The square check is the full Theorem 6 (80,000 boundary samples, seconds). The
 tetrahedron check is the full Theorem 7, using adaptive cells as the JavaScript does
@@ -305,7 +305,7 @@ def main():
         print(f'  circumradius ≥ {smin:.4f}')
         all_ok &= r['ok']
     if 'orientations' in which:
-        t = sys.argv[sys.argv.index('--T') + 1] if '--T' in sys.argv else '1/20'
+        t = sys.argv[sys.argv.index('--T') + 1] if '--T' in sys.argv else '7/100'
         all_ok &= covering('T' + t.replace('/', '-'))
     sys.exit(0 if all_ok else 1)
 

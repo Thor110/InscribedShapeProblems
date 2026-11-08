@@ -11,7 +11,7 @@ We study four inscribed-shape problems: an equilateral triangle or a square in a
 3. **Admissibility is needed.** Bodies with sharp corners can lose orientations: an isosceles triangle with apex below $60°$ has no inscribed equilateral triangle pointing at its apex (Proposition 5).
 4. **A limit criterion for squares.** Non-shrinking squares on approximations give a square on the limit (Lemma 4).
 5. **A computer-assisted proof.** Every Jordan curve whose polar radius stays within $0.15$ of that of the ellipse $x^2 + y^2/0.36 = 1$ has an inscribed square (Theorem 6), proved in interval arithmetic. This class contains nowhere-differentiable curves that are neither locally monotone nor symmetric.
-6. **The same in 3D.** Every surface whose radius stays within $0.13$ of that of a $1 \times 0.8 \times 0.6$ ellipsoid has an inscribed regular tetrahedron (Theorem 7), and within $0.06$ in every orientation within $4.16°$ of a given one. Within $0.05$ it has one in **every** orientation (Corollary 7.3), by a covering of all rotations with 10,544 certificates. This includes surfaces that are not $C^1$, outside Gromov's theorem.
+6. **The same in 3D.** Every surface whose radius stays within $0.13$ of that of a $1 \times 0.8 \times 0.6$ ellipsoid has an inscribed regular tetrahedron (Theorem 7), and within $0.06$ in every orientation within $4.16°$ of a given one. Within $0.07$ it has one in **every** orientation (Corollary 7.3), by a covering of all rotations with 12,784 certificates. This includes surfaces that are not $C^1$, outside Gromov's theorem.
 7. **Numerical studies.** Four studies probe the open continuous cases:
    - on fractal curves and surfaces refined level by level, the largest inscribed squares and the tracked regular tetrahedra converge rather than shrink;
    - rectangles of 9 aspect ratios are found on all 9 test curves;
@@ -143,9 +143,9 @@ The computation (`node tools/certify-tetra.js`, seconds on 4 cores) checks the 8
 
 Turning the tetrahedron by an angle $\theta$ moves $G$ by at most $s_{\max}\theta$, which acts as one more perturbation. That gives the open set of orientations.
 
-> **Corollary 7.3.** If $|\rho - r_E| \le 0.05$, the surface has an inscribed regular tetrahedron in every orientation.
+> **Corollary 7.3.** If $|\rho - r_E| \le 0.07$, the surface has an inscribed regular tetrahedron in every orientation.
 
-Write rotations as unit quaternions, with Cayley vector $q = v/w$. The tetrahedron's symmetries are the 24 Hurwitz units, and every rotation is equivalent under them to one whose Cayley vector lies in the octahedron $|a| + |b| + |c| \le 1$. That octahedron is covered by 10,544 cubes of half-width $1/36$. Within a cube of half-width $h$, the vertices turn by at most $2\sqrt3\,h\,s/d$, where $d$ is the smallest value of $|(1, q)|$ on the cube. So the certificate at each cube's centre, with that turning counted as an extra perturbation, covers the whole cube. All 10,544 certificates pass (12.9 billion cells, about 3 hours on 4 cores). The covering is re-checked in exact arithmetic, and a random sample of 100 cubes in C with Arb.
+Write rotations as unit quaternions, with Cayley vector $q = v/w$. The tetrahedron's symmetries are the 24 Hurwitz units, and every rotation is equivalent under them to one whose Cayley vector lies in the octahedron $|a| + |b| + |c| \le 1$. That octahedron is covered by 10,544 cubes of half-width $1/36$, and the 320 where the room is tight are split into 8. Within a cube of half-width $h$, the vertices turn by at most $2\sqrt3\,h\,s/d$, where $d$ is the smallest value of $|(1, q)|$ on the cube. So the certificate at each cube's centre, with that turning counted as an extra perturbation, covers the whole cube. All 12,784 certificates pass (16.3 billion cells, about 4 hours on 4 cores). The covering is re-checked in exact arithmetic, and a random sample of 100 cubes in C with Arb.
 
 With $F(\omega) = (1 - 2^{-1/2})\sum_k 2^{-k/2}\cos(2^k\langle\omega, e\rangle)$, the surface $r_E + 0.13\,F$ is not $C^1$, so Gromov's theorem does not cover it, but Theorem 7 does.
 
@@ -201,13 +201,13 @@ Signed counts vanish, because a square's two diagonals carry opposite signs. Cou
 |---|---|
 | Square in every Jordan curve | open |
 | Rectangle of every aspect ratio in every Jordan curve | open; smooth case solved |
-| Regular simplex in every Jordan sphere | open; $C^1$ case solved (Gromov); convex case in admissible orientations, and a neighbourhood of one ellipsoid, in every orientation within 0.05 (Thm 7, Cor 7.3), here |
+| Regular simplex in every Jordan sphere | open; $C^1$ case solved (Gromov); convex case in admissible orientations, and a neighbourhood of one ellipsoid, in every orientation within 0.07 (Thm 7, Cor 7.3), here |
 | Cross-polytope in every (smooth convex) sphere | open in general |
 | Cube in every Jordan surface | false (Theorem 1), with an explicit egg (Thm 1.3); true for centrally symmetric convex bodies |
 
 Two directions follow from this work:
 - **Larger certified neighbourhoods.** Theorems 6–7 could start from other smooth base curves and surfaces, use several boxes, or replace the linearisation by a higher-order model.
-- **Wider 3D certificates.** Second-derivative bounds for the signed distance would enlarge Theorem 7's neighbourhood, and a finer covering of the rotations would give every orientation for a wider neighbourhood than 0.05.
+- **Wider 3D certificates.** Second-derivative bounds for the signed distance would enlarge Theorem 7's neighbourhood, and a finer covering of the rotations would give every orientation for a wider neighbourhood than 0.07.
 
 ## References
 
