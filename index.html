@@ -21,6 +21,23 @@
   .proved li{margin-left:16px;margin-bottom:4px;}
   .proved a{color:#6a8;}
   .proved .note{margin-top:8px;color:#888;font-size:10px;}
+  .explain{border:1px solid #22222e;background:#0d0d14;padding:4px 16px 10px;font-size:11px;line-height:1.75;color:#bbb;}
+  .explain>p{margin:10px 0 6px;color:#999;}
+  .explain details{border-top:1px solid #1c1c26;padding:8px 0;}
+  .explain details:first-of-type{border-top:none;}
+  .explain summary{cursor:pointer;color:#ddd;letter-spacing:0.06em;list-style-position:outside;margin-left:14px;}
+  .explain summary .tag{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;margin-left:8px;padding:1px 6px;border:1px solid #333;color:#888;white-space:nowrap;}
+  .explain summary .tag.open{border-color:#5a4a20;color:#c9a54a;}
+  .explain summary .tag.solved{border-color:#1e3a2c;color:#4a9;}
+  .explain summary .tag.false{border-color:#4a2424;color:#c66;}
+  .explain .body{padding:6px 0 4px 14px;}
+  .explain .body p{margin-bottom:8px;}
+  .explain .body ul{margin:0 0 8px 16px;}
+  .explain .body li{margin-bottom:3px;}
+  .explain .body b{color:#ddd;}
+  .explain .body a{color:#6a8;}
+  .explain svg{display:block;margin:4px auto 10px;max-width:100%;height:auto;}
+  .explain .count{font-size:10px;color:#999;border-left:2px solid #2a3a32;padding-left:10px;margin:6px 0 10px;}
   .footer{margin-top:40px;font-size:9px;color:#777;letter-spacing:0.1em;text-transform:uppercase;text-align:center;line-height:1.8;}
   .footer a{color:#888;}
 </style>
@@ -40,6 +57,122 @@
       <li><b>Odd perfect numbers:</b> Euler's form, at least three distinct primes, the steps of 6 and forced steps, all machine-checked in Lean.</li>
     </ul>
     <div class="note">The open problems themselves (squares and tetrahedra in every continuous curve and surface, odd perfect numbers) remain open. The computer-assisted proofs are confirmed by three independent programs. Details: <a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/PROOFS.md">PROOFS.md</a> · <a href="pages/paper.html">the preprint</a>.</div>
+  </div>
+
+  <h2>The problems, explained</h2>
+  <div class="explain">
+    <p>New to these problems? Start here. Each one asks the same kind of question: draw a closed loop (or, in 3D, a closed surface), however wiggly. Can you always find a given shape with <i>all of its corners exactly on it</i>? Open any problem below for a plain explanation.</p>
+
+    <details>
+      <summary>First, a few words used throughout</summary>
+      <div class="body">
+        <ul>
+          <li><b>Jordan curve:</b> a closed loop in the plane that never crosses itself. A circle, a star outline or a coastline all count. It may be extremely jagged, as long as it is unbroken.</li>
+          <li><b>Jordan surface (sphere):</b> the 3D version, a closed surface without self-intersections that encloses one region, like a balloon of any shape.</li>
+          <li><b>Inscribed:</b> a shape is inscribed in the curve when every one of its corners lies <i>on</i> the curve. The sides may cross the curve; only the corners matter.</li>
+          <li><b>Continuous / smooth / convex:</b> <i>continuous</i> just means unbroken, and allows corners and infinitely fine roughness (fractals). <i>Smooth</i> means it has a well-defined tangent everywhere, with no sharp corners. <i>Convex</i> means it bulges outward everywhere, like an egg, with no dents.</li>
+          <li><b>Orientation:</b> which way the shape is turned. Some results only say the shape exists at <i>some</i> angle, others say it exists at <i>every</i> angle you choose.</li>
+          <li><b>Open problem / conjecture:</b> a statement that nobody has proved or disproved. Many special cases may be proved without the whole thing being settled.</li>
+        </ul>
+        <p><b>A useful way to count.</b> A copy of a shape can be moved, turned and resized. In the plane that gives 4 free choices (2 for position, 1 for angle, 1 for size). Each corner that must land on the curve uses up one choice. So a triangle (3 corners) has 1 choice to spare, a square (4 corners) has exactly none spare, and a pentagon (5 corners) is one short. In 3D there are 7 free choices (3 position, 3 for turning, 1 size). A tetrahedron (4 corners) has 3 to spare and a cube (8 corners) is one short. This count does not prove anything by itself, but it predicts very well which problems are hard, which are easy, and which are false.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Triangles in curves<span class="tag solved">solved</span></summary>
+      <div class="body">
+        <p><b>The question.</b> Pick any triangle shape, say equilateral or a long thin one. Does every closed loop have a triangle of that shape (at some size and angle) with its three corners on the loop?</p>
+        <p><b>The answer: yes, always.</b> This is a theorem for every Jordan curve, however rough (Meyerson 1980, Nielsen 1992). By the count above, a triangle has one free choice to spare, so there is room to adjust: in fact there are infinitely many such triangles.</p>
+        <p>It is the warm-up case, and shows what the harder problems are reaching for. The <a href="pages/skeletal-shapefinder.html">Skeletal Shape Finder</a> finds them on any curve.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>The square peg problem (Toeplitz, 1911)<span class="tag open">open</span></summary>
+      <div class="body">
+        <svg viewBox="0 0 220 140" width="220" height="140" role="img" aria-label="A wobbly closed curve with a square whose four corners all lie on it"><path d="M172.3,70.0 L172.1,68.4 L171.8,66.8 L171.4,65.2 L170.8,63.6 L170.2,62.1 L169.4,60.6 L168.5,59.2 L167.6,57.8 L166.6,56.4 L165.6,55.1 L164.5,53.8 L163.5,52.6 L162.3,51.5 L161.2,50.3 L160.0,49.3 L158.9,48.2 L157.7,47.3 L156.5,46.3 L155.3,45.4 L154.0,44.6 L152.7,43.8 L151.4,43.1 L150.1,42.5 L148.7,41.9 L147.3,41.4 L145.9,40.9 L144.5,40.6 L143.0,40.2 L141.6,40.0 L140.2,39.8 L138.8,39.7 L137.4,39.5 L136.1,39.4 L134.8,39.3 L133.6,39.2 L132.5,39.0 L131.4,38.8 L130.5,38.5 L129.5,38.1 L128.7,37.6 L128.0,36.9 L127.3,36.1 L126.6,35.1 L126.0,34.0 L125.4,32.7 L124.9,31.2 L124.3,29.6 L123.7,27.9 L123.0,26.0 L122.3,24.1 L121.5,22.1 L120.6,20.0 L119.6,18.0 L118.6,16.0 L117.4,14.0 L116.1,12.2 L114.7,10.5 L113.2,9.0 L111.6,7.6 L110.0,6.5 L108.3,5.7 L106.6,5.1 L104.9,4.7 L103.1,4.6 L101.4,4.8 L99.7,5.3 L98.1,6.0 L96.6,6.8 L95.1,7.9 L93.7,9.2 L92.4,10.6 L91.2,12.0 L90.0,13.6 L89.0,15.2 L88.0,16.8 L87.0,18.4 L86.1,19.9 L85.2,21.4 L84.4,22.8 L83.5,24.1 L82.6,25.3 L81.7,26.4 L80.7,27.4 L79.8,28.4 L78.7,29.2 L77.6,30.0 L76.5,30.8 L75.3,31.5 L74.1,32.2 L72.9,32.9 L71.6,33.6 L70.4,34.4 L69.3,35.2 L68.1,36.1 L67.1,37.1 L66.1,38.1 L65.3,39.3 L64.5,40.5 L63.9,41.8 L63.5,43.1 L63.1,44.6 L63.0,46.0 L62.9,47.5 L63.0,49.1 L63.2,50.6 L63.5,52.1 L63.8,53.7 L64.3,55.2 L64.8,56.6 L65.3,58.0 L65.9,59.4 L66.4,60.7 L66.9,62.0 L67.3,63.2 L67.7,64.4 L68.0,65.6 L68.2,66.7 L68.3,67.8 L68.4,68.9 L68.3,70.0 L68.2,71.1 L68.0,72.2 L67.7,73.3 L67.4,74.5 L67.0,75.7 L66.7,76.9 L66.3,78.1 L65.9,79.4 L65.5,80.7 L65.2,82.0 L64.8,83.4 L64.5,84.8 L64.3,86.2 L64.1,87.6 L64.0,89.1 L63.9,90.5 L63.8,92.0 L63.8,93.5 L63.9,95.1 L63.9,96.6 L64.0,98.2 L64.2,99.8 L64.4,101.4 L64.6,103.0 L64.8,104.7 L65.1,106.4 L65.4,108.1 L65.8,109.8 L66.2,111.6 L66.7,113.3 L67.2,115.1 L67.8,116.8 L68.6,118.5 L69.4,120.2 L70.3,121.7 L71.4,123.2 L72.5,124.5 L73.8,125.7 L75.2,126.8 L76.7,127.6 L78.3,128.3 L80.1,128.8 L81.9,129.0 L83.7,129.0 L85.6,128.8 L87.6,128.3 L89.6,127.7 L91.5,126.8 L93.5,125.8 L95.4,124.6 L97.2,123.2 L99.0,121.8 L100.7,120.2 L102.3,118.7 L103.8,117.1 L105.2,115.6 L106.5,114.2 L107.8,112.8 L108.9,111.6 L110.0,110.5 L111.0,109.6 L112.0,108.9 L113.0,108.4 L114.0,108.1 L115.0,107.9 L116.0,108.0 L117.1,108.2 L118.2,108.6 L119.4,109.1 L120.6,109.6 L121.9,110.3 L123.3,111.0 L124.7,111.6 L126.2,112.3 L127.8,112.9 L129.3,113.4 L130.9,113.8 L132.4,114.1 L134.0,114.2 L135.5,114.2 L137.0,114.0 L138.3,113.6 L139.7,113.1 L140.9,112.5 L142.0,111.7 L143.1,110.8 L144.0,109.8 L144.9,108.8 L145.7,107.6 L146.4,106.4 L147.1,105.2 L147.7,104.0 L148.4,102.8 L149.0,101.6 L149.6,100.4 L150.3,99.3 L151.0,98.2 L151.8,97.1 L152.6,96.1 L153.5,95.1 L154.5,94.2 L155.6,93.2 L156.8,92.3 L158.0,91.4 L159.3,90.4 L160.6,89.4 L161.9,88.4 L163.2,87.3 L164.5,86.1 L165.8,84.9 L167.0,83.7 L168.1,82.4 L169.1,81.0 L170.0,79.5 L170.8,78.0 L171.4,76.5 L171.9,74.9 L172.2,73.3 L172.3,71.6 Z" fill="none" stroke="#666" stroke-width="1.4"/><polygon points="146.7,41.2 73.9,32.3 65.0,105.0 137.8,114.0" fill="rgba(68,170,153,0.08)" stroke="#4a9" stroke-width="1.3"/><circle cx="146.7" cy="41.2" r="2.6" fill="#4a9"/><circle cx="73.9" cy="32.3" r="2.6" fill="#4a9"/><circle cx="65.0" cy="105.0" r="2.6" fill="#4a9"/><circle cx="137.8" cy="114.0" r="2.6" fill="#4a9"/></svg>
+        <p><b>The question.</b> Does every Jordan curve have four points on it that form the corners of a square?</p>
+        <p>It sounds like it should be easy, and it was posed by Otto Toeplitz in 1911. More than a century later it is still unsolved for general continuous curves, one of the best-known open problems in geometry.</p>
+        <p><b>What is known.</b> It is proved for many kinds of curve:</p>
+        <ul>
+          <li>convex curves (Emch, 1913);</li>
+          <li>smooth curves (Schnirelmann, 1929), and curves without very sharp kinks;</li>
+          <li>curves that are "locally monotone", which includes every polygon (Stromquist, 1989);</li>
+          <li>curves that are only slightly bumpy in a precise sense (Tao, 2017), or close to a smooth curve (Chambers, 2022).</li>
+        </ul>
+        <p><b>Why the general case is hard.</b> The natural plan is to approximate a rough curve by smooth ones, find a square on each, and pass to the limit. The trouble is that the squares might shrink as the approximations get better, and in the limit collapse to a single point, which is not a square. For curves with roughness at every scale (fractals), no one can yet rule that out.</p>
+        <p><b>What this project adds.</b> A computer-assisted proof that every curve staying within 0.15 of a particular ellipse has an inscribed square, including nowhere-smooth fractal curves that none of the results above reach (Theorem 6). It covers one region of curves, not all curves. <a href="pages/certificate.html">Run the proof in your browser</a>, or try the <a href="pages/inscribed-square-viewfinder.html">Square Viewfinder</a>.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Rectangles of every shape<span class="tag open">open</span></summary>
+      <div class="body">
+        <p><b>The question.</b> Fix a rectangle shape, for example twice as long as it is wide. Does every Jordan curve have an inscribed rectangle of exactly that shape? (The square is the case where length equals width.)</p>
+        <p><b>What is known.</b> Every curve has <i>some</i> inscribed rectangle, of some unknown shape (Vaughan, 1977), with a beautiful proof that glues pairs of points into a Möbius strip. For a <i>prescribed</i> shape, Greene and Lobb proved it for smooth curves in 2021 using symplectic geometry. For general continuous curves it is open, for the same reason as the square.</p>
+        <p>The numerical studies here sweep through rectangle shapes on ever-rougher curves, and in every test the rectangles persist rather than shrinking away.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Regular tetrahedra in surfaces<span class="tag open">open</span></summary>
+      <div class="body">
+        <p><b>The question.</b> A regular tetrahedron is the triangular pyramid with four equal equilateral faces. Does every closed surface in 3D have four points on it forming a regular tetrahedron? This is the 3D cousin of the square peg problem.</p>
+        <p><b>What is known.</b> For smooth surfaces it is true, and more: Gromov proved in 1969 that you can find one turned to <i>any</i> orientation you like. That fits the count above, since the tetrahedron has 3 choices to spare, exactly enough to fix its orientation. For surfaces that are merely continuous, with corners or fractal roughness, it is open.</p>
+        <p><b>What this project adds.</b></p>
+        <ul>
+          <li>An elementary proof, using a "centring jig", for every smooth convex body, and for every convex body in a large set of orientations (Theorems 2–3). It also shows that "every orientation" genuinely fails for some sharp-edged bodies (Proposition 5).</li>
+          <li>A computer-assisted proof that every surface within 0.13 of a particular ellipsoid has one, including rough surfaces Gromov's theorem does not cover (Theorem 7), and within 0.05 in <b>every</b> orientation (Corollary 7.3).</li>
+        </ul>
+        <p>Explore them in the <a href="pages/skeletal-spacefinder.html">Skeletal Space Finder</a>.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Octahedra and cross-polytopes<span class="tag open">open</span></summary>
+      <div class="body">
+        <p><b>The question.</b> A regular octahedron has 6 corners, at the ends of three equal, mutually perpendicular sticks crossing at their midpoints. Does every closed surface have one inscribed? In higher dimensions the same shape (more sticks) is called a <i>cross-polytope</i>.</p>
+        <p><b>What is known.</b> It is proved for smooth convex bodies in 3D (Makeev, 2001), and in dimension <i>n</i> when <i>n</i> is an odd prime power (Karasev, 2009). The general case is open. The count gives 1 choice to spare in 3D, so it is expected to be true. Every surface tested here has one.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Cubes in surfaces<span class="tag false">false in general</span></summary>
+      <div class="body">
+        <p><b>The question.</b> Does every closed surface have an inscribed cube, with all 8 corners on it?</p>
+        <p><b>The answer: no.</b> A cube has 8 corners but only 7 free choices (position, turning, size), so it is one short. For a "typical" surface there is no cube at all: making all 8 corners land is one demand too many. This project proves that properly (Theorem 1): a generic smooth convex surface has no inscribed cube. Some special surfaces do have one, for example every centrally symmetric convex body, where opposite points match up (Hausel–Makai–Szűcs, 2000).</p>
+        <p>"Generic" says that cube-free surfaces are everywhere, but does not name one. So the project also proves, with an exact computer check, that one explicit smooth egg-shaped surface has no inscribed cube anywhere (Theorem 1.3). The same egg has no inscribed regular icosahedron either.</p>
+        <p>See it in the <a href="pages/inscribed-cube-viewfinder.html">Cube Viewfinder</a>. The same count shows hypercubes in 4D and beyond fail too; the <a href="pages/dimension-explorer.html">Dimension Explorer</a> shows the proved eggs in 3D and 4D.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Higher dimensions</summary>
+      <div class="body">
+        <p>All of these questions make sense in any number of dimensions. The square becomes the hypercube, the tetrahedron the regular simplex, and the octahedron the cross-polytope. The count still decides the expected answer. Simplices always have choices to spare and are proved for smooth surfaces (Gromov). Cross-polytopes are expected to work. Hypercubes run out of choices faster and faster (in 4D a hypercube is 5 short), so they fail in general. The <a href="pages/dimension-explorer.html">Dimension Explorer</a> tests each family up to 6D.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>What is a "computer-assisted proof" here?</summary>
+      <div class="body">
+        <p>A computer can only calculate with rounded numbers, so a computer result is normally not a proof. The certificates here avoid that in two ways.</p>
+        <ul>
+          <li><b>Interval arithmetic.</b> Every number is stored as a small range guaranteed to contain the true value, and every calculation widens the range enough to absorb rounding. A statement like "this quantity is positive" is then <i>proved</i> when its whole range is above zero.</li>
+          <li><b>A degree argument.</b> The pen-and-paper part is a short lemma: if a set of equations, around the edge of a small box, stays further from zero than the curve could push it, then the equations still have a solution inside the box for every nearby curve. The computer only checks the inequality on the box's edge, in many small pieces.</li>
+        </ul>
+        <p>So the computer does a large but simple check, and the logic that turns that check into a theorem is written out by hand. Every certificate is re-checked by three independently written programs (JavaScript, Python with mpmath, and C with the Arb library).</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Odd perfect numbers<span class="tag open">open</span></summary>
+      <div class="body">
+        <p><b>The question.</b> A number is <i>perfect</i> if it equals the sum of its divisors smaller than itself: 6 = 1 + 2 + 3, and 28 = 1 + 2 + 4 + 7 + 14. Every perfect number found so far is even. Is there an odd one? This is one of the oldest open questions in mathematics, going back over two thousand years.</p>
+        <p><b>What is known.</b> Euler showed an odd perfect number would have to take a special form, and later work shows it would have to be enormous (well beyond 10<sup>1500</sup>) with many prime factors. None has been found, and none has been ruled out.</p>
+        <p><b>What this project adds.</b> Nothing new is claimed about whether one exists. The project proves several classical facts, including Euler's form and that an odd perfect number needs at least three different prime factors, in the Lean proof assistant, which checks every step mechanically. It also searches all odd numbers up to 10<sup>11</sup> for the closest near-misses. See <a href="pages/number-stability.html">Odd Perfect Numbers</a>.</p>
+      </div>
+    </details>
   </div>
 
   <h2>Explore</h2>
