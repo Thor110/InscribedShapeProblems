@@ -255,5 +255,13 @@ fetch('../data/study-parity.json').then(r => r.json()).then(d => { if (!paRun) {
 fetch('../data/study-tetrahedra.json').then(r => r.json()).then(d => { if (!teRun) { teData = d; renderTetra(d.families, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('teStatus').textContent = 'Press Run to start'; });
 fetch('../data/study-rectangles.json').then(r => r.json()).then(d => { if (!rcRun) { rcData = Object.assign({ seed: 1 }, d); renderRects(d, 'Showing saved results from the full run · press Run to recompute'); } }).catch(() => { $('rcStatus').textContent = 'Press Run to start'; });
 </script>
+<div class="footer">
+  Surgical Determinism · Geometric Sieve v1.0<br>
+  <a href="https://github.com/Thor110/InscribedShapeProblems">Source on GitHub</a> · Edward James Gordon (Thor110)
+  <br>
+  <a href="https://thor110.github.io/ClassicalGeometryProblems/">Classical Geometry Problems</a>
+  <br>
+  <a href="https://thor110.github.io/Potentia/">Potentia</a>
+</div>
 </body>
 </html>
