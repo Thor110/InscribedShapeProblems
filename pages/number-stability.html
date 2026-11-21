@@ -54,7 +54,7 @@
   Conjecture: the proper divisors of an odd number can never arrive exactly at N. No odd perfect number has ever been found, and none is known to be impossible: the question is open. An odd number lacks the N/2 divisor, so its largest proper divisor is at most N/3. That alone does not settle it: odd abundant numbers (the smallest is 945) pass N, and odd numbers come arbitrarily close to landing on it exactly. Drag the slider to explore, and see the panels below for what can be proved.
 </div>
 
-<canvas id="canvas" height="100"></canvas>
+<canvas id="canvas" height="100" role="img" aria-label="Divisor bar for the selected odd number: its proper divisors stacked against the target N"></canvas>
 
 <div class="slrow" style="margin-top:10px;">
   <label for="nSl" style="min-width:80px;text-align:left;">Odd number</label>
@@ -97,7 +97,7 @@
 
 <div class="panel">
   <h2>2 · Odd numbers come arbitrarily close</h2>
-  <p>The closest odd numbers up to 4,000,000, by σ(N)/N: none is perfect, but the misses get smaller. Then a construction that gets as close as you like: multiply distinct odd primes, each time choosing the smallest prime that keeps σ(N)/N below 2. The gap to 2 roughly squares at every step, so there is no fixed "gap" an odd number must leave, and no argument from the sizes of divisors alone can rule out an odd perfect number.</p>
+  <p>The odd numbers up to 4,000,000 that come closer to σ(N)/N = 2 than every smaller odd number (from 315 on): none is perfect, but the misses get smaller. Then a construction that gets as close as you like: multiply distinct odd primes, each time choosing the smallest prime that keeps σ(N)/N below 2. The gap to 2 roughly squares at every step, so there is no fixed "gap" an odd number must leave, and no argument from the sizes of divisors alone can rule out an odd perfect number.</p>
   <table id="records"></table>
   <div class="controls"><button onclick="greedyStep()">Add a prime</button><button onclick="greedyReset()">Reset</button></div>
   <table id="greedy" style="margin-top:8px"></table>
@@ -330,7 +330,7 @@ render=function(n){_render(n);const t=getDivisors(n).reduce((s,x)=>s+x,0)+n;docu
   pr.forEach((p,i)=>{P*=p/(p-1);rows+=`<tr><td>${i+1} (${pr.slice(0,i+1).join(', ')}, …)</td><td>below ${P.toFixed(4)}</td><td class="${P>2?'ok':'bad'}">${P>2?'not ruled out by this bound':'no — so an odd perfect number has at least 3 distinct primes'}</td></tr>`;});
   rows+='<tr><td colspan="3">Known (much harder): at least 10 distinct primes (Nielsen 2015), at least 101 prime factors with multiplicity and N &gt; 10^1500 (Ochem–Rao 2012).</td></tr>';
   document.getElementById('primeBound').innerHTML=rows;
-  const rec=[[315,'3²·5·7',-6],[1155,'3·5·7·11',-6],[8925,'3·5²·7·17',6],[32445,'3²·5·7·103',6],[442365,'3·5·7·11·383',6]];
+  const rec=[[315,'3²·5·7',-6],[1155,'3·5·7·11',-6],[7425,'3³·5²·11',30],[8415,'3²·5·11·17',18],[8925,'3·5²·7·17',6],[31815,'3²·5·7·101',18],[32445,'3²·5·7·103',6],[351351,'3³·7·11·13²',18],[442365,'3·5·7·11·383',6]];
   document.getElementById('records').innerHTML='<tr><th>N</th><th>Factors</th><th>σ(N) − 2N</th><th>σ(N)/N</th></tr>'+rec.map(([n,f,d])=>`<tr><td>${n.toLocaleString()}</td><td>${f}</td><td>${d>0?'+':''}${d}</td><td>${((2*n+d)/n).toFixed(6)}</td></tr>`).join('');
   const D=198585576189n,pp=(p,a)=>{let s=0n,q=1n;for(let i=0;i<=a;i++){s+=q;q*=p;}return s;};
   const base=pp(3n,2)*pp(7n,2)*pp(11n,2)*pp(13n,2), spoof=base*(1n+22021n), real=base*pp(19n,2)*pp(61n,1);

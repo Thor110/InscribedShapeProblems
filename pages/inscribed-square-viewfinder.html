@@ -40,7 +40,7 @@
 <body>
 <h1>Inscribed Square Viewfinder</h1>
 <div class="sub">Edward James Gordon — Inscribed Square Problem</div>
-<canvas id="canvas"></canvas>
+<canvas id="canvas" role="img" aria-label="The chosen closed curve with the draggable trial square; each vertex is grey inside, amber on the boundary, green when all four lock onto the curve"></canvas>
 <div class="controls">
   <select id="shapeType" aria-label="Curve" onchange="newCurve(false)"></select>
   <button onclick="newCurve(true)">New curve</button>
@@ -250,7 +250,13 @@ function newCurve(fresh){
   document.getElementById('status').textContent='Expand the square — it scales down when it meets the boundary';
   document.getElementById('status').className='status';
   ['mAB','mBC','mCD','mDA','mAC','mBD'].forEach(id=>{const el=document.getElementById(id);el.textContent='—';el.className='mval';});
-  draw();
+  draw();updateURL();
+}
+// Record the curve and seed in the URL so a square found here can be shared and reproduced.
+function updateURL(){
+  const url=new URL(location.href);
+  url.searchParams.set('curve',document.getElementById('shapeType').value);url.searchParams.set('seed',seed);
+  history.replaceState(null,'',url);
 }
 
 function resetSquare(){stopScan();lockedFrame=null;sqX=cen.x;sqY=cen.y;sqSz=50;sqAng=0;syncSliders(50,0);draw();}
@@ -393,7 +399,7 @@ Shapes2D.populateSelect(document.getElementById('shapeType'));
 {const q=new URLSearchParams(location.search);
  if(q.get('curve')&&Shapes2D.list.some(([v])=>v===q.get('curve')))document.getElementById('shapeType').value=q.get('curve');
  if(q.has('seed'))seed=+q.get('seed')|0;}
-resize();genCurve();sqX=cen.x;sqY=cen.y;draw();
+resize();genCurve();sqX=cen.x;sqY=cen.y;draw();updateURL();
 </script>
 <div class="footer">
   Surgical Determinism · Geometric Sieve v1.0<br>

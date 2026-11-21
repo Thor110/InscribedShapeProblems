@@ -13,5 +13,6 @@
  "boxesUsed": {
   "0.24": 12784
  },
- "splitCubes": 2560
+ "splitCubes": 320,
+ "certifiedSubcubes": 2560
 }

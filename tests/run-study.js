@@ -1,10 +1,9 @@
-// Runs the square-shrinkage study and/or the rectangle sweep, then writes
-//   data/study-squares.json, data/study-rectangles.json   (raw results)
-//   images/square-shrinkage.svg, images/rectangle-sweep.svg (charts for the README)
-// and prints Markdown tables.
+// Runs the studies (square shrinkage, rectangle sweep, tetrahedron shrinkage, square
+// parity), then writes the raw results to data/study-*.json and the README charts to
+// images/*.svg, and prints Markdown tables.
 // Usage: node tests/run-study.js [squares|rectangles|tetra|parity|both|all|charts] [--quick] [--seed N]
-//   both = squares + rectangles; all = squares + rectangles + tetra
-//   charts: rebuild the two SVGs from the saved JSON without re-running anything
+//   both = squares + rectangles; all = every study: parity + tetra + squares + rectangles
+//   charts: rebuild the SVGs from the saved JSON without re-running anything
 const fs = require('fs'), path = require('path');
 const Study = require('../pages/study.js'), Charts = require('../pages/study-charts.js');
 const ROOT = path.resolve(__dirname, '..'), args = process.argv.slice(2);

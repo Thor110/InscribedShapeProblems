@@ -1,6 +1,7 @@
 // Runs the n-dimensional jig search over dimensions, polytopes and surfaces and
 // prints a Markdown table (the "problem map" data in the README).
 // Usage: node tests/run-nd.js [maxDim=5] [seed=1]
+// Exits 1 if a shape with expected dimension ≥ 0 (a solution is expected) is not found.
 //        node tests/run-nd.js --check-convex      (checks the lopsided egg is convex in 2..6 D)
 const N = require('../pages/inscribed-nd.js');
 
@@ -25,7 +26,7 @@ if (process.argv.includes('--check-convex')) {
 
 const maxDim = +(process.argv[2] || 5), seed = +(process.argv[3] || 1);
 const surfaces = Object.keys(N.SURFACES);
-const rows = [];
+const rows = [], misses = [];
 console.log(`| n | Shape | Vertices | Expected dimension | ${surfaces.map(s => N.SURFACES[s].split(' (')[0]).join(' | ')} | Literature |`);
 console.log(`|---|---|---|---|${surfaces.map(() => '---').join('|')}|---|`);
 for (let n = 2; n <= maxDim; n++) {
@@ -36,6 +37,7 @@ for (let n = 2; n <= maxDim; n++) {
       // Over-determined shapes get more starts, so a miss is not just bad luck.
       const starts = e >= 0 ? 8 : n <= 3 ? 16 : 4, t0 = Date.now();
       const r = N.run(shape, n, sf, seed, { starts, maxIt: e >= 0 ? 200 : 120 });
+      if (!r.found && e >= 0) misses.push(`n=${n} ${shape} on ${sf}`);
       cells.push(r.found ? `✅ ${r.err.toExponential(0)}` : `❌ ${isFinite(r.err) ? r.err.toExponential(0) : 'n/a'}`);
       process.stderr.write(`n=${n} ${shape} ${sf}: ${r.found ? 'found' : 'none'} ${r.err.toExponential(2)} (${((Date.now() - t0) / 1000).toFixed(1)}s)\n`);
     }
@@ -43,3 +45,4 @@ for (let n = 2; n <= maxDim; n++) {
     rows.push(line); console.log(line);
   }
 }
+if (misses.length) { console.error('EXPECTED SOLUTIONS NOT FOUND:', misses); process.exitCode = 1; }

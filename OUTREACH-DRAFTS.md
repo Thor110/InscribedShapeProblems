@@ -3,7 +3,7 @@
 Drafts only. Nothing here has been sent, and nothing should be sent until you have read it, changed what you want, and decided to. Each draft is short on purpose: one question, what is claimed, what is not, and how to check it. [REVIEW.md](REVIEW.md) has the background (who works on what, and what each kind of result needs checking with).
 
 **Before using any of these:**
-- **Write the MathOverflow question in your own words.** MathOverflow does not allow AI-generated posts, and these drafts were written with an AI assistant. Use the draft as notes on *what* to ask, then write the post yourself. Emails are not covered by that rule, but they also read better in your own voice.
+- **If you ever post on MathOverflow, write the question in your own words.** MathOverflow does not allow AI-generated posts, and these drafts were written with an AI assistant. Use them as notes on *what* to ask, then write the post yourself. Emails are not covered by that rule, but they also read better in your own voice.
 - Rebuild the preprint (`node tools/build-paper.js`) and run the certificates, so every number quoted matches the repository.
 - Send one thing at a time and wait. A single reply, or none, tells you more than five messages sent at once.
 
@@ -53,10 +53,10 @@ Short answers to the replies most likely to come back, written now so they need 
 > Agreed, the proof is a dimension count. I am asking because I would like to cite it rather than reprove it. Do you know where it is written down?
 
 **"Who ever conjectured that every surface has an inscribed cube?" or "Bielecki already showed this in 1954."**
-> Agreed on both. The answer was known to be negative: Bielecki gave a convex body with no inscribed cube, and the write-up cites him and describes his example. The egg adds no new fact: it is a smooth example of the same thing, certified by computer, which the Hausel–Makai–Szűcs argument already implies. It is posed as a natural analogue of the square and tetrahedron problems rather than as a conjecture. The only thing I think may be new is an explicit smooth, strictly convex example with a checkable proof, and I would like to know if that is known too.
+> Agreed on both. The answer was known to be negative: Bielecki gave a convex body with no inscribed cube, and the write-up cites him and describes his example. The egg adds no new fact: it is a smooth example of the same thing, certified by computer, which the Hausel–Makai–Szűcs argument already implies. It is posed as a natural analogue of the square and tetrahedron problems rather than as a conjecture. I do not claim the example is new; it is a worked, certified instance of what their argument gives.
 
 **"Computer proofs are not proofs" or "floating point can't prove anything."**
-> Every estimate uses outward-rounded interval arithmetic, so each computed bound provably contains the true value. Three independent implementations agree, one of them using the Arb library, which is designed for exactly this. The mathematical part (the degree lemma) is a short pen-and-paper proof. Which part would you like me to explain in more detail?
+> Every estimate uses outward-rounded interval arithmetic, so each computed bound provably contains the true value. For Theorems 6 and 7, three independent implementations agree, one of them using the Arb library, which is designed for exactly this. The mathematical part (the degree lemma) is a short pen-and-paper proof. Which part would you like me to explain in more detail?
 
 **"This is a special case of Gromov's theorem."**
 > Gromov's theorem needs a $C^1$ surface. The certificate covers every continuous surface within 0.13 of the ellipsoid, including nowhere-differentiable ones, which his theorem does not reach. In the other direction it is much weaker: it covers one neighbourhood, not all smooth surfaces.
@@ -65,7 +65,7 @@ Short answers to the replies most likely to come back, written now so they need 
 > Thank you, I had not seen it. I will read it and update the write-up, with credit. (Then do so, and reply briefly once you have.)
 
 **"Did you use AI?"**
-> Yes. I used an AI assistant for much of the code and the write-up. The results do not rest on trusting it: the certificates are checked by three independent programs, and the number-theory results by Lean. I take responsibility for every claim, and corrections are welcome.
+> Yes. I used an AI assistant for much of the code and the write-up. The results do not rest on trusting it: the main certificates are re-checked by independent programs (three for Theorems 6 and 7, two for the egg), and the number-theory results by Lean. I take responsibility for every claim, and corrections are welcome.
 
 **"The odd perfect number results are elementary."**
 > Yes, they are known, classical results. The point of that section is that they are machine-checked in Lean, not that they are new. Nothing is claimed about the existence of odd perfect numbers.

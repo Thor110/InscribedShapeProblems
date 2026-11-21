@@ -218,7 +218,8 @@ static int cell_passes(const Box *X, const double *y, double hw, double *sG, dou
 typedef struct { double lo[MAXN - 1], hi[MAXN - 1]; int depth; } Cell;
 typedef struct { long cells, failed; int deepest; double slackG, slackD; } Stats;
 
-static Stats scan_face(const Box *X, int fixed, int sign, int start, int maxdepth) {
+/* failfast: stop at the first cell that still fails at maxdepth (the face has then failed) */
+static Stats scan_face(const Box *X, int fixed, int sign, int start, int maxdepth, int failfast) {
   int n = X->n, m = n - 1; Stats S = {0, 0, 0, INFINITY, INFINITY};
   long cap = 1 << 16, top = 0; Cell *st = malloc(cap * sizeof(Cell));
   double *edges = malloc((start + 1) * sizeof(double));
@@ -249,7 +250,7 @@ static Stats scan_face(const Box *X, int fixed, int sign, int start, int maxdept
         for (int f = 0; f < m; f++) { double mid = (C.lo[f] + C.hi[f]) / 2; if ((mask >> f) & 1) { st[top].lo[f] = mid; st[top].hi[f] = C.hi[f]; } else { st[top].lo[f] = C.lo[f]; st[top].hi[f] = mid; } }
         st[top++].depth = C.depth + 1;
       }
-    } else S.failed++;
+    } else { S.failed++; if (failfast) break; }
   }
   free(st); free(edges); return S;
 }
@@ -325,7 +326,7 @@ static int run(const char *title, Box *X, int adaptive, int N) {
   double cEff; int degree = box_setup(X, &cEff), nf = 2 * X->n; Stats R[2 * MAXN];
   double t0 = omp_get_wtime();
   #pragma omp parallel for schedule(dynamic, 1)
-  for (int f = 0; f < nf; f++) R[f] = adaptive ? scan_face(X, f / 2, f % 2 ? 1 : -1, 8, 12) : grid_face(X, f / 2, f % 2 ? 1 : -1, N);
+  for (int f = 0; f < nf; f++) R[f] = adaptive ? scan_face(X, f / 2, f % 2 ? 1 : -1, 8, 12, 1) : grid_face(X, f / 2, f % 2 ? 1 : -1, N);
   long cells = 0, failed = 0; int deepest = 0; double sG = INFINITY, sD = INFINITY;
   for (int f = 0; f < nf; f++) { cells += R[f].cells; failed += R[f].failed; if (R[f].deepest > deepest) deepest = R[f].deepest; if (R[f].slackG < sG) sG = R[f].slackG; if (R[f].slackD < sD) sD = R[f].slackD; }
   int ok = degree != 0 && cEff > 0 && failed == 0;
@@ -340,25 +341,39 @@ static int run(const char *title, Box *X, int adaptive, int N) {
  * box data z, J, K. Everything else is computed here: the half-width h of the cube around q,
  * the circumradius range on Q, the allowance T + s_max·2√3·h for turning within the cube,
  * and the adaptive-cell check of both conditions. */
-static int read_seq(const char **p, const char *key, double *out, int count) {
-  char pat[64]; snprintf(pat, sizeof pat, "\"%s\":", key); const char *q = strstr(*p, pat); if (!q) return 0;
+/* reads count numbers after "key": ; with limit, the key and all its numbers must lie before limit.
+ * Returns 0 (and leaves *p) if the key is missing or a number is missing or not finite. */
+static int read_seq(const char **p, const char *key, double *out, int count, const char *limit) {
+  char pat[64]; snprintf(pat, sizeof pat, "\"%s\":", key); const char *q = strstr(*p, pat); if (!q || (limit && q >= limit)) return 0;
   q += strlen(pat);
-  for (int i = 0; i < count; i++) { while (*q && !(*q == '-' || (*q >= '0' && *q <= '9'))) q++; char *end; out[i] = strtod(q, &end); q = end; }
+  for (int i = 0; i < count; i++) {
+    while (*q && !(*q == '-' || (*q >= '0' && *q <= '9'))) q++;
+    char *end; out[i] = strtod(q, &end); if (end == q || (limit && end > limit) || !isfinite(out[i])) return 0; q = end;
+  }
   *p = q; return 1;
 }
 static int orientations(const char *file) {
   char *json = slurp(file); const char *p = json;
-  double Tq[2]; if (!read_seq(&p, "T", Tq, 2)) { fprintf(stderr, "missing T\n"); exit(2); }
-  enum { MAXC = 100000 }; static double LO[MAXC][3], HI[MAXC][3], Q[MAXC][3], C[MAXC], Z[MAXC][4], JJ[MAXC][16], KK[MAXC][16];
+  double Tq[2]; if (!read_seq(&p, "T", Tq, 2, NULL) || Tq[0] < 0 || Tq[1] <= 0 || Tq[0] != (long)Tq[0] || Tq[1] != (long)Tq[1]) { printf("Corollary 7.3: FAILED (missing or invalid T)\n"); free(json); return 0; }
+  enum { MAXC = 100000 }; static double LO[MAXC][3], HI[MAXC][3], Q[MAXC][3], C[MAXC], Z[MAXC][4], JJ[MAXC][16], KK[MAXC][16]; static char OK[MAXC];
   int m = 0;
-  while (m < MAXC && read_seq(&p, "lo", LO[m], 3)) {
-    read_seq(&p, "hi", HI[m], 3); read_seq(&p, "q", Q[m], 3); read_seq(&p, "c", &C[m], 1);
-    read_seq(&p, "zero", Z[m], 4); read_seq(&p, "J", JJ[m], 16); read_seq(&p, "K", KK[m], 16); m++;
+  /* each record runs up to the next "lo": ; every key must be present in it, with finite numbers,
+   * lo ≤ q ≤ hi and c > 0, or the record fails at once (without scanning) */
+  const char *s;
+  while (m < MAXC && (s = strstr(p, "\"lo\":"))) {
+    const char *next = strstr(s + 5, "\"lo\":"), *lim = next ? next : s + strlen(s);
+    p = s; int good = read_seq(&p, "lo", LO[m], 3, lim);
+    good = good && read_seq(&p, "hi", HI[m], 3, lim) && read_seq(&p, "q", Q[m], 3, lim) && read_seq(&p, "c", &C[m], 1, lim);
+    good = good && read_seq(&p, "zero", Z[m], 4, lim) && read_seq(&p, "J", JJ[m], 16, lim) && read_seq(&p, "K", KK[m], 16, lim);
+    for (int k = 0; good && k < 3; k++) good = LO[m][k] <= Q[m][k] && Q[m][k] <= HI[m][k];
+    good = good && C[m] > 0;
+    OK[m++] = good; p = lim;
   }
   free(json);
   int passed = 0; double worstG = INFINITY, worstD = INFINITY, smallS = INFINITY; long cells = 0; double t0 = omp_get_wtime();
   #pragma omp parallel for schedule(dynamic, 1) reduction(+:passed, cells) reduction(min:worstG, worstD, smallS)
   for (int i = 0; i < m; i++) {
+    if (!OK[i]) { printf("  cube %d FAILED: missing key, non-finite number, q outside [lo, hi], or c <= 0\n", i); continue; }
     Problem P; tetra_problem(&P, Q[i]); Box X; X.P = &P; X.n = 4; X.c = C[i];
     for (int r = 0; r < 4; r++) { X.z[r] = Z[i][r]; for (int k = 0; k < 4; k++) { X.J[r][k] = JJ[i][4 * r + k]; X.K[r][k] = KK[i][4 * r + k]; } }
     arb_t h, a, t; arb_init(h); arb_init(a); arb_init(t); arb_zero(h);
@@ -379,7 +394,8 @@ static int orientations(const char *file) {
     set_ratio(a, (long)Tq[0], (long)Tq[1]); X.Teff = up_d(a);
     arb_clear(dd); arb_clear(h); arb_clear(a); arb_clear(t);
     double cEff; int degree = box_setup(&X, &cEff); Stats S = {0, 0, 0, INFINITY, INFINITY};
-    for (int f = 0; f < 8; f++) { Stats R = scan_face(&X, f / 2, f % 2 ? 1 : -1, 8, 12); S.cells += R.cells; S.failed += R.failed; if (R.slackG < S.slackG) S.slackG = R.slackG; if (R.slackD < S.slackD) S.slackD = R.slackD; }
+    int valid = degree != 0 && cEff > 0 && smin > 0;   /* otherwise the cube fails without scanning */
+    for (int f = 0; f < 8 && valid && S.failed == 0; f++) { Stats R = scan_face(&X, f / 2, f % 2 ? 1 : -1, 8, 12, 1); S.cells += R.cells; S.failed += R.failed; if (R.slackG < S.slackG) S.slackG = R.slackG; if (R.slackD < S.slackD) S.slackD = R.slackD; }
     int ok = degree != 0 && cEff > 0 && S.failed == 0 && smin > 0;
     passed += ok; cells += S.cells; if (S.slackG < worstG) worstG = S.slackG; if (S.slackD < worstD) worstD = S.slackD; if (smin < smallS) smallS = smin;
     if (!ok) printf("  cube %d (q = %.4f, %.4f, %.4f) FAILED: degree %d, cEff %.3g, %ld cells failed, circumradius ≥ %.4f\n", i, Q[i][0], Q[i][1], Q[i][2], degree, cEff, S.failed, smin);

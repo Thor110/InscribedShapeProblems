@@ -41,7 +41,7 @@
 <body>
 <h1>Skeletal Shape Finder</h1>
 <div class="sub">Edward James Gordon — Inscribed Polygon Problems</div>
-<canvas id="canvas"></canvas>
+<canvas id="canvas" role="img" aria-label="The chosen closed curve with the rotating jig: rays from the jig centre to the curve and the inscribed shape they span, green once verified"></canvas>
 <div class="controls">
   <select id="insType" aria-label="Shape to inscribe" onchange="onShapeChange()">
     <option value="square">Inscribed Square</option>
@@ -231,8 +231,10 @@ function verify(P) {
 
 // ---------- state + drawing ----------
 function computeView() {
-  const r = rays(jig.x, jig.y, jig.ang);
-  view = r ? { r, P: hits(jig.x, jig.y, jig.ang, r) } : null;
+  const r = rays(jig.x, jig.y, jig.ang), prev = view;
+  view = r ? { r, P: hits(jig.x, jig.y, jig.ang, r), jx: jig.x, jy: jig.y, ja: jig.ang, jm: hitMode } : null;
+  // keep recenter()'s result while the jig has not moved since
+  if (view && prev && prev.jx === jig.x && prev.jy === jig.y && prev.ja === jig.ang && prev.jm === hitMode) view.centered = prev.centered;
 }
 
 function fmt(e) { return e === 0 ? '0' : e.toExponential(2); }

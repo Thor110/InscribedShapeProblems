@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Website smoke test: serves the repository on a local port, loads every page at desktop
 // and phone width, and fails if any page throws an error, fails to load a resource,
-// overflows sideways, or has an input without an accessible label.
+// overflows sideways, or has an input or canvas without an accessible label.
 //
 //   node tests/smoke.js
 'use strict';
@@ -36,9 +36,12 @@ server.listen(0, async () => {
       const info = await page.evaluate(() => ({
         overflow: document.documentElement.scrollWidth - window.innerWidth,
         unlabeled: [...document.querySelectorAll('input, select, textarea')].filter(x => x.type !== 'hidden' && !x.labels?.length && !x.getAttribute('aria-label') && !x.title).map(x => x.id || x.name || x.type),
+        // a canvas needs a name for screen readers (aria-label, aria-labelledby or title), unless hidden from them
+        unnamedCanvas: [...document.querySelectorAll('canvas')].filter(x => !x.getAttribute('aria-label') && !x.getAttribute('aria-labelledby') && !x.title && x.getAttribute('aria-hidden') !== 'true' && x.getAttribute('role') !== 'presentation' && x.getAttribute('role') !== 'none').map(x => x.id || 'canvas'),
       }));
       if (info.overflow > 0) problems.push(`overflows sideways by ${info.overflow}px`);
       if (info.unlabeled.length) problems.push('unlabeled: ' + info.unlabeled.join(', '));
+      if (info.unnamedCanvas.length) problems.push('canvas without accessible name: ' + info.unnamedCanvas.join(', '));
       failures += problems.length ? 1 : 0;
       console.log(`${problems.length ? 'FAIL' : 'ok  '} ${vp.tag.padEnd(7)} ${pg.padEnd(40)} ${String(ms).padStart(5)} ms  ${problems.join('; ')}`);
       await ctx.close();

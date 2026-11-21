@@ -137,7 +137,7 @@
     <details>
       <summary>Higher dimensions</summary>
       <div class="body">
-        <p>All of these questions make sense in any number of dimensions. The square becomes the hypercube, the tetrahedron the regular simplex, and the octahedron the cross-polytope. The count still decides the expected answer. Simplices always have choices to spare and are proved for smooth surfaces (Gromov). Cross-polytopes are expected to work. Hypercubes run out of choices faster and faster (in 4D a hypercube is 5 short), so they fail in general. The <a href="pages/dimension-explorer.html">Dimension Explorer</a> tests each family up to 6D.</p>
+        <p>All of these questions make sense in any number of dimensions. The square's jig generalises to the cross-polytope (octahedron, 16-cell, …), the tetrahedron to the regular simplex, and the cube to the hypercube. The count still decides the expected answer. Simplices always have choices to spare and are proved for smooth surfaces (Gromov). Cross-polytopes are expected to work. Hypercubes run out of choices faster and faster (in 4D a hypercube is 5 short), so they fail in general. The <a href="pages/dimension-explorer.html">Dimension Explorer</a> tests each family up to 6D.</p>
       </div>
     </details>
 
@@ -149,7 +149,7 @@
           <li><b>Interval arithmetic.</b> Every number is stored as a small range guaranteed to contain the true value, and every calculation widens the range enough to absorb rounding. A statement like "this quantity is positive" is then <i>proved</i> when its whole range is above zero.</li>
           <li><b>A degree argument.</b> The pen-and-paper part is a short lemma: if a set of equations, around the edge of a small box, stays further from zero than the curve could push it, then the equations still have a solution inside the box for every nearby curve. The computer only checks the inequality on the box's edge, in many small pieces.</li>
         </ul>
-        <p>So the computer does a large but simple check, and the logic that turns that check into a theorem is written out by hand. Every certificate is re-checked by three independently written programs (JavaScript, Python with mpmath, and C with the Arb library).</p>
+        <p>So the computer does a large but simple check, and the logic that turns that check into a theorem is written out by hand. Theorems 6 and 7 are each re-checked by three independently written programs (JavaScript, Python with mpmath, and C with the Arb library). Theorem 1.3 is checked by two C programs, one using Arb. For Corollary 7.3 the covering is re-checked exactly in Python, and a random sample of 100 of its 12,784 cubes in C with Arb.</p>
       </div>
     </details>
 
@@ -193,7 +193,7 @@
       <li><b>Tetrahedra near an ellipsoid:</b> every surface within 0.13 of a 1 × 0.8 × 0.6 ellipsoid has an inscribed regular tetrahedron (Theorem 7), and within 0.07 one in <b>every</b> orientation (Corollary 7.3).</li>
       <li><b>Odd perfect numbers:</b> Euler's form, at least three distinct primes, the steps of 6 and forced steps, all machine-checked in Lean.</li>
     </ul>
-    <div class="note">The open problems themselves (squares and tetrahedra in every continuous curve and surface, odd perfect numbers) remain open. The computer-assisted proofs are confirmed by three independent programs. Details: <a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/PROOFS.md">PROOFS.md</a> · <a href="pages/paper.html">the preprint</a>.</div>
+    <div class="note">The open problems themselves (squares and tetrahedra in every continuous curve and surface, odd perfect numbers) remain open. Theorems 6 and 7 are confirmed by three independent programs, Theorem 1.3 by two; for Corollary 7.3 only the covering and a sample of cubes are re-checked. Details: <a href="https://github.com/Thor110/InscribedShapeProblems/blob/main/PROOFS.md">PROOFS.md</a> · <a href="pages/paper.html">the preprint</a>.</div>
   </div>
 </div>
 

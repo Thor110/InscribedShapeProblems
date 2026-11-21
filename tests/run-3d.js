@@ -1,6 +1,8 @@
 // Runs the Skeletal Space Finder's auto-search on every surface for each shape
 // and reports the verified error (or the best candidate's error if none verified).
 // Usage: node tests/run-3d.js [seeds=2] [shapes=cube,tetrahedron,octahedron] [surfaces=all]
+// Exits 1 on a page error, or when a search the page expects to succeed (its time
+// estimate is not '∞', e.g. not a cube on an asymmetric surface) finds nothing.
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
@@ -9,7 +11,7 @@ const path = require('path');
   const p0 = await b.newPage(); await p0.goto(url);
   let surfaces = await p0.evaluate(() => SURFACES.map(s => s[0])); await p0.close();
   if (process.argv[4]) surfaces = surfaces.filter(s => process.argv[4].split(',').includes(s));
-  const errs = [];
+  const errs = [], misses = [];
   for (const sh of shapes) {
     console.log(`\n== Inscribed ${sh}`);
     await Promise.all(surfaces.map(async sf => {
@@ -18,7 +20,8 @@ const path = require('path');
         await p.goto(`${url}?shape=${sh}&surface=${sf}&seed=${s}`);
         const t0 = Date.now(); await p.evaluate(() => startScan());
         await p.waitForFunction(() => !search, null, { timeout: 900000, polling: 500 });
-        const r = await p.evaluate(() => ({ ok: !!locked, st: document.getElementById('status').textContent }));
+        const r = await p.evaluate(() => ({ ok: !!locked, st: document.getElementById('status').textContent, expected: !/∞/.test(est()) }));
+        if (!r.ok && r.expected) misses.push(`${sh} on ${sf}, seed ${s}`);
         const e = (r.st.match(/error ([0-9.e+-]+)/) || [])[1];
         row.push(`${r.ok ? 'VERIFIED' : 'none    '} err ${e} (${((Date.now() - t0) / 1000).toFixed(0)}s)`);
       }
@@ -26,5 +29,7 @@ const path = require('path');
     }));
   }
   if (errs.length) console.log('PAGE ERRORS:', errs);
+  if (misses.length) console.log('EXPECTED SOLUTIONS NOT FOUND:', misses);
+  if (errs.length || misses.length) process.exitCode = 1;
   await b.close();
 })();

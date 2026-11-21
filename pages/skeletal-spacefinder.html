@@ -46,7 +46,7 @@
 <h1>Skeletal Space Finder</h1>
 <div class="sub">Edward James Gordon — Inscribed Cube, Tetrahedron &amp; Octahedron Problem</div>
 
-<canvas id="c3d"></canvas>
+<canvas id="c3d" role="img" aria-label="3D view of the surface with the skeletal jig: rays from a central pivot to the surface, and the inscribed cube, tetrahedron or octahedron they define. Drag to rotate the view."></canvas>
 
 <div class="controls">
   <div class="btn-group">
@@ -91,21 +91,39 @@ const { rng, randUnit, FRACTAL } = Surfaces3D, SURFACES = Surfaces3D.list, makeS
 const setOctaves = n => Surfaces3D.setOctaves(n);
 let rad, Rmax = 1.5, SAMPLES = 160, surfType = 'ellipsoid', seed = 1, mesh = [];
 const MR = 40, MC = 80;
-function outside(x, y, z) { const L = Math.hypot(x, y, z); return L > 0 && L > rad([x / L, y / L, z / L]); }
+// An implicit surface (the egg) carries F: test the sign of F rather than bisecting rad().
+function outside(x, y, z) {
+  const L = Math.hypot(x, y, z);
+  if (rad.F) return L > rad.rBound || rad.F(x, y, z) > 0;
+  return L > 0 && L > rad([x / L, y / L, z / L]);
+}
 
 // Farthest crossing of the ray o + t·u with the surface (t > 0), or -1.
-function hit(o, u) {
-  const tmax = Rmax + Math.hypot(...o) + 0.05; let prev = tmax;
-  for (let i = SAMPLES - 1; i >= 0; i--) {
-    const t = (tmax * i) / SAMPLES;
-    if (!outside(o[0] + t * u[0], o[1] + t * u[1], o[2] + t * u[2])) {
-      let lo = t, hi = prev;
-      for (let k = 0; k < 64 && hi - lo > 0; k++) { const m = (lo + hi) / 2; if (outside(o[0] + m * u[0], o[1] + m * u[1], o[2] + m * u[2])) hi = m; else lo = m; }
-      return lo > 1e-12 ? (lo + hi) / 2 : -1;
+// With a guess (the ray's previous length), take the exit crossing nearest it,
+// scanning ever-wider windows, as InscribedND's hit() does: finite differences and
+// solver steps then stay on the same crossing of a rough surface.
+function hit(o, u, guess) {
+  const out = t => outside(o[0] + t * u[0], o[1] + t * u[1], o[2] + t * u[2]);
+  let lo = -1, hi;
+  if (guess > 0) {
+    for (const w of [1e-4, 1e-3, 1e-2, 3e-2]) {
+      const N = 48, a0 = guess * (1 - w), step = (2 * guess * w) / N;
+      let prevOut = out(a0), bestD = Infinity;
+      for (let i = 1; i <= N; i++) {
+        const t = a0 + i * step, o2 = out(t);
+        if (o2 && !prevOut) { const d = Math.abs(t - step / 2 - guess); if (d < bestD) { bestD = d; lo = t - step; hi = t; } }
+        prevOut = o2;
+      }
+      if (bestD < Infinity) break;
     }
-    prev = t;
   }
-  return -1;
+  if (lo < 0) {
+    const tmax = Rmax + Math.hypot(...o) + 0.05; let prev = tmax;
+    for (let i = SAMPLES - 1; i >= 0; i--) { const t = (tmax * i) / SAMPLES; if (!out(t)) { lo = t; hi = prev; break; } prev = t; }
+    if (lo < 0) return -1;
+  }
+  for (let k = 0; k < 64 && hi - lo > 0; k++) { const m = (lo + hi) / 2; if (out(m)) hi = m; else lo = m; }
+  return lo > 1e-12 ? (lo + hi) / 2 : -1;
 }
 
 // ---------- jig geometry ----------
@@ -126,24 +144,21 @@ const shape = () => SHAPES[$('insType').value];
 
 const { matMul, matVec, rotVec, euler, toEuler, randRot, solveSym } = Space3D;   // pages/space3d.js
 
-function jigRays(c, R) {
-  const r = [];
-  for (const u of shape().dirs) { const t = hit(c, matVec(R, u)); if (t < 0) return null; r.push(t); }
+function jigRays(c, R, guess) {
+  const r = [], U = shape().dirs;
+  for (let k = 0; k < U.length; k++) { const t = hit(c, matVec(R, U[k]), guess && guess[k]); if (t < 0) return null; r.push(t); }
   return r;
 }
 // Residual: relative spread of the ray lengths. All equal <=> regular shape,
 // because the ray directions are exactly the shape's vertex directions.
-function residual(c, R) {
-  const r = jigRays(c, R); if (!r) return null;
-  const m = r.reduce((a, b) => a + b, 0) / r.length;
-  return r.map(v => (v - m) / m);
-}
+function spreadOf(r) { const m = r.reduce((a, b) => a + b, 0) / r.length; return r.map(v => (v - m) / m); }
 function points(c, R, r) { return shape().dirs.map((u, k) => { const v = matVec(R, u); return [c[0] + r[k] * v[0], c[1] + r[k] * v[1], c[2] + r[k] * v[2]]; }); }
 
 // ---------- Levenberg–Marquardt over centre (3) and optionally rotation (3) ----------
 function apply(st, d) { return { c: [st.c[0] + d[0], st.c[1] + d[1], st.c[2] + d[2]], R: d.length > 3 ? matMul(rotVec([d[3], d[4], d[5]]), st.R) : st.R }; }
 const cost = f => f.reduce((s, v) => s + v * v, 0);
-function lmInit(c, R, rotate) { const f = residual(c, R); return f && { c, R, f, cost: cost(f), lam: 1e-3, rotate, done: false, it: 0, stall: 0 }; }
+// st.r holds the current ray lengths; every later evaluation brackets near them.
+function lmInit(c, R, rotate) { const r = jigRays(c, R); if (!r) return null; const f = spreadOf(r); return { c, R, r, f, cost: cost(f), lam: 1e-3, rotate, done: false, it: 0, stall: 0 }; }
 function lmIterate(st, iters) {
   const np = st.rotate ? 6 : 3, h = 1e-7;
   for (let it = 0; it < iters && !st.done; it++) {
@@ -151,8 +166,9 @@ function lmIterate(st, iters) {
     const J = st.f.map(() => new Array(np));
     for (let j = 0; j < np; j++) {
       const dp = new Array(np).fill(0), dm = new Array(np).fill(0); dp[j] = h; dm[j] = -h;
-      const a = apply(st, dp), b = apply(st, dm), fp = residual(a.c, a.R), fm = residual(b.c, b.R);
-      if (!fp || !fm) { st.done = true; return st; }
+      const a = apply(st, dp), b = apply(st, dm), rp = jigRays(a.c, a.R, st.r), rm = jigRays(b.c, b.R, st.r);
+      if (!rp || !rm) { st.done = true; return st; }
+      const fp = spreadOf(rp), fm = spreadOf(rm);
       for (let i = 0; i < st.f.length; i++) J[i][j] = (fp[i] - fm[i]) / (2 * h);
     }
     const A = [], g = [];
@@ -163,11 +179,11 @@ function lmIterate(st, iters) {
       const M = A.map((r, i) => r.map((v, j) => (i === j ? v + st.lam * (v + 1e-9 * tr) : v)));
       const d = solveSym(M, g.map(v => -v));
       if (d) {
-        const n = apply(st, d), f = residual(n.c, n.R);
+        const n = apply(st, d), r = jigRays(n.c, n.R, st.r), f = r && spreadOf(r);
         if (f && cost(f) < st.cost) {
           // Stop when progress stalls (no exact solution nearby, e.g. a cube on a rough surface).
           st.stall = st.cost - cost(f) < 1e-6 * st.cost ? st.stall + 1 : 0;
-          Object.assign(st, n, { f, cost: cost(f) }); st.lam = Math.max(st.lam / 4, 1e-15); improved = true; break;
+          Object.assign(st, n, { r, f, cost: cost(f) }); st.lam = Math.max(st.lam / 4, 1e-15); improved = true; break;
         }
       }
       st.lam *= 6;
@@ -266,11 +282,13 @@ function recenter() {
   const c = rattle([0, 0, 0], jig.R, 30);
   const st = lmInit(c, jig.R, false); if (st) { lmIterate(st, 60); jig.c = st.c; }
 }
+// Slider input can arrive many times per frame: re-centre at most once per frame.
+let uiFrame = 0;
 function onUIChange() {
   stopScan(); locked = null;
   ['p', 'r', 'y'].forEach(k => ($(k + 'V').textContent = (+$(k + 'Sl').value).toFixed(1) + '°'));
   jig.R = euler(...['p', 'r', 'y'].map(k => (+$(k + 'Sl').value * Math.PI) / 180));
-  recenter(); refresh();
+  if (!uiFrame) uiFrame = requestAnimationFrame(() => { uiFrame = 0; recenter(); refresh(); });
 }
 function resetJig() { stopScan(); locked = null; onUIChange(); updateURL(); showEstimate(); }
 
@@ -312,7 +330,10 @@ function* searchGen(s) {
   for (s.k = 0; s.k < N; s.k++) {
     const R0 = s.k === 0 || pivotOnly() ? jig.R : randRot(Rn);
     const off = s.k === 0 ? [0, 0, 0] : randUnit(Rn).map(v => v * (pivotOnly() ? 0.5 : 0.2) * Rn());
-    const levels = FRACTAL.has(surfType) ? [1, 3, 5, 7, Infinity] : [Infinity];
+    // Fractal surfaces: continuation (little detail first, then add octaves). With
+    // the rotation fixed, alternate it with solving directly at full detail, as the
+    // shared engine does: continuation alone often lands on the wrong crossing.
+    const levels = FRACTAL.has(surfType) && !(pivotOnly() && s.k % 2 === 0) ? [1, 3, 5, 7, Infinity] : [Infinity];
     let c = off, R = R0, st = null;
     for (const lev of levels) {
       setOctaves(lev);
@@ -331,6 +352,7 @@ function* searchGen(s) {
 }
 function startScan() {
   cancelAnimationFrame(scanId);   // never run two search loops at once
+  cancelAnimationFrame(uiFrame); uiFrame = 0;   // a pending slider re-centre would move the jig mid-search
   $('registry').style.display = 'none';
   locked = null; search = { k: 0, best: null, t0: performance.now() }; search.gen = searchGen(search);
   $('scanBtn').textContent = 'Stop'; $('scanBtn').classList.add('active');

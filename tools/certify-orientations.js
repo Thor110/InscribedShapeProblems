@@ -97,15 +97,15 @@ if (fs.existsSync(PROGRESS)) for (const line of fs.readFileSync(PROGRESS, 'utf8'
 
 // Covering check: every top cube is certified, or split into certified (or further split) children.
 function coverage() {
-  let certified = 0, missing = 0, failed = 0;
+  let certified = 0, missing = 0, failed = 0, split = 0, subcubes = 0;   // split: cubes that failed and were split; subcubes: certified cubes below the top level
   const visit = c => {
     const r = done.get(c.key);
-    if (r && r.ok) { certified++; return; }
-    if (r && !r.ok && c.depth < MAX_SPLIT) { for (const ch of children(c)) visit(ch); return; }
+    if (r && r.ok) { certified++; if (c.depth > 0) subcubes++; return; }
+    if (r && !r.ok && c.depth < MAX_SPLIT) { split++; for (const ch of children(c)) visit(ch); return; }
     if (r) failed++; else missing++;
   };
   topCubes.forEach(visit);
-  return { certified, missing, failed };
+  return { certified, missing, failed, split, subcubes };
 }
 
 function finish() {
@@ -116,11 +116,11 @@ function finish() {
     method: 'cover the octahedron |a|+|b|+|c| ≤ 1 of Cayley vectors (a fundamental domain of the tetrahedral group) by cubes; certify each cube centre in interval arithmetic with adaptive cells, with a perturbation allowance T + turn·s for turning within the cube',
     T: `${T[0]}/${T[1]}`, grid: N_GRID, ok, cubesCertified: cov.certified, missing: cov.missing, failed: cov.failed,
     smallestCircumradius: Math.min(...all.map(r => r.sMin)), smallestSlack: Math.min(...all.map(r => r.slack)), smallestDegreeSlack: Math.min(...all.map(r => r.degSlack)),
-    boxesUsed: all.reduce((o, r) => ((o[r.c] = (o[r.c] || 0) + 1), o), {}), splitCubes: all.filter(r => r.depth > 0).length,
+    boxesUsed: all.reduce((o, r) => ((o[r.c] = (o[r.c] || 0) + 1), o), {}), splitCubes: cov.split, certifiedSubcubes: cov.subcubes,
   };
   fs.writeFileSync(OUT, JSON.stringify(summary, null, 1) + '\n');
   console.log(`\n${ok ? 'VALID' : 'INCOMPLETE'}: ${cov.certified} cubes certified, ${cov.missing} not yet checked, ${cov.failed} failed after splitting.`);
-  console.log(`  smallest circumradius ${summary.smallestCircumradius.toFixed(4)}; smallest slack ${summary.smallestSlack.toExponential(2)}; boxes used ${JSON.stringify(summary.boxesUsed)}; ${summary.splitCubes} cubes needed splitting`);
+  console.log(`  smallest circumradius ${summary.smallestCircumradius.toFixed(4)}; smallest slack ${summary.smallestSlack.toExponential(2)}; boxes used ${JSON.stringify(summary.boxesUsed)}; ${summary.splitCubes} cubes split, giving ${summary.certifiedSubcubes} certified sub-cubes`);
   return ok;
 }
 

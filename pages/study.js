@@ -118,9 +118,11 @@
     { family: 'ridged', label: 'Ridged', levels: [0, 16] },
     { family: 'rough', label: 'Rough (Hölder 0.3)', levels: [0, 16] },
   ];
-  function meanRadius(rad, R) {
-    let s = 0; const N = 2000;
-    for (let i = 0; i < N; i++) { let v = [R() - 0.5, R() - 0.5, R() - 0.5]; const L = Math.hypot(...v); v = v.map(x => x / L); s += rad(v); }
+  // Mean radius over a Fibonacci sphere: N directions spread evenly (equal-area) over
+  // the sphere, the same set at every level, so levels are comparable and unbiased.
+  function meanRadius(rad, N = 20000) {
+    let s = 0; const ga = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < N; i++) { const z = 1 - (2 * i + 1) / N, r = Math.sqrt(1 - z * z), t = ga * i; s += rad([r * Math.cos(t), r * Math.sin(t), z]); }
     return s / N;
   }
   // Run a solver step by step, reporting `tick` as progress after each step.
@@ -157,7 +159,7 @@
           }
         }
         yield tick;
-        const mr = meanRadius(b, InscribedND.rng(seed + L)), live = next.filter(Boolean), sizes = live.map(v => v.size / mr);
+        const mr = meanRadius(b), live = next.filter(Boolean), sizes = live.map(v => v.size / mr);
         const ratios = next.map((v, i) => (v && sols[i] ? v.size / sols[i].size : null)).filter(x => x !== null);
         const big = live.reduce((m, v) => (!m || v.size > m.size ? v : m), null), small = live.reduce((m, v) => (!m || v.size < m.size ? v : m), null);
         rec.levels.push({

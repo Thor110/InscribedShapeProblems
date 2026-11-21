@@ -126,7 +126,7 @@ Let $E$ be the ellipse with semi-axes $1$ and $b = 0.6$, with polar radius $r_E(
 
    The signed distance to the ellipse is enclosed exactly: the closest-point equation's root is bracketed and the bracket verified in intervals. No trigonometric functions are used.
 
-The computation takes under a second (`node tools/certify-square.js`), and runs live on the companion page. An independent re-implementation in Python, using the interval arithmetic of the mpmath library and sharing only the box definition, confirms it (`tools/verify_certificates.py`), as does a third in C with the Arb library (`tools/verify-certificates.c`). Only IEEE 754 arithmetic ($+, -, \times, \div, \sqrt{\ }$, each correctly rounded) and about 300 lines of code are trusted.
+The computation takes under a second (`node tools/certify-square.js`), and runs live on the companion page. An independent re-implementation in Python, using the interval arithmetic of the mpmath library and sharing only the box definition, confirms it (`tools/verify_certificates.py`), as does a third in C with the Arb library (`tools/verify-certificates.c`). Only IEEE 754 arithmetic ($+, -, \times, \div, \sqrt{\ }$, each correctly rounded) and about 400 lines of code (`pages/interval.js` and `pages/certify-rigorous.js`) are trusted.
 
 > **Corollary 6.1.** Let $W(\theta) = (1 - 2^{-1/2})\sum_{k \ge 0} 2^{-k/2}\cos(2^k(\theta - 0.3))$. The curve $\rho = r_E + 0.15\,W$ has an inscribed square, and so does $r_E + 0.15 f$ for every continuous $|f| \le 1$.
 
@@ -141,7 +141,7 @@ Theorem 6's neighbourhood is $4.2$ times wider than $1/(10\kappa) = 0.036$ for t
 
 > **Theorem 7.** Let $E$ be the ellipsoid with semi-axes $1, 0.8, 0.6$. Every surface $\rho(\omega)\omega$ with $|\rho - r_E| \le 0.13$ has an inscribed regular tetrahedron (in a fixed orientation) with circumradius at least $0.4089$. If $|\rho - r_E| \le 0.06$, it has one in every orientation within $4.16°$ of that one.
 
-The computation (`node tools/certify-tetra.js`, seconds on 4 cores) checks the 8 faces of the 4D box ($c = 0.26$) in adaptive cells. Each cell is checked at its centre, with an explicit bound for the change across it, and split only if the margin is too small for its size. All 997,168 cells pass both conditions of the degree lemma with $\tau = T = 0.13$. A uniform grid would need 64 million samples for the weaker $T = 0.12$. An independent Python/mpmath implementation reaches the same 997,168 cell decisions.
+The computation (`node tools/certify-tetra.js --theorem`, seconds on 4 cores) checks the 8 faces of the 4D box ($c = 0.26$) in adaptive cells. Each cell is checked at its centre, with an explicit bound for the change across it, and split only if the margin is too small for its size. All 997,168 cells pass both conditions of the degree lemma with $\tau = T = 0.13$. A uniform grid would need 64 million samples for the weaker $T = 0.12$. An independent Python/mpmath implementation reaches the same 997,168 cell decisions.
 
 Turning the tetrahedron by an angle $\theta$ moves $G$ by at most $s_{\max}\theta$, which acts as one more perturbation. That gives the open set of orientations.
 
@@ -185,7 +185,7 @@ Sixteen regular tetrahedra, started at fixed orientations, are followed on three
 - ridged;
 - Hölder exponent $0.3$.
 
-The smallest tracked tetrahedron changes from $0.895$ to $0.894$, $0.899$ to $0.948$, and $0.939$ to $0.927$ (circumradius divided by mean radius) between levels 8 and 16. Some tetrahedra are lost along the way, through pair annihilation or tracking failure.
+The smallest tracked tetrahedron changes from $0.904$ to $0.905$, $0.900$ to $0.948$, and $0.939$ to $0.927$ (circumradius divided by mean radius) between levels 8 and 16. Some tetrahedra are lost along the way, through pair annihilation or tracking failure.
 
 Rectangles with aspect ratios from $1{:}1$ to $16{:}1$ were found on all 9 test curves, in all 81 cells. On the ellipse, the search finds exactly one square and two rectangles of every other ratio.
 

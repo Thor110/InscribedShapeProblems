@@ -29,15 +29,23 @@
   const SHAPES_3D = ['tetrahedron', 'octahedron', 'cube'];
   const NAMES = { square: 'square', rectangle: 'rectangle', pentagon: 'regular pentagon', hexagon: 'regular hexagon', tetrahedron: 'regular tetrahedron', octahedron: 'regular octahedron', cube: 'cube' };
 
-  // Some curves and surfaces ignore the seed (circle, heart, sphere, …). For those
-  // only seed 1 is catalogued, so one result cannot be claimed ten times. Detected
-  // by generating seeds 1 and 2 and comparing.
+  // Some curves and surfaces ignore the seed (circle, heart, sphere, …), or ignore it
+  // at some levels (level 0 of weierstrass, fractal, ridged and rough is the plain
+  // circle or sphere). For those only seed 1 is catalogued, so one result cannot be
+  // claimed ten times. Detected by generating seeds 1 and 2 at the same level and comparing.
   const seedless = {};
-  function isSeedless(dim, type) {
-    const k = dim + type;
+  function isSeedless(dim, type, level) {
+    const k = dim + type + '|' + level;
     if (!(k in seedless)) {
-      if (dim === 2) { const a = S2().generate(type, 1), b = S2().generate(type, 2); seedless[k] = a.length === b.length && a.every((p, i) => p.x === b[i].x && p.y === b[i].y); }
-      else { const a = S3().make(type, 1), b = S3().make(type, 2), us = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [0.6, 0.48, 0.64]]; seedless[k] = us.every(u => a(u) === b(u)); }
+      if (dim === 2) {
+        const gen = s => (level === undefined ? S2().generate(type, s) : S2().generate(type, s, level)), a = gen(1), b = gen(2);
+        seedless[k] = a.length === b.length && a.every((p, i) => p.x === b[i].x && p.y === b[i].y);
+      } else {
+        const a = S3().make(type, 1, level), b = S3().make(type, 2, level);
+        // a fixed spread of directions (Fibonacci sphere), so a surface counts as seedless only if it matches everywhere sampled
+        const N = 200, us = Array.from({ length: N }, (_, i) => { const z = 1 - (2 * i + 1) / N, r = Math.sqrt(1 - z * z), t = 2.399963229728653 * i; return [r * Math.cos(t), r * Math.sin(t), z]; });
+        seedless[k] = us.every(u => a(u) === b(u));
+      }
     }
     return seedless[k];
   }
@@ -45,7 +53,6 @@
     if (!r || (r.dim !== 2 && r.dim !== 3)) return 'dim must be 2 or 3';
     const c = r.curve || {};
     if (!Number.isInteger(c.seed) || c.seed < SEEDS[0] || c.seed > SEEDS[1]) return `only seeds ${SEEDS[0]}–${SEEDS[1]} are catalogued (this one is ${c.seed})`;
-    if (c.seed !== 1 && c.type && (r.dim === 2 ? S2().list : S3().list).some(([v]) => v === c.type) && isSeedless(r.dim, c.type)) return `${c.type} does not depend on the seed, so only seed 1 is catalogued`;
     if (r.dim === 2) {
       if (r.shape === 'triangle' || r.shape === 'trianglex') return 'triangles are not collected, since that problem is already solved';
       if (!SHAPES_2D.includes(r.shape)) return `2D shapes collected: ${SHAPES_2D.join(', ')}`;
@@ -61,6 +68,8 @@
       if (L) { if (!Number.isInteger(c.level) || c.level < L[0] || c.level > L[1]) return `${c.type} levels are ${L[0]}–${L[1]}`; }
       else if (c.level !== undefined) return `${c.type} has no levels`;
     }
+    // checked last, once the type and level are known to be valid
+    if (c.seed !== 1 && isSeedless(r.dim, c.type, c.level)) return `${c.type}${c.level !== undefined ? ` level ${c.level}` : ''} does not depend on the seed, so only seed 1 is catalogued`;
     return null;
   }
 
@@ -151,7 +160,7 @@
         // Offer the same shape on a catalogued seed (1 for curves that ignore the seed).
         el.insertAdjacentHTML('beforeend', ' <button class="reg-btn">Try a catalogued seed</button>');
         el.querySelector('.reg-btn').onclick = () => {
-          const u = new URL(location.href), one = /does not depend/.test(why) || isSeedless(r.dim, r.curve.type);
+          const u = new URL(location.href), one = /does not depend/.test(why) || isSeedless(r.dim, r.curve.type, r.curve.level);
           u.searchParams.set('seed', one ? 1 : 1 + Math.floor(Math.random() * SEEDS[1])); location.href = u.toString();
         };
       }

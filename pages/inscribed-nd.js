@@ -104,7 +104,7 @@
         const a = Array.from({ length: n }, () => 0.85 + R() * 0.4), e = 0.1, z = n - 1;
         const F = p => { let s = -1; for (let i = 0; i < n; i++) s += (p[i] / a[i]) ** 2;
           return s + e * (0.5 * p[0] ** 3 + (n > 2 ? p[0] * p[1] * p[2] : p[0] * p[1] * p[1]) + 0.7 * p[1] * p[1] * p[z] + 0.3 * p[z] ** 3); };
-        return { F, rad: u => { let lo = 0, hi = 3; for (let i = 0; i < 64; i++) { const m = (lo + hi) / 2; if (F(u.map(v => v * m)) < 0) lo = m; else hi = m; } return (lo + hi) / 2; }, rmax: 1.8 };
+        return { F, rBound: 3, rad: u => { let lo = 0, hi = 3; for (let i = 0; i < 64; i++) { const m = (lo + hi) / 2; if (F(u.map(v => v * m)) < 0) lo = m; else hi = m; } return (lo + hi) / 2; }, rmax: 1.8 };
       }
       case 'blob': { const D = Array.from({ length: 6 }, () => randUnit(n, R)), A = D.map(() => 0.04 + R() * 0.06), f = D.map(() => 2 + R() * 2), p = D.map(() => R() * 6.283);
         return { rad: u => 1 + D.reduce((s, d, k) => s + A[k] * Math.sin(f[k] * dot(u, d) + p[k]), 0), rmax: 1.4 }; }
@@ -127,14 +127,19 @@
       : p => { const [x, y, z, w] = p; return x * x + (16 / 25) * y * y + (400 / 289) * z * z + (100 / 81) * w * w + e * (0.5 * x ** 3 + x * y * z + 0.7 * y * y * z + 0.3 * z ** 3 + x * z * w + 0.4 * w ** 3) - 1; };
     // F < 0 inside, F > 0 on |p| = 3/2, one crossing on each ray (proved): bisect on [0, 3/2]
     const rad = u => { let lo = 0, hi = 1.5; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (F(u.map(v => v * m)) < 0) lo = m; else hi = m; } return (lo + hi) / 2; };
-    return { F, rad, rmax: 1.3 };
+    return { F, rBound: 1.5, rad, rmax: 1.3 };
   }
 
   // ---------- the solver ----------
   // `surface` (optional) supplies a ready-made surface { rad(u), rmax } instead of surfType/seed.
   function makeProblem(shape, n, surfType, seed, surface) {
     const S = surface || makeSurface(surfType, n, seed), U = directions(shape, n), m = U.length;
-    const outside = p => { const L = norm(p); return L > 0 && L > S.rad(p.map(v => v / L)); };
+    // An implicit surface (F < 0 inside, one crossing per ray within |p| < rBound) is
+    // tested by the sign of F: the same answer as comparing with rad(), without the
+    // nested bisection inside rad() on every call.
+    const outside = S.F
+      ? (p => norm(p) > (S.rBound || Infinity) || S.F(p) > 0)
+      : (p => { const L = norm(p); return L > 0 && L > S.rad(p.map(v => v / L)); });
     // Farthest crossing of the ray o + t·u, or -1. With a guess, bracket locally
     // (keeps finite-difference derivatives on the same crossing).
     function hit(o, u, guess) {

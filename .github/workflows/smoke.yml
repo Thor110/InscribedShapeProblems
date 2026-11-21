@@ -12,12 +12,16 @@ on:
       - 'pages/**'
       - 'data/**'
       - 'tests/smoke.js'
+      - 'package.json'
+      - 'package-lock.json'
   pull_request:
     paths:
       - 'index.html'
       - 'pages/**'
       - 'data/**'
       - 'tests/smoke.js'
+      - 'package.json'
+      - 'package-lock.json'
 
 permissions:
   contents: read

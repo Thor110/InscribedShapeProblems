@@ -152,6 +152,7 @@
     // approximations of one limiting fractal curve.
     koch(R, level = 6) { return koch(regular(3, R() * TAU), level, -1); },
     antikoch(R, level = 5) { return koch(regular(6, R() * TAU), level, 1); },
+    // seedless on purpose: saved results (results/2d/*/minkowski-L*/s1.json) fix this exact shape
     minkowski(R, level = 4) { return minkowski(regular(4, Math.PI / 4), level); },
     weierstrass(R, level = 11) {
       // Radial Weierstrass-type function with `level` octaves: continuous, and
@@ -183,7 +184,7 @@
     ['crescent', 'Crescent'], ['polygon', 'Polygon'], ['teardrop', 'Teardrop'], ['heart', 'Heart-like'],
     ['comb', 'Comb (non-convex)'], ['spiral', 'Spiral (not star-shaped)'],
     ['koch', 'Koch snowflake (fractal)'], ['antikoch', 'Hexagonal anti-snowflake (fractal)'],
-    ['minkowski', 'Minkowski island (fractal)'], ['weierstrass', 'Weierstrass blob (fractal)'],
+    ['minkowski', 'Minkowski island (fractal, same for every seed)'], ['weierstrass', 'Weierstrass blob (fractal)'],
     ['coastline', 'Random coastline (fractal)'],
   ];
 

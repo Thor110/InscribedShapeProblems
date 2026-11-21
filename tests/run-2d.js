@@ -1,13 +1,15 @@
 // Runs the Skeletal Shape Finder's auto-search on every curve type and reports
 // whether a verified shape was found and its independently measured error.
 // Usage: node tests/run-2d.js [seeds=3] [shapes=square,triangle] [curves=all]
+// Exits 1 on a page error, or when a search the page expects to succeed (its time
+// estimate is not '∞') finds nothing.
 //   shapes: square, rectangle, triangle, trianglex, pentagon, hexagon
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
   const seeds = +(process.argv[2] || 3);
   const b = await chromium.launch(); const p = await b.newPage();
-  const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const errs = [], misses = []; p.on('pageerror', e => errs.push(e.message));
   const url = 'file://' + path.resolve(__dirname, '../pages/skeletal-shapefinder.html');
   await p.goto(url);
   let curves = await p.evaluate(() => Shapes2D.list.map(x => x[0]));
@@ -21,7 +23,8 @@ const path = require('path');
         const t0 = Date.now();
         await p.evaluate(() => startScan());
         await p.waitForFunction(() => !search, null, { timeout: 300000, polling: 200 });
-        const r = await p.evaluate(() => ({ ok: !!locked, err: locked ? locked.v.err : search === null && document.getElementById('status').textContent }));
+        const r = await p.evaluate(() => ({ ok: !!locked, err: locked ? locked.v.err : search === null && document.getElementById('status').textContent, expected: !/∞/.test(est()) }));
+        if (!r.ok && r.expected) misses.push(`${ins} on ${c}, seed ${s}`);
         const closest = ((r.err || '').match && r.err.match(/error ([0-9.e+-]+)/)) || [];
         row.push(r.ok ? `ok ${r.err.toExponential(1)} (${((Date.now() - t0) / 1000).toFixed(1)}s)` : `none, closest ${closest[1]} (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
       }
@@ -29,5 +32,7 @@ const path = require('path');
     }
   }
   if (errs.length) console.log('PAGE ERRORS:', errs);
+  if (misses.length) console.log('EXPECTED SOLUTIONS NOT FOUND:', misses);
+  if (errs.length || misses.length) process.exitCode = 1;
   await b.close();
 })();

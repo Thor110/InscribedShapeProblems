@@ -1,10 +1,12 @@
 // Runs the Inscribed Cube Viewfinder's search on every surface and reports
 // whether an inscribed cube was verified, or the closest cube's error.
 // Usage: node tests/run-cube-viewfinder.js [seeds=2]
+// Exits 1 on a page error, or when no cube is verified on a surface where one is
+// expected (Surfaces3D.estimate is not '∞').
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
-  const seeds = +(process.argv[2] || 2), b = await chromium.launch(), errs = [];
+  const seeds = +(process.argv[2] || 2), b = await chromium.launch(), errs = [], misses = [];
   const url = 'file://' + path.resolve(__dirname, '../pages/inscribed-cube-viewfinder.html');
   const p0 = await b.newPage(); await p0.goto(url);
   const surfaces = await p0.evaluate(() => Surfaces3D.list.map(s => s[0])); await p0.close();
@@ -15,10 +17,13 @@ const path = require('path');
       await p.evaluate(() => startScan());
       await p.waitForFunction(() => !search, null, { timeout: 900000, polling: 300 });
       const st = await p.textContent('#status'), t = await p.textContent('#timing');
+      if (!/verified —/.test(st) && await p.evaluate(() => !/∞/.test(est()))) misses.push(`${sf}, seed ${s}`);
       row.push(`${/verified —/.test(st) ? 'VERIFIED' : 'none    '} err ${(st.match(/error ([0-9.e+-]+)/) || [])[1]} (${(t.match(/took ([0-9.]+) s/) || [])[1]}s)`);
     }
     console.log(sf.padEnd(10), row.join(' | ')); await p.close();
   }));
   if (errs.length) console.log('PAGE ERRORS:', errs);
+  if (misses.length) console.log('EXPECTED CUBES NOT FOUND:', misses);
+  if (errs.length || misses.length) process.exitCode = 1;
   await b.close();
 })();

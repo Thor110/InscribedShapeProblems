@@ -135,7 +135,16 @@
       tries++;
       const v = verify(x, y, ang); if (!v || !(v.err < tol) || v.diag < 1e-4 * S) return null;
       // the same rectangle can be found from different starts or jig rotations
-      for (const f of found) if (Math.hypot(f.x - x, f.y - y) < 1e-6 * S && Math.abs(f.diag - v.diag) < 1e-6 * S) return f;
+      // Rectangles sharing a centre and diagonal can still differ in orientation (e.g.
+      // about a symmetry centre), so the vertex sets must match too, unless the two
+      // lie on one continuous family (a circle): then the midway rotation verifies.
+      const same = f => {
+        if (Math.hypot(f.x - x, f.y - y) >= 1e-6 * S || Math.abs(f.diag - v.diag) >= 1e-6 * S) return false;
+        if (v.P.every(p => f.P.some(q => Math.hypot(p.x - q.x, p.y - q.y) < 1e-6 * S))) return true;
+        const dA = ((((ang - f.ang) % period) + period * 1.5) % period) - period / 2, m = verify(x, y, f.ang + dA / 2);
+        return !!m && m.err < tol && Math.abs(m.diag - v.diag) < 1e-6 * S;
+      };
+      for (const f of found) if (same(f)) return f;
       v.mode = mode; if (mode === 'track') v.r = v.r.slice(); found.push(v);
       return v;
     }

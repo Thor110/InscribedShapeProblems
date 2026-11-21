@@ -1,0 +1,59 @@
+# Runs the fast search tests: every 2D curve is a Jordan curve, the orientation check,
+# the n-dimensional problem map up to 3D, and the 2D jig and cube viewfinder searches
+# (one seed each). The runners exit 1 on a page error or when a search the page
+# expects to succeed finds nothing. The slow studies (tests/run-study.js, run-3d.js)
+# are left out. Runs on pushes and pull requests that touch the code they test.
+name: Search tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'pages/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    paths:
+      - 'pages/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Every curve is a Jordan curve
+        run: node tests/jordan-check.js
+
+      - name: Triangle orientations
+        run: node tests/check-orientations.js
+
+      - name: n-dimensional problem map (n ≤ 3)
+        run: node tests/run-nd.js 3
+
+      - name: 2D jig search (squares and triangles, one seed)
+        run: node tests/run-2d.js 1
+
+      - name: Cube viewfinder (one seed)
+        run: node tests/run-cube-viewfinder.js 1

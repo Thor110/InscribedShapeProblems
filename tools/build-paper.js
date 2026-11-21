@@ -90,7 +90,7 @@ const page = `<!DOCTYPE html>
   mjx-container svg{max-width:100%;}
   .nav{font:12px 'Courier New',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px;display:flex;gap:18px;flex-wrap:wrap;}
   .nav a{color:var(--muted);text-decoration:none;}
-  @media print{.nav{display:none;} body{font-size:11pt;background:#fff;color:#000;} main{max-width:none;padding:0;} h2{break-after:avoid;} blockquote,table,mjx-container{break-inside:avoid;}}
+  @media print{.nav,.site-nav,.footer{display:none;} body{font-size:11pt;background:#fff;color:#000;} main{max-width:none;padding:0;} h2{break-after:avoid;} blockquote,table,mjx-container{break-inside:avoid;}}
 </style>
 <link rel="stylesheet" href="site.css">
 <script src="site-nav.js" defer></script>
@@ -101,6 +101,14 @@ ${glyphs}
 <div class="nav"><a href="../index.html">← Back to suite</a><a href="${REPO}PAPER.md">Markdown source</a><a href="${REPO}PAPER.pdf">PDF</a></div>
 ${body}
 </main>
+<div class="footer">
+  Surgical Determinism · Geometric Sieve v1.0<br>
+  <a href="https://github.com/Thor110/InscribedShapeProblems">Source on GitHub</a> · Edward James Gordon (Thor110)
+  <br>
+  <a href="https://thor110.github.io/ClassicalGeometryProblems/">Classical Geometry Problems</a>
+  <br>
+  <a href="https://thor110.github.io/Potentia/">Potentia</a>
+</div>
 </body>
 </html>
 `;

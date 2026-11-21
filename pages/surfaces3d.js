@@ -14,7 +14,7 @@
   // Each surface is star-shaped about the origin and given by rad(u): the distance
   // to the surface along unit direction u. Being a function of u (not of polar
   // angles) makes every surface seam-free. 'egg' is an implicit convex surface with
-  // no symmetry at all; its rad() is found by bisection.
+  // no symmetry at all; its rad() is found by bisection (and carries F and rBound).
   const SURFACES = [
     ['ellipsoid', 'Ellipsoid'], ['egg', 'Lopsided egg (convex, no symmetry)'], ['blob', 'Random blob'],
     ['bumpy', 'Bumpy sphere'], ['star3d', '3D Star'], ['heart', 'Heart-like'], ['ring', 'Ring-like'],
@@ -38,7 +38,11 @@
       case 'egg': {
         const a = 1, b = 1.25, c = 0.85, e = 0.15;   // verified strictly convex (see README)
         const F = (x, y, z) => x * x / a / a + y * y / b / b + z * z / c / c + e * (0.5 * x ** 3 + x * y * z + 0.7 * y * y * z + 0.3 * z ** 3) - 1;
-        return u => { let lo = 0, hi = 3; for (let i = 0; i < 64; i++) { const m = (lo + hi) / 2; if (F(m * u[0], m * u[1], m * u[2]) < 0) lo = m; else hi = m; } return (lo + hi) / 2; };
+        const rad = u => { let lo = 0, hi = 3; for (let i = 0; i < 64; i++) { const m = (lo + hi) / 2; if (F(m * u[0], m * u[1], m * u[2]) < 0) lo = m; else hi = m; } return (lo + hi) / 2; };
+        // The implicit function itself, so pages can test inside/outside by its sign
+        // (one crossing per ray within |p| < rBound) instead of bisecting rad().
+        rad.F = F; rad.rBound = 3;
+        return rad;
       }
       case 'blob': { const D = dirs(6), A = D.map(() => 0.04 + R() * 0.06), f = D.map(() => 2 + R() * 2), p = D.map(() => R() * 6.283); return u => 1 + D.reduce((s, d, k) => s + A[k] * Math.sin(f[k] * dot(u, d) + p[k]), 0); }
       case 'bumpy': { const f = [4, 4, 4].map(v => v + R() * 4), p = [R(), R(), R()].map(v => v * 6.283); return u => 1 + 0.12 * Math.sin(f[0] * u[0] + p[0]) * Math.sin(f[1] * u[1] + p[1]) * Math.sin(f[2] * u[2] + p[2]); }

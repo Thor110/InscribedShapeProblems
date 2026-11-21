@@ -63,6 +63,8 @@ static inline double dn_sqrt(double a) { return rd(sqrt(a)); }
  * none: a quadric through the 12 vertices of a regular icosahedron is its circumsphere). */
 #ifndef E_NUM
 #define E_NUM 3
+#endif
+#ifndef E_DEN
 #define E_DEN 20
 #endif
 static iv A, B, K1, K2, K3, K4;   /* 16/25, 400/289, e/2, e, 0.7e, 0.3e */

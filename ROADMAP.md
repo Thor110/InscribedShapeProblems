@@ -6,7 +6,7 @@ Notes on work planned or considered but not yet done, so it can be picked up lat
 
 - **Classical proofs** (PROOFS.md): Theorem 1 (no cube in a generic surface, probably folklore; Theorem 1.3, computer-assisted, certifies one explicit smooth egg with none: a worked example of a known fact, since Bielecki 1954 and the Hausel–Makai–Szűcs argument already give such bodies), Theorems 2–3 (regular simplices in convex bodies), Proposition 5, Lemma 4.
 - **Computer-assisted proofs** in interval arithmetic: Theorem 6 (squares in every curve within 0.15 of an ellipse) and Theorem 7 (tetrahedra in every surface within 0.13 of an ellipsoid, plus a range of orientations). Each is confirmed by three independent implementations: JavaScript, Python/mpmath and C/Arb. Corollary 7.3: every orientation within 0.07, by 12,784 certificates; the covering is re-checked exactly and a sample of 100 in Arb.
-- **Machine-checked proofs** in Lean 4: all nine odd perfect number results (at least three primes, Euler's form, steps of 6, forced steps, the spine rule, odd σ(N), "9 or 12k + 1").
+- **Machine-checked proofs** in Lean 4: all nine odd perfect number results (at least three primes, Euler's form, steps of 6, the spine rule, the spine on its own, perfect times a prime, odd σ(N), "9 or 12k + 1", forced steps).
 - **Numerical studies:** shrinkage, rectangle sweep, parity counts, and nearest misses to perfection up to $10^{11}$.
 
 None of this settles an open problem. What it provides is proved constraints, wider proved special cases, and evidence that others can check cheaply.
@@ -59,7 +59,7 @@ In priority order. Each step ends in something checkable, so the plan can stop a
 ### 2. Outreach, prepared in advance (alongside 1)
 
 **Aim:** make it easy to share the work when you choose, with the stressful parts written beforehand.
-- A MathOverflow question asking only "is Theorem 1 known?". It is factual and narrow, so there is little to strawman.
+- A MathOverflow question asking only "is Theorem 1 known?". (Later dropped: see OUTREACH-DRAFTS.md, section 1.)
 - A short email to the one researcher closest to the certificates (Chambers' work on near-smooth curves is the natural match).
 - Prepared replies to likely pushback ("so you think you've proved X" → "No, the claim is Y; see section Z").
 
@@ -101,7 +101,6 @@ These would be drafts in a file for you to read and decide on. Nothing is sent w
 ### Outreach
 
 - **Send the preprint to one or two people**, using REVIEW.md (questions to ask, closest researchers, a short message template).
-- **Ask one focused MathOverflow question**, such as "Is Theorem 1 known?". It asks for a fact, not a judgement.
 - **arXiv** (category math.MG), which needs an endorsement for a first submission.
 
 Draft messages and replies to likely pushback can be prepared in advance, so the stressful part is mostly done before anything is sent.

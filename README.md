@@ -108,8 +108,8 @@ The open part of the square problem is rough, merely continuous curves. For smoo
 
 | Family | Carried to level 16 | Smallest tetrahedron, level 8 → level 16 | Size change per level at level 16 |
 |---|---|---|---|
-| Weierstrass (Hölder 0.5) | 12 of 16 | 0.895 → 0.894 | 1.000 |
-| Ridged | 9 of 16 | 0.899 → 0.948 | 1.000 |
+| Weierstrass (Hölder 0.5) | 12 of 16 | 0.904 → 0.905 | 1.000 |
+| Ridged | 9 of 16 | 0.900 → 0.948 | 1.000 |
 | Rough (Hölder 0.3) | 7 of 16 | 0.939 → 0.927 | 1.000 |
 
 (Sizes are circumradius ÷ the surface's mean radius.) As in 2D, the tetrahedra that are carried through converge onto fixed sizes instead of shrinking. Some are lost along the way, more on the rougher surfaces: either a pair of solutions annihilates, which is expected, or the tracking fails, which looks the same. The rise in the ridged family's minimum at level 15 is a survivor effect, since the smallest ones were among those lost.
@@ -182,7 +182,7 @@ Turning the tetrahedron by a small angle acts like one more small perturbation, 
 All 12,784 pass: 16.3 billion cells, about 4 hours on 4 cores. The covering is re-checked in exact rational arithmetic in Python. A random sample of 100 cubes is re-checked from scratch in C with Arb.
 
 ```bash
-node tools/certify-tetra.js          # seconds for the theorem, about a minute with the orientation table
+node tools/certify-tetra.js          # about 2 minutes with the orientation table; add --theorem for seconds
 node tools/certify-orientations.js --T 7/100  # every orientation: about 4 hours on 4 cores, resumable
 ```
 
@@ -230,7 +230,7 @@ The finders can contribute to a shared registry of verified results ([`data/regi
 
 **What is collected (and why it can't be spammed).**
 - **Only the first verified result for each problem.** Repeats are rejected automatically.
-- **Only catalogued curves and surfaces:** seeds 1–10 of every curve and surface, at their standard roughness levels. Curves that ignore the seed (circle, heart, Minkowski island, sphere, egg) count once, as seed 1. If a finder is on another seed, it offers a catalogued one.
+- **Only catalogued curves and surfaces:** seeds 1–10 of every curve and surface, at their standard roughness levels. Curves that ignore the seed (circle, heart, Minkowski island, sphere, egg, and level 0 of the Weierstrass curve and of the fractal, ridged and rough surfaces) count once, as seed 1. If a finder is on another seed, it offers a catalogued one.
 - **Only the open or interesting shapes:** squares, rectangles (aspect 1.5–16), regular pentagons and hexagons in 2D; regular tetrahedra, octahedra and cubes in 3D. Triangles are not collected, because that problem is solved.
 - **The registry starts with 243 results from the repository's own searches** (`tools/seed-registry.js`), so the easy cases are already taken. What is left open is the hard part, for example a cube on any surface without symmetry, or a regular pentagon or hexagon on most curves.
 
@@ -362,7 +362,7 @@ Define a 3D "Skeletal Jig" representing the four internal diagonals of a cube. T
 
 ![Inscribed Cube Spacefinder Demo](images/cube_demonstration.gif)
 
-The Inscribed Cube Viewfinder on the lopsided egg (strictly convex, no symmetry): 120 starts, and the closest cube still misses the surface by 1.5% of its size, as Theorem 1 predicts.
+The Skeletal Space Finder in cube mode on the ellipsoid: a centrally symmetric surface, so an inscribed cube exists, and the finder verifies one.
 
 **Proved: the egg has no inscribed cube** ([PROOFS.md, Theorem 1.3](PROOFS.md#theorem-1--generic-non-existence)). Not finding a cube is not a proof, so the egg was settled rigorously, in three parts, all in interval arithmetic:
 1. **The shape.** The egg's equation, which has exact rational coefficients, is checked to describe one smooth, strictly convex closed surface.
@@ -388,7 +388,9 @@ gcc -O2 -fopenmp -o egg-cube-arb tools/egg-cube-arb.c -lflint -lm
 
 ![Inscribed Cube Viewfinder Demo](images/cube_viewfinder_demo.gif)
 
-[Run the Skeletal Space Finder](https://thor110.github.io/InscribedShapeProblems/pages/skeletal-spacefinder.html)
+The Inscribed Cube Viewfinder on the lopsided egg (strictly convex, no symmetry): 120 starts, and the closest cube still misses the surface by 1.5% of its size, as Theorem 1 predicts.
+
+[Run the Inscribed Cube Viewfinder on the egg](https://thor110.github.io/InscribedShapeProblems/pages/inscribed-cube-viewfinder.html?surface=egg)
 
 ## Inscribed Tetrahedron Problem
 > **Update.** Gromov (1969) proved that every $C^1$-smooth sphere in $\mathbb{R}^n$ contains an inscribed simplex similar to any given simplex, in every orientation; this includes the regular tetrahedron. For $C^1$ convex bodies it was also proved by Kramer–Németh (1973, 1975) and Makeev (1987), and Makeev (1992) showed every convex body has one in some orientation. [PROOFS.md](PROOFS.md) (Theorem 2) turns the centring argument below into a short self-contained proof. The case of general continuous surfaces remains open.
@@ -413,13 +415,13 @@ Define a 'Skeletal Jig' consisting of four rays extending from a common midpoint
 
 **Note.** If $I$ is the centroid of the four hit points, the four ray lengths must be equal, so the jig is a regular tetrahedron at every rotation. The rotation does not need searching. Regular tetrahedra come in a 3-parameter family (see the count below), and the Skeletal Space Finder verifies one on every test surface, including the fractals.
 
-## Inscribed Octahedron (added for comparison)
-
-The Skeletal Space Finder also has an octahedron mode: six rays along $\pm x, \pm y, \pm z$. A regular octahedron has 7 DoF and 6 vertex conditions, so a 1-parameter family is expected. The finder verifies one on every test surface. Makeev has related results on regular octahedra inscribed in smooth convex bodies ([Zap. Nauchn. Sem. POMI](https://m.mathnet.ru/eng/znsl1460)).
-
 ![Inscribed Tetrahedron Spacefinder Demo](images/tetrahedron_demonstration.gif)
 
 [Run the Skeletal Space Finder](https://thor110.github.io/InscribedShapeProblems/pages/skeletal-spacefinder.html?shape=tetrahedron)
+
+## Inscribed Octahedron (added for comparison)
+
+The Skeletal Space Finder also has an octahedron mode: six rays along $\pm x, \pm y, \pm z$. A regular octahedron has 7 DoF and 6 vertex conditions, so a 1-parameter family is expected. The finder verifies one on every test surface. Makeev has related results on regular octahedra inscribed in smooth convex bodies ([Zap. Nauchn. Sem. POMI](https://m.mathnet.ru/eng/znsl1460)).
 
 ## Degrees Of Freedom (Heuristic)
 
@@ -714,7 +716,7 @@ node tests/run-2d.js 1 rectangle,trianglex,pentagon,hexagon   # the other 2D tar
 node tests/run-3d.js 2           # cube, tetrahedron and octahedron search on every surface
 node tests/run-cube-viewfinder.js 2   # direct inscribed-cube search on every surface
 node tests/run-nd.js 5           # n-dimensional table (dimensions 2–5)
-node tests/run-study.js all      # square shrinkage + rectangle sweep + tetrahedron study (writes data/ and the SVG charts)
+node tests/run-study.js all      # square shrinkage + rectangle sweep + tetrahedron and parity studies (writes data/ and the SVG charts)
 node tests/run-study.js tetra    # just the 3D tetrahedron study
 node tests/run-study.js parity   # count every square and 2:1 rectangle (parity study)
 node tests/check-orientations.js # which orientations of an inscribed equilateral triangle exist in sharp polygons

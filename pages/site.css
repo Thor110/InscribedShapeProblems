@@ -16,3 +16,4 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,su
 .footer{margin-top:40px;font-size:9px;color:#777;letter-spacing:0.1em;text-transform:uppercase;text-align:center;line-height:1.8;}
 .footer a{color:#888;}
 @media (max-width: 720px){.footer{white-space:normal;overflow-wrap:anywhere;}}
+@media print{.site-nav{display:none;}}

@@ -40,8 +40,14 @@ if (!isMainThread) {
     console.log(`  ${r.cellsChecked.toLocaleString()} cells checked (deepest split level ${r.deepest}), ${r.failedCells} failed`);
     console.log(`  on every cell: |G| − (change across the cell) − T ≥ ${r.slackOverTeff.toExponential(2)} > 0, and the degree condition holds (slack ${r.degreeSlack.toExponential(2)})`);
     console.log(`  circumradius of the guaranteed tetrahedron between ${f(radius)} and ${f(sMax)}  (${((Date.now() - t0) / 1000).toFixed(0)} s on ${nw} threads)`);
-    const orientations = [];
-    if (!process.argv.includes('--theorem')) {
+    const orientations = [], file = path.join(__dirname, '..', 'data', 'certificate-tetrahedron.json');
+    if (process.argv.includes('--theorem')) {
+      // keep the stored Corollary 7.2 table, but only if it was computed for this same box (z, J, K)
+      let old = null; try { old = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { /* no table yet */ }
+      const same = old && old.certificate && ['zero', 'J', 'K'].every(k => JSON.stringify(old.certificate[k]) === JSON.stringify(r[k]));
+      if (same) orientations.push(...(old.orientations || []));
+      else if (old && (old.orientations || []).length) console.log('  the box changed: the stored orientation table is dropped (rerun without --theorem)');
+    } else {
       // Corollary 7.2: turning by θ moves G by at most s_max·θ, so certify Teff = T + s_max·θ.
       console.log('  every orientation within angle α of the given one, for surfaces within T:');
       for (const t of [0, 0.03, 0.06, 0.09, 0.12]) {
@@ -55,7 +61,7 @@ if (!isMainThread) {
       }
     }
     console.log(`  ${((Date.now() - t0) / 1000).toFixed(0)} s in all`);
-    fs.writeFileSync(path.join(__dirname, '..', 'data', 'certificate-tetrahedron.json'), JSON.stringify({
+    fs.writeFileSync(file, JSON.stringify({
       theorem: 'Every surface ρ(ω)·ω with ρ continuous and |ρ(ω) − r_E(ω)| ≤ T for all unit vectors ω, where r_E is the radial function of the ellipsoid x² + y²/0.8² + z²/0.6² = 1, has an inscribed regular tetrahedron with vertices x + s·w_k, w_k the directions of tetraDirs() in pages/certify-rigorous.js.',
       method: 'interval arithmetic with outward rounding, adaptive cells (pages/interval.js, pages/certify-rigorous.js)',
       ellipsoid: { axes: [1, '4/5', '3/5'] }, orientation: 'Cayley rotation with q = (1/8, 1/4, 3/8)', T: `${T[0]}/${T[1]}`, ok,

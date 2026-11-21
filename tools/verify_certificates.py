@@ -123,12 +123,12 @@ def scan_face(args):
         ps = [z[r] + sum(K[r][k] * y[k] for k in range(n)) for r in range(n)]       # float sample point
         for r in range(n):                             # distance from the exact z + K y to it
             ex = I(z[r]) + sum((I(K[r][k]) * I(y[k]) for k in range(n)), I(0))
-            flerr = max(flerr, max(hi(ex) - ps[r], ps[r] - lo(ex)))
+            flerr = max(flerr, hi(ex - I(ps[r])), hi(I(ps[r]) - ex))
         g = P['G'](ps); h = 0.0; gl = 0.0
         for r in range(n):
             L = sum((I(J[r][k]) * (I(ps[k]) - I(z[k])) for k in range(n)), I(0))
             h = max(h, mag(g[r] - L)); gl = max(gl, mig(g[r]))
-        maxH = max(maxH, h); minG = min(minG, gl); degm = min(degm, gl - h); count += 1
+        maxH = max(maxH, h); minG = min(minG, gl); degm = min(degm, lo(I(gl) - I(h))); count += 1
         k = 0
         while k < n - 1:
             idx[k] += 1
@@ -142,8 +142,9 @@ def scan_face(args):
 # every point of its image in Q is within r = ‖K‖∞·h + ε of the centre's sample point,
 # so it passes if  |G| − lip·r > Teff  and  |G| − |G − L| − (2·lip + ‖J‖∞)·r > 0  there.
 # A failing cell is split in half along every free direction (exact in floating point).
+# With fail_fast, the scan stops at the first cell that still fails at max_depth: the face has failed.
 def scan_face_adaptive(args):
-    name, z, J, K, c, Teff, nK, nJ, start, max_depth, fixed, sign = args
+    name, z, J, K, c, Teff, nK, nJ, start, max_depth, fixed, sign, fail_fast = args
     P = PROBLEMS[name](); n = P['n']; m = n - 1; lip = P['lip']
     kD = hi(I(2) * I(lip) + I(nJ))
     edges = [(-c + 2 * c * i / start) if i < start else c for i in range(start + 1)]
@@ -165,7 +166,7 @@ def scan_face_adaptive(args):
         fl = 0.0
         for r in range(n):
             ex = I(z[r]) + sum((I(K[r][k]) * I(y[k]) for k in range(n)), I(0))
-            fl = max(fl, max(hi(ex) - ps[r], ps[r] - lo(ex)))
+            fl = max(fl, hi(ex - I(ps[r])), hi(I(ps[r]) - ex))
         g = P['G'](ps); h = 0.0; gl = 0.0
         for r in range(n):
             L = sum((I(J[r][k]) * (I(ps[k]) - I(z[k])) for k in range(n)), I(0))
@@ -184,23 +185,40 @@ def scan_face_adaptive(args):
                 stack.append((lo_, hi_, depth + 1))
         else:
             failed += 1
+            if fail_fast: break
     return dict(cells=cells, failed=failed, deepest=deepest, slackG=slackG, slackD=slackD)
 
-def certify_adaptive(name, z, J, K, c, Teff, start=8, max_depth=12):
+def certify_adaptive(name, z, J, K, c, Teff, start=8, max_depth=12, fail_fast=True):
     n = len(z); Ji = [[I(x) for x in row] for row in J]; Ki = [[I(x) for x in row] for row in K]
     JK = [[sum((Ji[i][k] * Ki[k][j] for k in range(n)), I(0)) for j in range(n)] for i in range(n)]
     e = norm_inf([[JK[i][j] - I(1 if i == j else 0) for j in range(n)] for i in range(n)])
     cEff = lo(I(c) * (I(1) - I(e))); dJ = det(Ji); degree = 1 if lo(dJ) > 0 else -1 if hi(dJ) < 0 else 0
     nK = norm_inf(Ki); nJ = norm_inf(Ji)
-    faces = [(name, z, J, K, c, Teff, nK, nJ, start, max_depth, f, s) for f in range(n) for s in (-1, 1)]
+    faces = [(name, z, J, K, c, Teff, nK, nJ, start, max_depth, f, s, fail_fast) for f in range(n) for s in (-1, 1)]
     t0 = time.time()
-    with Pool(min(len(faces), os.cpu_count() or 1)) as pool: res = pool.map(scan_face_adaptive, faces)
+    if fail_fast and (degree == 0 or cEff <= 0):       # already failed: no need to scan
+        res = [dict(cells=0, failed=0, deepest=0, slackG=math.inf, slackD=math.inf)]
+    else:
+        with Pool(min(len(faces), os.cpu_count() or 1)) as pool: res = pool.map(scan_face_adaptive, faces)
     failed = sum(r['failed'] for r in res)
     return dict(ok=degree != 0 and cEff > 0 and failed == 0, degree=degree, cells=sum(r['cells'] for r in res), failed=failed,
                 deepest=max(r['deepest'] for r in res), slackG=min(r['slackG'] for r in res), slackD=min(r['slackD'] for r in res),
                 seconds=time.time() - t0)
 
-def norm_inf(M): return max(sum(mag(x) for x in row) for row in M)
+def load_certificate(file, n, box=False):
+    """The box data z, J, K of a certificate file, or None (after printing why) if it is malformed."""
+    try:
+        d = json.load(open(os.path.join(ROOT, 'data', file)))['certificate']
+        z, J, K = d['zero'], d['J'], d['K']
+        nums = list(z) + [x for row in J + K for x in row]
+        if len(z) != n or len(J) != n or len(K) != n or any(len(row) != n for row in J + K) \
+           or not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in nums): raise ValueError('wrong shape')
+        if box and not (isinstance(d['c'], (int, float)) and 0 < d['c'] < math.inf): raise ValueError('bad box size c')
+        return d
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f'data/{file}: FAILED (malformed certificate: {e!r})'); return None
+
+def norm_inf(M): return max(hi(sum((I(mag(x)) for x in row), I(0))) for row in M)   # row sums rounded up
 
 def det(M):
     n = len(M)
@@ -246,8 +264,12 @@ def covering(tag):
     from bisect import bisect_left
     recs = [json.loads(l) for l in open(os.path.join(ROOT, 'data', f'orientations-progress-{tag}.jsonl')) if l.strip()]
     want = [int(v) for v in tag[1:].split('-')]
+    num = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+    vec = lambda v: isinstance(v, list) and len(v) == 3 and all(num(x) for x in v)
+    if not recs or not all(isinstance(r, dict) and 'ok' in r and vec(r.get('lo')) and vec(r.get('hi')) and (not r['ok'] or vec(r.get('q'))) for r in recs):
+        print(f'Corollary 7.3 covering: FAILED (a record in orientations-progress-{tag}.jsonl lacks lo, hi, q or ok)'); return False
     if any(r.get('T') != want for r in recs):   # every cube must have been certified for this T
-        print(f'  a record in orientations-progress-{tag}.jsonl was certified for another T'); return False
+        print(f'Corollary 7.3 covering: FAILED (a record in orientations-progress-{tag}.jsonl was certified for another T)'); return False
     cubes = [([Fr(v) for v in r['lo']], [Fr(v) for v in r['hi']]) for r in recs if r['ok']]
     axes = [sorted({v for lo_, hi_ in cubes for v in (lo_[i], hi_[i])} | {Fr(-1), Fr(1)}) for i in range(3)]
     covered = set()
@@ -273,12 +295,15 @@ def covering(tag):
     ok = missing == 0 and inside and centred and need > 0
     print(f"Corollary 7.3 covering: {'VALID' if ok else 'FAILED'}")
     print(f"  {len(cubes):,} certified cubes; {need:,} elementary cells meet the octahedron, {missing} not covered")
+    if not centred: print('  a certified centre q lies outside its cube')
     return ok
 
 def main():
     which = [a for a in sys.argv[1:] if a in ('square', 'tetra', 'orientations')] or ['square', 'tetra']; all_ok = True
     if 'square' in which:
-        d = json.load(open(os.path.join(ROOT, 'data', 'certificates.json')))['certificate']
+        d = load_certificate('certificates.json', 2)
+    if 'square' in which and d is None: all_ok = False
+    elif 'square' in which:
         T = 0.15; Teff = hi((1 + iv.sqrt(I(2))) * (iv.mpf(15) / 100))
         r = certify('square', d['zero'], d['J'], d['K'], 0.5, 20000, Teff)
         # non-degeneracy: |A − C| = |γ(t) + γ(t')| on Q's bounding box, in cells
@@ -294,7 +319,9 @@ def main():
         report(f'Theorem 6 (square, T = {T})', r); print(f'  diagonal ≥ {m:.4f} − 2T = {m - 2 * T:.4f}')
         all_ok &= r['ok']
     if 'tetra' in which:
-        d = json.load(open(os.path.join(ROOT, 'data', 'certificate-tetrahedron.json')))['certificate']
+        d = load_certificate('certificate-tetrahedron.json', 4, box=True)
+    if 'tetra' in which and d is None: all_ok = False
+    elif 'tetra' in which:
         T = 0.13; c = d['c']
         r = certify_adaptive('tetra', d['zero'], d['J'], d['K'], c, hi(iv.mpf(13) / 100))
         smin = min(lo(I(d['zero'][3]) + sum((I(d['K'][3][k]) * I(c if (m >> k) & 1 else -c) for k in range(4)), I(0))) for m in range(16))
